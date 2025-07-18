@@ -1,0 +1,640 @@
+{% extends "base.html" %}
+
+{% block title %}Track Signals - BFI Signals AI{% endblock %}
+
+{% block content %}
+<style>
+    .track-signals-container {
+        max-width: 1400px;
+        margin: 0 auto;
+        padding: 30px;
+    }
+
+    .track-signals-title {
+        text-align: center;
+        margin-bottom: 40px;
+        color: #d4af37;
+        font-size: 2.5rem;
+        font-weight: 700;
+        text-shadow: 0 0 20px rgba(212, 175, 55, 0.3);
+    }
+
+    .track-signals-subtitle {
+        text-align: center;
+        margin-bottom: 50px;
+        color: #cccccc;
+        font-size: 1.2rem;
+        line-height: 1.6;
+    }
+
+    .signals-section {
+        margin-bottom: 50px;
+    }
+
+    .section-title {
+        color: #d4af37;
+        font-size: 1.8rem;
+        font-weight: 700;
+        margin-bottom: 25px;
+        text-shadow: 0 0 10px rgba(212, 175, 55, 0.3);
+        display: flex;
+        align-items: center;
+        gap: 10px;
+    }
+
+    .section-title::before {
+        content: '';
+        width: 4px;
+        height: 25px;
+        background: linear-gradient(135deg, #d4af37, #ffd700);
+        border-radius: 2px;
+    }
+
+    .track-table {
+        width: 100%;
+        border-collapse: separate;
+        border-spacing: 0;
+        margin-top: 20px;
+        border: 2px solid #d4af37;
+        border-radius: 15px;
+        overflow: hidden;
+        box-shadow: 
+            0 8px 25px rgba(0, 0, 0, 0.3),
+            0 4px 15px rgba(212, 175, 55, 0.1);
+        background: linear-gradient(135deg, #2a2a2a, #1f1f1f);
+    }
+
+    .track-table th {
+        padding: 12px 10px;
+        text-align: left;
+        border-bottom: 1px solid #d4af37;
+        border-right: 1px solid #d4af37;
+        background: linear-gradient(135deg, #d4af37, #f4e971, #d4af37);
+        color: #000000;
+        font-weight: 700;
+        font-size: 0.95rem;
+        letter-spacing: 0.5px;
+        text-transform: uppercase;
+        box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.2);
+    }
+
+    .track-table td {
+        padding: 12px 10px;
+        text-align: left;
+        border-bottom: 1px solid #d4af37;
+        border-right: 1px solid #d4af37;
+        color: #ffffff;
+        font-weight: 500;
+    }
+
+    .track-table tr {
+        background: linear-gradient(135deg, #2d2d2d, #252525);
+    }
+
+    .track-table tr:nth-child(even) {
+        background: linear-gradient(135deg, #2f2f2f, #272727);
+    }
+
+    .track-table tr:hover {
+        background: linear-gradient(135deg, rgba(45, 45, 45, 0.8), rgba(212, 175, 55, 0.05));
+        transform: scale(1.005);
+        transition: all 0.3s ease;
+    }
+
+    .track-table th:last-child,
+    .track-table td:last-child {
+        border-right: none;
+    }
+
+    .track-table tr:last-child td {
+        border-bottom: none;
+    }
+
+    .signal-badge {
+        padding: 6px 12px;
+        border-radius: 20px;
+        font-size: 0.75rem;
+        font-weight: 700;
+        display: inline-block;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        border: 1px solid rgba(255, 255, 255, 0.1);
+    }
+
+    .signal-badge.long {
+        background: linear-gradient(135deg, #1a4d1a, #2d5a2d);
+        color: #ffffff;
+    }
+
+    .signal-badge.short {
+        background: linear-gradient(135deg, #4d1a1a, #5a2d2d);
+        color: #ffffff;
+    }
+
+    .probability-badge {
+        padding: 6px 12px;
+        border-radius: 20px;
+        font-size: 0.75rem;
+        font-weight: 700;
+        display: inline-block;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+    }
+
+    .probability-badge.high {
+        background: linear-gradient(135deg, #1a4d1a, #2d5a2d);
+        color: #ffffff;
+    }
+
+    .probability-badge.medium {
+        background: linear-gradient(135deg, #4d4d1a, #5a5a2d);
+        color: #ffffff;
+    }
+
+    .probability-badge.low {
+        background: linear-gradient(135deg, #4d1a1a, #5a2d2d);
+        color: #ffffff;
+    }
+
+    .outcome-dropdown {
+        padding: 10px 15px;
+        border: 2px solid #d4af37;
+        border-radius: 10px;
+        background: linear-gradient(135deg, #0a0a0a, #1a1a1a) !important;
+        color: #ffffff !important;
+        font-size: 0.85rem;
+        font-weight: 600;
+        min-width: 130px;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
+        backdrop-filter: blur(10px);
+        -webkit-appearance: none;
+        -moz-appearance: none;
+        appearance: none;
+    }
+
+    .outcome-dropdown:focus {
+        outline: none;
+        border-color: #ffd700;
+        box-shadow: 0 0 20px rgba(212, 175, 55, 0.5);
+        transform: translateY(-2px);
+        background: linear-gradient(135deg, #1a1a1a, #2a2a2a) !important;
+    }
+
+    .outcome-dropdown:hover {
+        border-color: #ffd700;
+        box-shadow: 0 6px 20px rgba(212, 175, 55, 0.3);
+        transform: translateY(-1px);
+        background: linear-gradient(135deg, #1a1a1a, #2a2a2a) !important;
+    }
+
+    /* Force dark theme for dropdown options */
+    .outcome-dropdown option {
+        background: linear-gradient(135deg, #1a1a1a, #2a2a2a) !important;
+        color: #ffffff !important;
+        padding: 10px;
+        border: none;
+    }
+
+    .outcome-dropdown option:hover {
+        background: linear-gradient(135deg, #2a2a2a, #3a3a3a) !important;
+    }
+
+    .outcome-dropdown option:checked {
+        background: linear-gradient(135deg, #d4af37, #ffd700) !important;
+        color: #000000 !important;
+    }
+
+    /* Global option styling to inherit dark theme */
+    option {
+        background-color: #0a0a0a !important;
+        color: #ffffff !important;
+        border: none !important;
+        padding: 8px 12px !important;
+    }
+
+    option:hover {
+        background-color: #1a1a1a !important;
+        color: #ffffff !important;
+    }
+
+    option:checked {
+        background-color: #d4af37 !important;
+        color: #000000 !important;
+    }
+
+    option:focus {
+        background-color: #1a1a1a !important;
+        color: #ffffff !important;
+    }
+
+    .outcome-win {
+        background: linear-gradient(135deg, #0d4d0d, #1a5a1a) !important;
+        color: #ffffff !important;
+        border-color: #48bb78 !important;
+        box-shadow: 0 4px 15px rgba(72, 187, 120, 0.4) !important;
+    }
+
+    .outcome-loss {
+        background: linear-gradient(135deg, #4d0d0d, #5a1a1a) !important;
+        color: #ffffff !important;
+        border-color: #f56565 !important;
+        box-shadow: 0 4px 15px rgba(245, 101, 101, 0.4) !important;
+    }
+
+    .outcome-breakeven {
+        background: linear-gradient(135deg, #4d4d0d, #5a5a1a) !important;
+        color: #ffffff !important;
+        border-color: #ed8936 !important;
+        box-shadow: 0 4px 15px rgba(237, 137, 54, 0.4) !important;
+    }
+
+    .outcome-pending {
+        background: linear-gradient(135deg, #1a3a4d, #2d4a5a) !important;
+        color: #ffffff !important;
+        border-color: #3b82f6 !important;
+        box-shadow: 0 4px 15px rgba(59, 130, 246, 0.4) !important;
+    }
+
+    .no-signals {
+        background: linear-gradient(135deg, #2d2d2d, #1a1a1a);
+        border: 2px solid #d4af37;
+        padding: 60px 40px;
+        border-radius: 20px;
+        text-align: center;
+        box-shadow: 0 10px 30px rgba(212, 175, 55, 0.15);
+        margin-top: 20px;
+    }
+
+    .no-signals h3 {
+        color: #d4af37;
+        margin-bottom: 20px;
+        font-size: 1.8rem;
+        font-weight: 700;
+    }
+
+    .no-signals p {
+        color: #cccccc;
+        margin-bottom: 30px;
+        font-size: 1.1rem;
+        line-height: 1.6;
+    }
+
+    .stats-summary {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        gap: 20px;
+        margin-bottom: 40px;
+    }
+
+    .stat-card {
+        background: linear-gradient(135deg, #2d2d2d, #1a1a1a);
+        border: 2px solid #d4af37;
+        border-radius: 20px;
+        padding: 25px;
+        text-align: center;
+        transition: all 0.4s ease;
+        position: relative;
+        overflow: hidden;
+        box-shadow: 
+            0 8px 25px rgba(212, 175, 55, 0.1),
+            0 5px 15px rgba(0, 0, 0, 0.4),
+            inset 0 1px 0 rgba(255, 255, 255, 0.1);
+    }
+
+    .stat-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 
+            0 12px 35px rgba(212, 175, 55, 0.25),
+            0 8px 25px rgba(0, 0, 0, 0.5),
+            inset 0 2px 0 rgba(255, 255, 255, 0.15);
+        border-color: #ffd700;
+    }
+
+    .stat-number {
+        font-size: 2.5rem;
+        font-weight: 800;
+        margin-bottom: 10px;
+        color: #d4af37;
+        text-shadow: 0 0 20px rgba(212, 175, 55, 0.3);
+    }
+
+    .stat-label {
+        color: #cccccc;
+        font-size: 1rem;
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+    }
+
+    .stat-subtitle {
+        color: #888888;
+        font-size: 0.85rem;
+        margin-top: 5px;
+    }
+
+    /* Additional dropdown styling for cross-browser compatibility */
+    select.outcome-dropdown {
+        background: linear-gradient(135deg, #0a0a0a, #1a1a1a) !important;
+        color: #ffffff !important;
+        border: 2px solid #d4af37 !important;
+    }
+
+    select.outcome-dropdown option {
+        background: linear-gradient(135deg, #1a1a1a, #2a2a2a) !important;
+        color: #ffffff !important;
+    }
+
+    /* Force dark styling for dropdown options in all browsers */
+    .outcome-dropdown option {
+        background-color: #1a1a1a !important;
+        color: #ffffff !important;
+        border: none !important;
+        padding: 8px 12px !important;
+    }
+
+    .outcome-dropdown option:hover {
+        background-color: #2a2a2a !important;
+        color: #ffffff !important;
+    }
+
+    .outcome-dropdown option:checked {
+        background-color: #d4af37 !important;
+        color: #000000 !important;
+    }
+
+    /* Additional browser-specific rules */
+    .outcome-dropdown::-ms-expand {
+        background-color: #1a1a1a !important;
+    }
+
+    .outcome-dropdown option:focus {
+        background-color: #2a2a2a !important;
+        color: #ffffff !important;
+    }
+
+    @media (max-width: 768px) {
+        .track-signals-container {
+            padding: 20px;
+        }
+        
+        .track-signals-title {
+            font-size: 2rem;
+        }
+        
+        .track-table {
+            font-size: 0.8rem;
+        }
+        
+        .track-table th,
+        .track-table td {
+            padding: 8px 6px;
+        }
+        
+        .outcome-dropdown {
+            font-size: 0.75rem;
+            padding: 6px 8px;
+            min-width: 100px;
+        }
+    }
+</style>
+
+<div class="track-signals-container">
+    <h1 class="track-signals-title">📊 Track Signals</h1>
+    <p class="track-signals-subtitle">Mark your signals as Win, Loss, or Breakeven to track performance and improve your trading strategy</p>
+
+    <!-- Stats Summary -->
+    <div class="stats-summary">
+        <div class="stat-card">
+            <div class="stat-number">{{ daily_signals|length }}</div>
+            <div class="stat-label">Daily Signals</div>
+            <div class="stat-subtitle">Auto-generated signals</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-number">{{ manual_signals|length }}</div>
+            <div class="stat-label">Manual Signals</div>
+            <div class="stat-subtitle">User-created signals</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-number">{{ (daily_signals + manual_signals)|selectattr('actual_outcome', 'none')|list|length }}</div>
+            <div class="stat-label">Pending</div>
+            <div class="stat-subtitle">Awaiting outcome</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-number">{{ (daily_signals + manual_signals)|selectattr('actual_outcome', 'equalto', 1)|list|length }}</div>
+            <div class="stat-label">Wins</div>
+            <div class="stat-subtitle">Successful trades</div>
+        </div>
+    </div>
+
+    <!-- Daily Signals Section -->
+    <div class="signals-section">
+        <h2 class="section-title">📈 Daily Signals</h2>
+        {% if daily_signals %}
+        <table class="track-table">
+            <thead>
+                <tr>
+                    <th>Symbol</th>
+                    <th>Type</th>
+                    <th>Probability</th>
+                    <th>Risk Level</th>
+                    <th>Date</th>
+                    <th>Main Outcome</th>
+                    <th>Risky Play</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for signal in daily_signals %}
+                <tr>
+                    <td><strong>{{ signal[1] }}</strong></td>
+                    <td>
+                        <span class="signal-badge {{ signal[2].lower() }}">
+                            {{ signal[2] }}
+                        </span>
+                    </td>
+                    <td>
+                        {% set probability = (signal[3] * 100) | int %}
+                        {% if probability >= 80 %}
+                            <span class="probability-badge high">🟢 {{ probability }}%</span>
+                        {% elif probability >= 65 %}
+                            <span class="probability-badge medium">🟡 {{ probability }}%</span>
+                        {% else %}
+                            <span class="probability-badge low">🔴 {{ probability }}%</span>
+                        {% endif %}
+                    </td>
+                    <td>{{ signal[4].upper() }}</td>
+                    <td>{{ signal[5][:10] }}</td>
+                    <td>
+                        <select class="outcome-dropdown" data-signal-id="{{ signal[0] }}" data-type="main" onchange="updateOutcome(this)">
+                            <option value="">Select Outcome</option>
+                            <option value="1" {% if signal[6] == 1 %}selected{% endif %}>✅ Win</option>
+                            <option value="0" {% if signal[6] == 0 %}selected{% endif %}>❌ Loss</option>
+                            <option value="2" {% if signal[6] == 2 %}selected{% endif %}>⚖️ Breakeven</option>
+                        </select>
+                    </td>
+                    <td>
+                        <select class="outcome-dropdown" data-signal-id="{{ signal[0] }}" data-type="risky" onchange="updateOutcome(this)">
+                            <option value="">Select Outcome</option>
+                            <option value="1" {% if signal[7] == 1 %}selected{% endif %}>✅ Win</option>
+                            <option value="0" {% if signal[7] == 0 %}selected{% endif %}>❌ Loss</option>
+                            <option value="2" {% if signal[7] == 2 %}selected{% endif %}>⚖️ Breakeven</option>
+                        </select>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+        {% else %}
+        <div class="no-signals">
+            <h3>📊 No Daily Signals Found</h3>
+            <p>Generate some automatic signals to see them here for tracking.</p>
+        </div>
+        {% endif %}
+    </div>
+
+    <!-- Manual Signals Section -->
+    <div class="signals-section">
+        <h2 class="section-title">✍️ Manual Signals</h2>
+        {% if manual_signals %}
+        <table class="track-table">
+            <thead>
+                <tr>
+                    <th>Symbol</th>
+                    <th>Type</th>
+                    <th>Probability</th>
+                    <th>Risk Level</th>
+                    <th>Date</th>
+                    <th>Main Outcome</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for signal in manual_signals %}
+                <tr>
+                    <td><strong>{{ signal[1] }}</strong></td>
+                    <td>
+                        <span class="signal-badge {{ signal[2].lower() }}">
+                            {{ signal[2] }}
+                        </span>
+                    </td>
+                    <td>
+                        {% set probability = (signal[3] * 100) | int %}
+                        {% if probability >= 80 %}
+                            <span class="probability-badge high">🟢 {{ probability }}%</span>
+                        {% elif probability >= 65 %}
+                            <span class="probability-badge medium">🟡 {{ probability }}%</span>
+                        {% else %}
+                            <span class="probability-badge low">🔴 {{ probability }}%</span>
+                        {% endif %}
+                    </td>
+                    <td>{{ signal[4].upper() }}</td>
+                    <td>{{ signal[5][:10] }}</td>
+                    <td>
+                        <select class="outcome-dropdown" data-signal-id="{{ signal[0] }}" data-type="main" onchange="updateOutcome(this)">
+                            <option value="">Select Outcome</option>
+                            <option value="1" {% if signal[6] == 1 %}selected{% endif %}>✅ Win</option>
+                            <option value="0" {% if signal[6] == 0 %}selected{% endif %}>❌ Loss</option>
+                            <option value="2" {% if signal[6] == 2 %}selected{% endif %}>⚖️ Breakeven</option>
+                        </select>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+        {% else %}
+        <div class="no-signals">
+            <h3>✍️ No Manual Signals Found</h3>
+            <p>Create some manual signals to see them here for tracking.</p>
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+function updateOutcome(selectElement) {
+    const signalId = selectElement.getAttribute('data-signal-id');
+    const outcome = selectElement.value;
+    const type = selectElement.getAttribute('data-type');
+    
+    if (!outcome) {
+        return; // Don't send empty values
+    }
+    
+    // Update visual styling based on outcome
+    selectElement.className = 'outcome-dropdown';
+    if (outcome === '1') {
+        selectElement.classList.add('outcome-win');
+    } else if (outcome === '0') {
+        selectElement.classList.add('outcome-loss');
+    } else if (outcome === '2') {
+        selectElement.classList.add('outcome-breakeven');
+    }
+    
+    // Send update to server
+    fetch('/api/update_outcome', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+            signal_id: signalId,
+            outcome: outcome,
+            type: type
+        })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            // Show success feedback
+            selectElement.style.borderColor = '#48bb78';
+            setTimeout(() => {
+                selectElement.style.borderColor = '#d4af37';
+            }, 1000);
+        } else {
+            // Show error feedback
+            selectElement.style.borderColor = '#f56565';
+            setTimeout(() => {
+                selectElement.style.borderColor = '#d4af37';
+            }, 1000);
+            console.error('Error updating outcome:', data.error);
+        }
+    })
+    .catch(error => {
+        console.error('Error updating outcome:', error);
+        selectElement.style.borderColor = '#f56565';
+        setTimeout(() => {
+            selectElement.style.borderColor = '#d4af37';
+        }, 1000);
+    });
+}
+
+// Initialize outcome styling on page load
+document.addEventListener('DOMContentLoaded', function() {
+    const dropdowns = document.querySelectorAll('.outcome-dropdown');
+    dropdowns.forEach(dropdown => {
+        const value = dropdown.value;
+        if (value === '1') {
+            dropdown.classList.add('outcome-win');
+        } else if (value === '0') {
+            dropdown.classList.add('outcome-loss');
+        } else if (value === '2') {
+            dropdown.classList.add('outcome-breakeven');
+        }
+        
+        // Force dark styling for dropdown options
+        dropdown.style.backgroundColor = '#1a1a1a';
+        dropdown.style.color = '#ffffff';
+        dropdown.style.borderColor = '#d4af37';
+        
+        // Apply styles to options
+        const options = dropdown.querySelectorAll('option');
+        options.forEach(option => {
+            option.style.backgroundColor = '#1a1a1a';
+            option.style.color = '#ffffff';
+        });
+    });
+});
+</script>
+{% endblock %} 

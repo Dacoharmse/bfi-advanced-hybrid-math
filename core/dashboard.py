@@ -110,6 +110,27 @@ def dashboard():
         ''')
         today_signals = cursor.fetchone()[0]
         
+        # Calculate win rate statistics
+        cursor.execute('''
+            SELECT 
+                COUNT(*) as total_signals,
+                SUM(CASE WHEN actual_outcome = 1 THEN 1 ELSE 0 END) as wins,
+                SUM(CASE WHEN actual_outcome = 0 THEN 1 ELSE 0 END) as losses,
+                SUM(CASE WHEN actual_outcome = 2 THEN 1 ELSE 0 END) as breakevens,
+                CASE 
+                    WHEN COUNT(*) > 0 THEN 
+                        ROUND((SUM(CASE WHEN actual_outcome = 1 THEN 1 ELSE 0 END) * 100.0 / COUNT(*)), 1)
+                    ELSE 0 
+                END as win_rate
+            FROM signal_performance 
+            WHERE actual_outcome IS NOT NULL
+        ''')
+        win_rate_stats = cursor.fetchone()
+        
+        # If no data, set defaults
+        if not win_rate_stats or win_rate_stats[0] == 0:
+            win_rate_stats = (0, 0, 0, 0, 0.0)
+        
         # Get model performance
         cursor.execute('''
             SELECT model_used, COUNT(*) as count, AVG(confidence) as avg_confidence
@@ -124,14 +145,16 @@ def dashboard():
                              stats=stats,
                              recent_signals=recent_signals,
                              today_signals=today_signals,
-                             model_stats=model_stats)
+                             model_stats=model_stats,
+                             win_rate_stats=win_rate_stats)
     except Exception as e:
         return render_template('dashboard.html', 
                              error=f"Error loading dashboard: {e}",
                              stats={'total_signals': 0, 'success_rate': 0},
                              recent_signals=[],
                              today_signals=0,
-                             model_stats=[])
+                             model_stats=[],
+                             win_rate_stats=(0, 0, 0, 0, 0.0))
 
 
 @app.route('/performance')
@@ -347,6 +370,149 @@ def generate_signals():
     """Generate signals page"""
     return render_template('generate_signals.html')
 
+@app.route('/journal')
+def journal():
+    """Journal Signal Page - Track Win Rate and Performance"""
+    try:
+        conn = sqlite3.connect("ai_learning.db")
+        cursor = conn.cursor()
+        
+        # Get comprehensive performance statistics
+        cursor.execute('''
+            SELECT 
+                COUNT(*) as total_signals,
+                SUM(CASE WHEN actual_outcome = 1 THEN 1 ELSE 0 END) as wins,
+                SUM(CASE WHEN actual_outcome = 0 THEN 1 ELSE 0 END) as losses,
+                SUM(CASE WHEN actual_outcome = 2 THEN 1 ELSE 0 END) as breakevens,
+                SUM(CASE WHEN actual_outcome IS NULL THEN 1 ELSE 0 END) as pending,
+                AVG(CASE WHEN actual_outcome IS NOT NULL THEN predicted_probability * 100 ELSE NULL END) as avg_probability,
+                AVG(CASE WHEN actual_outcome = 1 THEN predicted_probability * 100 ELSE NULL END) as avg_win_probability,
+                AVG(CASE WHEN actual_outcome = 0 THEN predicted_probability * 100 ELSE NULL END) as avg_loss_probability
+            FROM signal_performance
+        ''')
+        overall_stats = cursor.fetchone()
+        
+        # Get performance by symbol
+        cursor.execute('''
+            SELECT 
+                symbol,
+                COUNT(*) as total_signals,
+                SUM(CASE WHEN actual_outcome = 1 THEN 1 ELSE 0 END) as wins,
+                SUM(CASE WHEN actual_outcome = 0 THEN 1 ELSE 0 END) as losses,
+                SUM(CASE WHEN actual_outcome = 2 THEN 1 ELSE 0 END) as breakevens,
+                SUM(CASE WHEN actual_outcome IS NULL THEN 1 ELSE 0 END) as pending,
+                AVG(predicted_probability * 100) as avg_probability,
+                ROUND(
+                    CAST(SUM(CASE WHEN actual_outcome = 1 THEN 1 ELSE 0 END) AS FLOAT) / 
+                    CAST(SUM(CASE WHEN actual_outcome IS NOT NULL THEN 1 ELSE 0 END) AS FLOAT) * 100, 2
+                ) as win_rate
+            FROM signal_performance 
+            GROUP BY symbol
+            ORDER BY total_signals DESC
+        ''')
+        symbol_performance = cursor.fetchall()
+        
+        # Get performance by signal type (LONG/SHORT)
+        cursor.execute('''
+            SELECT 
+                signal_type,
+                COUNT(*) as total_signals,
+                SUM(CASE WHEN actual_outcome = 1 THEN 1 ELSE 0 END) as wins,
+                SUM(CASE WHEN actual_outcome = 0 THEN 1 ELSE 0 END) as losses,
+                SUM(CASE WHEN actual_outcome = 2 THEN 1 ELSE 0 END) as breakevens,
+                SUM(CASE WHEN actual_outcome IS NULL THEN 1 ELSE 0 END) as pending,
+                AVG(predicted_probability * 100) as avg_probability,
+                ROUND(
+                    CAST(SUM(CASE WHEN actual_outcome = 1 THEN 1 ELSE 0 END) AS FLOAT) / 
+                    CAST(SUM(CASE WHEN actual_outcome IS NOT NULL THEN 1 ELSE 0 END) AS FLOAT) * 100, 2
+                ) as win_rate
+            FROM signal_performance 
+            GROUP BY signal_type
+            ORDER BY total_signals DESC
+        ''')
+        signal_type_performance = cursor.fetchall()
+        
+        # Get performance by probability range
+        cursor.execute('''
+            SELECT 
+                CASE 
+                    WHEN predicted_probability >= 0.8 THEN 'High (80%+)'
+                    WHEN predicted_probability >= 0.65 THEN 'Medium (65-79%)'
+                    WHEN predicted_probability >= 0.5 THEN 'Low (50-64%)'
+                    ELSE 'Very Low (<50%)'
+                END as probability_range,
+                COUNT(*) as total_signals,
+                SUM(CASE WHEN actual_outcome = 1 THEN 1 ELSE 0 END) as wins,
+                SUM(CASE WHEN actual_outcome = 0 THEN 1 ELSE 0 END) as losses,
+                SUM(CASE WHEN actual_outcome = 2 THEN 1 ELSE 0 END) as breakevens,
+                SUM(CASE WHEN actual_outcome IS NULL THEN 1 ELSE 0 END) as pending,
+                AVG(predicted_probability * 100) as avg_probability,
+                ROUND(
+                    CAST(SUM(CASE WHEN actual_outcome = 1 THEN 1 ELSE 0 END) AS FLOAT) / 
+                    CAST(SUM(CASE WHEN actual_outcome IS NOT NULL THEN 1 ELSE 0 END) AS FLOAT) * 100, 2
+                ) as win_rate
+            FROM signal_performance 
+            GROUP BY probability_range
+            ORDER BY avg_probability DESC
+        ''')
+        probability_performance = cursor.fetchall()
+        
+        # Get recent signals with outcomes
+        cursor.execute('''
+            SELECT 
+                id, symbol, signal_type, predicted_probability, risk_level, 
+                timestamp, actual_outcome, profit_loss
+            FROM signal_performance 
+            ORDER BY timestamp DESC 
+            LIMIT 20
+        ''')
+        recent_signals = cursor.fetchall()
+        
+        # Get monthly performance for chart
+        cursor.execute('''
+            SELECT 
+                strftime('%Y-%m', timestamp) as month,
+                COUNT(*) as total_signals,
+                SUM(CASE WHEN actual_outcome = 1 THEN 1 ELSE 0 END) as wins,
+                SUM(CASE WHEN actual_outcome = 0 THEN 1 ELSE 0 END) as losses,
+                SUM(CASE WHEN actual_outcome = 2 THEN 1 ELSE 0 END) as breakevens,
+                ROUND(
+                    CAST(SUM(CASE WHEN actual_outcome = 1 THEN 1 ELSE 0 END) AS FLOAT) / 
+                    CAST(SUM(CASE WHEN actual_outcome IS NOT NULL THEN 1 ELSE 0 END) AS FLOAT) * 100, 2
+                ) as win_rate
+            FROM signal_performance 
+            WHERE timestamp >= datetime('now', '-6 months')
+            GROUP BY strftime('%Y-%m', timestamp)
+            ORDER BY month DESC
+        ''')
+        monthly_performance = cursor.fetchall()
+        
+        conn.close()
+        
+        # Calculate overall win rate
+        total_completed = overall_stats[1] + overall_stats[2] + overall_stats[3]  # wins + losses + breakevens
+        overall_win_rate = (overall_stats[1] / total_completed * 100) if total_completed > 0 else 0
+        
+        return render_template('journal.html',
+                             overall_stats=overall_stats,
+                             overall_win_rate=round(overall_win_rate, 2),
+                             symbol_performance=symbol_performance,
+                             signal_type_performance=signal_type_performance,
+                             probability_performance=probability_performance,
+                             recent_signals=recent_signals,
+                             monthly_performance=monthly_performance)
+        
+    except Exception as e:
+        return render_template('journal.html', 
+                             error=f"Error loading journal data: {e}",
+                             overall_stats=(0, 0, 0, 0, 0, 0, 0, 0),
+                             overall_win_rate=0,
+                             symbol_performance=[],
+                             signal_type_performance=[],
+                             probability_performance=[],
+                             recent_signals=[],
+                             monthly_performance=[])
+
 @app.route('/api/discord_debug', methods=['GET'])
 def api_discord_debug():
     """Debug Discord configuration"""
@@ -404,6 +570,74 @@ def api_test_discord_connection():
             'debug': check_discord_config()
         })
 
+@app.route('/track_signals')
+def track_signals():
+    """Track Signals Page - Mark signals as Win/Loss/Breakeven"""
+    try:
+        conn = sqlite3.connect("ai_learning.db")
+        cursor = conn.cursor()
+        
+        # Ensure risky_play_outcome and manual columns exist
+        try:
+            cursor.execute('ALTER TABLE signal_performance ADD COLUMN risky_play_outcome INTEGER')
+            conn.commit()
+        except sqlite3.OperationalError:
+            pass
+        
+        try:
+            cursor.execute('ALTER TABLE signal_performance ADD COLUMN manual INTEGER DEFAULT 0')
+            conn.commit()
+        except sqlite3.OperationalError:
+            pass
+        
+        # Check if risky_play_outcome column exists
+        cursor.execute('PRAGMA table_info(signal_performance)')
+        columns = [col[1] for col in cursor.fetchall()]
+        
+        if 'risky_play_outcome' in columns:
+            cursor.execute('''
+                SELECT 
+                    id, symbol, signal_type, predicted_probability, risk_level, 
+                    timestamp, actual_outcome, risky_play_outcome, COALESCE(manual, 0) as manual
+                FROM signal_performance 
+                ORDER BY timestamp DESC
+                LIMIT 100
+            ''')
+        else:
+            cursor.execute('''
+                SELECT 
+                    id, symbol, signal_type, predicted_probability, risk_level, 
+                    timestamp, actual_outcome, NULL as risky_play_outcome, COALESCE(manual, 0) as manual
+                FROM signal_performance 
+                ORDER BY timestamp DESC
+                LIMIT 100
+            ''')
+        all_signals = cursor.fetchall()
+        
+        # Split signals into daily (auto-generated) and manual based on manual flag
+        daily_signals = []
+        manual_signals = []
+        
+        for signal in all_signals:
+            # Use the manual flag to properly categorize signals
+            is_manual = signal[8] if len(signal) > 8 else 0  # manual flag is at index 8
+            
+            if is_manual:
+                manual_signals.append(signal)
+            else:
+                daily_signals.append(signal)
+        
+        conn.close()
+        
+        return render_template('track_signals.html', 
+                             daily_signals=daily_signals,
+                             manual_signals=manual_signals)
+    except Exception as e:
+        print(f"❌ Error loading track signals page: {str(e)}")
+        return render_template('track_signals.html', 
+                             daily_signals=[],
+                             manual_signals=[])
+
 @app.route('/api/auto_generate_signal', methods=['POST'])
 def api_auto_generate_signal():
     """Auto-generate signal using hybrid math strategy and post to Discord"""
@@ -456,16 +690,25 @@ def api_auto_generate_signal():
         trading_date = get_trading_date()
         conn = sqlite3.connect("ai_learning.db")
         cursor = conn.cursor()
+        
+        # Ensure manual column exists
+        try:
+            cursor.execute('ALTER TABLE signal_performance ADD COLUMN manual INTEGER DEFAULT 0')
+            conn.commit()
+        except sqlite3.OperationalError:
+            pass
+        
         cursor.execute('''
             INSERT INTO signal_performance 
-            (symbol, signal_type, predicted_probability, risk_level, timestamp)
-            VALUES (?, ?, ?, ?, ?)
+            (symbol, signal_type, predicted_probability, risk_level, timestamp, manual)
+            VALUES (?, ?, ?, ?, ?, ?)
         ''', (
             symbol,
             signal['bias'],
             signal['probability_percentage'] / 100.0,
             signal.get('probability_label', 'Medium').lower(),
-            trading_date.isoformat()
+            trading_date.isoformat(),
+            0  # Mark as auto-generated signal
         ))
         conn.commit()
         conn.close()
@@ -635,16 +878,25 @@ def api_semi_auto_generate_signal():
         trading_date = get_trading_date()
         conn = sqlite3.connect("ai_learning.db")
         cursor = conn.cursor()
+        
+        # Ensure manual column exists
+        try:
+            cursor.execute('ALTER TABLE signal_performance ADD COLUMN manual INTEGER DEFAULT 0')
+            conn.commit()
+        except sqlite3.OperationalError:
+            pass
+        
         cursor.execute('''
             INSERT INTO signal_performance 
-            (symbol, signal_type, predicted_probability, risk_level, timestamp)
-            VALUES (?, ?, ?, ?, ?)
+            (symbol, signal_type, predicted_probability, risk_level, timestamp, manual)
+            VALUES (?, ?, ?, ?, ?, ?)
         ''', (
             symbol,
             signal['bias'],
             signal['probability_percentage'] / 100.0,
             signal.get('probability_label', 'Medium').lower(),
-            trading_date.isoformat()
+            trading_date.isoformat(),
+            0  # Mark as auto-generated signal
         ))
         conn.commit()
         conn.close()
@@ -747,16 +999,25 @@ def api_manual_generate_signal():
         trading_date = get_trading_date()
         conn = sqlite3.connect("ai_learning.db")
         cursor = conn.cursor()
+        
+        # Ensure manual column exists
+        try:
+            cursor.execute('ALTER TABLE signal_performance ADD COLUMN manual INTEGER DEFAULT 0')
+            conn.commit()
+        except sqlite3.OperationalError:
+            pass
+        
         cursor.execute('''
             INSERT INTO signal_performance 
-            (symbol, signal_type, predicted_probability, risk_level, timestamp)
-            VALUES (?, ?, ?, ?, ?)
+            (symbol, signal_type, predicted_probability, risk_level, timestamp, manual)
+            VALUES (?, ?, ?, ?, ?, ?)
         ''', (
             symbol,
             bias,
             confidence / 100.0,
             risk_level.lower(),
-            trading_date.isoformat()
+            trading_date.isoformat(),
+            1  # Mark as manual signal
         ))
         conn.commit()
         conn.close()
@@ -864,6 +1125,87 @@ def api_clear_data():
         return jsonify({'success': True, 'message': 'All learning data cleared successfully!'})
     except Exception as e:
         return jsonify({'error': f'Error clearing data: {str(e)}'})
+
+@app.route('/api/live_prices')
+def api_live_prices():
+    """Get live market prices for NASDAQ, Gold, and DOW"""
+    try:
+        import yfinance as yf
+        from datetime import datetime
+        
+        # Define symbols
+        symbols = {
+            'nasdaq': '^NDX',   # NASDAQ-100
+            'gold': 'GC=F',     # Gold Futures
+            'dow': '^DJI'       # Dow Jones Industrial Average
+        }
+        
+        live_data = {}
+        
+        for key, symbol in symbols.items():
+            try:
+                # Get current data
+                ticker = yf.Ticker(symbol)
+                current_data = ticker.history(period='2d')
+                
+                if len(current_data) >= 2:
+                    current_price = current_data['Close'].iloc[-1]
+                    previous_price = current_data['Close'].iloc[-2]
+                    
+                    # Calculate change
+                    change = current_price - previous_price
+                    change_percent = (change / previous_price) * 100
+                    
+                    # Format prices
+                    if key == 'gold':
+                        price_str = f"${current_price:.2f}"
+                        change_str = f"{change:+.2f}"
+                        change_percent_str = f"{change_percent:+.2f}%"
+                    else:
+                        price_str = f"{current_price:,.2f}"
+                        change_str = f"{change:+.2f}"
+                        change_percent_str = f"{change_percent:+.2f}%"
+                    
+                    live_data[key] = {
+                        'price': price_str,
+                        'change': change_str,
+                        'changePercent': change_percent_str,
+                        'rawChange': change
+                    }
+                else:
+                    live_data[key] = {
+                        'price': '--',
+                        'change': '--',
+                        'changePercent': '--',
+                        'rawChange': 0
+                    }
+                    
+            except Exception as e:
+                print(f"Error fetching {key} data: {str(e)}")
+                live_data[key] = {
+                    'price': '--',
+                    'change': '--',
+                    'changePercent': '--',
+                    'rawChange': 0
+                }
+        
+        return jsonify({
+            'success': True,
+            'nasdaq': live_data['nasdaq'],
+            'gold': live_data['gold'],
+            'dow': live_data['dow'],
+            'timestamp': datetime.now().isoformat()
+        })
+        
+    except Exception as e:
+        print(f"Error in live prices API: {str(e)}")
+        return jsonify({
+            'success': False,
+            'error': str(e),
+            'nasdaq': {'price': '--', 'change': '--', 'changePercent': '--'},
+            'gold': {'price': '--', 'change': '--', 'changePercent': '--'},
+            'dow': {'price': '--', 'change': '--', 'changePercent': '--'}
+        })
 
 @app.route('/api/export_data')
 def api_export_data():

@@ -1,0 +1,508 @@
+{% extends "base.html" %}
+
+{% block title %}Journal - BFI Signals AI{% endblock %}
+
+{% block content %}
+<style>
+    .journal-stats-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        gap: 20px;
+        margin-bottom: 30px;
+    }
+
+    .journal-stat-card {
+        background: linear-gradient(135deg, rgba(45, 45, 45, 0.9) 0%, rgba(26, 26, 26, 0.9) 100%);
+        backdrop-filter: blur(20px);
+        border: 2px solid #d4af37;
+        border-radius: 20px;
+        padding: 25px;
+        text-align: center;
+        box-shadow: 
+            0 8px 25px rgba(212, 175, 55, 0.25),
+            0 16px 40px rgba(0, 0, 0, 0.3),
+            inset 0 1px 0 rgba(255, 255, 255, 0.1);
+        transition: all 0.4s ease;
+        position: relative;
+        overflow: hidden;
+    }
+
+    .journal-stat-card:hover {
+        transform: translateY(-5px);
+        border-color: #ffd700;
+        box-shadow: 
+            0 12px 35px rgba(212, 175, 55, 0.4),
+            0 20px 50px rgba(0, 0, 0, 0.4),
+            inset 0 1px 0 rgba(255, 255, 255, 0.15);
+    }
+
+    .journal-stat-card::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: linear-gradient(135deg, transparent 0%, rgba(212, 175, 55, 0.05) 50%, transparent 100%);
+        pointer-events: none;
+    }
+
+    .journal-stat-card h3 {
+        font-size: 2.5rem;
+        margin-bottom: 10px;
+        font-weight: bold;
+        color: #d4af37;
+        text-shadow: 0 0 10px rgba(212, 175, 55, 0.3);
+    }
+
+    .journal-stat-card p {
+        color: #cccccc;
+        font-size: 1rem;
+        margin: 0;
+    }
+
+    .journal-stat-card .stat-subtitle {
+        color: #888888;
+        font-size: 0.85rem;
+        margin-top: 5px;
+    }
+
+    .win-rate-high { color: #48bb78; }
+    .win-rate-medium { color: #ed8936; }
+    .win-rate-low { color: #f56565; }
+
+    .performance-section {
+        margin-bottom: 40px;
+    }
+
+    .performance-section h2 {
+        color: #d4af37;
+        margin-bottom: 20px;
+        font-size: 1.8rem;
+        text-shadow: 0 0 10px rgba(212, 175, 55, 0.3);
+    }
+
+    .performance-table {
+        width: 100%;
+        border-collapse: separate;
+        border-spacing: 0;
+        margin-top: 20px;
+        border: 2px solid #d4af37;
+        border-radius: 15px;
+        overflow: hidden;
+        box-shadow: 
+            0 8px 25px rgba(0, 0, 0, 0.3),
+            0 4px 15px rgba(212, 175, 55, 0.1);
+        background: linear-gradient(135deg, #2a2a2a, #1f1f1f);
+    }
+
+    .performance-table th {
+        background: linear-gradient(135deg, #d4af37, #ffd700, #f4e971);
+        color: #000000;
+        padding: 15px 12px;
+        font-weight: 700;
+        text-transform: uppercase;
+        font-size: 0.9rem;
+        letter-spacing: 0.5px;
+        border-bottom: 2px solid #d4af37;
+        text-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
+    }
+
+    .performance-table td {
+        padding: 12px;
+        border-bottom: 1px solid #333;
+        color: #ffffff;
+        vertical-align: middle;
+    }
+
+    .performance-table tr:hover {
+        background: linear-gradient(135deg, rgba(45, 45, 45, 0.8), rgba(212, 175, 55, 0.05));
+        transform: scale(1.005);
+        transition: all 0.3s ease;
+    }
+
+    .performance-table tr {
+        background: linear-gradient(135deg, #2d2d2d, #252525);
+    }
+
+    .performance-table tr:nth-child(even) {
+        background: linear-gradient(135deg, #2f2f2f, #272727);
+    }
+
+    .win-rate-badge {
+        padding: 6px 12px;
+        border-radius: 20px;
+        font-size: 0.8rem;
+        font-weight: 600;
+        display: inline-block;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+    }
+
+    .win-rate-badge.high {
+        background: linear-gradient(135deg, #48bb78, #38a169);
+        color: white;
+        box-shadow: 0 2px 8px rgba(72, 187, 120, 0.3);
+    }
+
+    .win-rate-badge.medium {
+        background: linear-gradient(135deg, #ed8936, #dd6b20);
+        color: white;
+        box-shadow: 0 2px 8px rgba(237, 137, 54, 0.3);
+    }
+
+    .win-rate-badge.low {
+        background: linear-gradient(135deg, #f56565, #e53e3e);
+        color: white;
+        box-shadow: 0 2px 8px rgba(245, 101, 101, 0.3);
+    }
+
+    .chart-container {
+        background: linear-gradient(135deg, rgba(45, 45, 45, 0.9) 0%, rgba(26, 26, 26, 0.9) 100%);
+        backdrop-filter: blur(20px);
+        border: 2px solid #d4af37;
+        border-radius: 20px;
+        padding: 30px;
+        margin-bottom: 30px;
+        box-shadow: 
+            0 8px 25px rgba(212, 175, 55, 0.25),
+            0 16px 40px rgba(0, 0, 0, 0.3),
+            inset 0 1px 0 rgba(255, 255, 255, 0.1);
+    }
+
+    .chart-container h3 {
+        color: #d4af37;
+        margin-bottom: 20px;
+        text-align: center;
+        font-size: 1.5rem;
+    }
+
+    .monthly-chart {
+        height: 300px;
+        background: rgba(0, 0, 0, 0.3);
+        border-radius: 10px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: #cccccc;
+        font-size: 1.1rem;
+    }
+
+    .recent-signals-section {
+        margin-top: 40px;
+    }
+
+    .signal-outcome {
+        padding: 4px 8px;
+        border-radius: 12px;
+        font-size: 0.75rem;
+        font-weight: 600;
+        text-transform: uppercase;
+    }
+
+    .signal-outcome.win {
+        background: linear-gradient(135deg, #48bb78, #38a169);
+        color: white;
+    }
+
+    .signal-outcome.loss {
+        background: linear-gradient(135deg, #f56565, #e53e3e);
+        color: white;
+    }
+
+    .signal-outcome.breakeven {
+        background: linear-gradient(135deg, #ed8936, #dd6b20);
+        color: white;
+    }
+
+    .signal-outcome.pending {
+        background: linear-gradient(135deg, #718096, #4a5568);
+        color: white;
+    }
+
+    .probability-display {
+        font-weight: 600;
+        color: #d4af37;
+    }
+
+    @media (max-width: 768px) {
+        .journal-stats-grid {
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 15px;
+        }
+        
+        .journal-stat-card {
+            padding: 20px;
+        }
+        
+        .journal-stat-card h3 {
+            font-size: 2rem;
+        }
+        
+        .performance-table {
+            font-size: 0.85rem;
+        }
+        
+        .performance-table th,
+        .performance-table td {
+            padding: 8px 6px;
+        }
+    }
+</style>
+
+<div class="journal-stats-grid">
+    <div class="journal-stat-card">
+        <h3 class="win-rate-{{ 'high' if overall_win_rate >= 70 else 'medium' if overall_win_rate >= 50 else 'low' }}">{{ overall_win_rate }}%</h3>
+        <p>Overall Win Rate</p>
+        <div class="stat-subtitle">{{ overall_stats[0] }} Total Signals</div>
+    </div>
+    
+    <div class="journal-stat-card">
+        <h3 style="color: #48bb78;">{{ overall_stats[1] }}</h3>
+        <p>Total Wins</p>
+        <div class="stat-subtitle">Successful Trades</div>
+    </div>
+    
+    <div class="journal-stat-card">
+        <h3 style="color: #f56565;">{{ overall_stats[2] }}</h3>
+        <p>Total Losses</p>
+        <div class="stat-subtitle">Failed Trades</div>
+    </div>
+    
+    <div class="journal-stat-card">
+        <h3 style="color: #ed8936;">{{ overall_stats[3] }}</h3>
+        <p>Breakevens</p>
+        <div class="stat-subtitle">Neutral Outcomes</div>
+    </div>
+    
+    <div class="journal-stat-card">
+        <h3 style="color: #718096;">{{ overall_stats[4] }}</h3>
+        <p>Pending</p>
+        <div class="stat-subtitle">Awaiting Outcome</div>
+    </div>
+    
+    <div class="journal-stat-card">
+        <h3 style="color: #d4af37;">{{ "%.1f"|format(overall_stats[5] or 0) }}%</h3>
+        <p>Avg Probability</p>
+        <div class="stat-subtitle">AI Confidence</div>
+    </div>
+</div>
+
+<div class="performance-section">
+    <h2>📊 Performance by Symbol</h2>
+    <table class="performance-table">
+        <thead>
+            <tr>
+                <th>Symbol</th>
+                <th>Total Signals</th>
+                <th>Wins</th>
+                <th>Losses</th>
+                <th>Breakevens</th>
+                <th>Pending</th>
+                <th>Win Rate</th>
+                <th>Avg Probability</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for symbol_data in symbol_performance %}
+            <tr>
+                <td><strong>{{ symbol_data[0] }}</strong></td>
+                <td>{{ symbol_data[1] }}</td>
+                <td style="color: #48bb78;">{{ symbol_data[2] }}</td>
+                <td style="color: #f56565;">{{ symbol_data[3] }}</td>
+                <td style="color: #ed8936;">{{ symbol_data[4] }}</td>
+                <td style="color: #718096;">{{ symbol_data[5] }}</td>
+                <td>
+                    {% if symbol_data[7] %}
+                        <span class="win-rate-badge {{ 'high' if symbol_data[7] >= 70 else 'medium' if symbol_data[7] >= 50 else 'low' }}">
+                            {{ symbol_data[7] }}%
+                        </span>
+                    {% else %}
+                        <span class="win-rate-badge low">N/A</span>
+                    {% endif %}
+                </td>
+                <td class="probability-display">{{ "%.1f"|format(symbol_data[6] or 0) }}%</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+
+<div class="performance-section">
+    <h2>📈 Performance by Signal Type</h2>
+    <table class="performance-table">
+        <thead>
+            <tr>
+                <th>Signal Type</th>
+                <th>Total Signals</th>
+                <th>Wins</th>
+                <th>Losses</th>
+                <th>Breakevens</th>
+                <th>Pending</th>
+                <th>Win Rate</th>
+                <th>Avg Probability</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for signal_data in signal_type_performance %}
+            <tr>
+                <td>
+                    <span class="badge {{ 'badge-success' if signal_data[0] == 'LONG' else 'badge-danger' }}">
+                        {{ signal_data[0] }}
+                    </span>
+                </td>
+                <td>{{ signal_data[1] }}</td>
+                <td style="color: #48bb78;">{{ signal_data[2] }}</td>
+                <td style="color: #f56565;">{{ signal_data[3] }}</td>
+                <td style="color: #ed8936;">{{ signal_data[4] }}</td>
+                <td style="color: #718096;">{{ signal_data[5] }}</td>
+                <td>
+                    {% if signal_data[7] %}
+                        <span class="win-rate-badge {{ 'high' if signal_data[7] >= 70 else 'medium' if signal_data[7] >= 50 else 'low' }}">
+                            {{ signal_data[7] }}%
+                        </span>
+                    {% else %}
+                        <span class="win-rate-badge low">N/A</span>
+                    {% endif %}
+                </td>
+                <td class="probability-display">{{ "%.1f"|format(signal_data[6] or 0) }}%</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+
+<div class="performance-section">
+    <h2>🎯 Performance by Probability Range</h2>
+    <table class="performance-table">
+        <thead>
+            <tr>
+                <th>Probability Range</th>
+                <th>Total Signals</th>
+                <th>Wins</th>
+                <th>Losses</th>
+                <th>Breakevens</th>
+                <th>Pending</th>
+                <th>Win Rate</th>
+                <th>Avg Probability</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for prob_data in probability_performance %}
+            <tr>
+                <td><strong>{{ prob_data[0] }}</strong></td>
+                <td>{{ prob_data[1] }}</td>
+                <td style="color: #48bb78;">{{ prob_data[2] }}</td>
+                <td style="color: #f56565;">{{ prob_data[3] }}</td>
+                <td style="color: #ed8936;">{{ prob_data[4] }}</td>
+                <td style="color: #718096;">{{ prob_data[5] }}</td>
+                <td>
+                    {% if prob_data[7] %}
+                        <span class="win-rate-badge {{ 'high' if prob_data[7] >= 70 else 'medium' if prob_data[7] >= 50 else 'low' }}">
+                            {{ prob_data[7] }}%
+                        </span>
+                    {% else %}
+                        <span class="win-rate-badge low">N/A</span>
+                    {% endif %}
+                </td>
+                <td class="probability-display">{{ "%.1f"|format(prob_data[6] or 0) }}%</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+
+<div class="chart-container">
+    <h3>📊 Monthly Performance Trend</h3>
+    <div class="monthly-chart">
+        {% if monthly_performance %}
+            <div style="text-align: center;">
+                <p>Monthly Performance Data Available</p>
+                <p style="font-size: 0.9rem; color: #888888;">
+                    {% for month_data in monthly_performance[:3] %}
+                        {{ month_data[0] }}: {{ month_data[5] }}% win rate ({{ month_data[1] }} signals)<br>
+                    {% endfor %}
+                </p>
+            </div>
+        {% else %}
+            <p>No monthly data available yet. Generate more signals to see trends.</p>
+        {% endif %}
+    </div>
+</div>
+
+<div class="recent-signals-section">
+    <h2>📋 Recent Signals</h2>
+    <table class="performance-table">
+        <thead>
+            <tr>
+                <th>Symbol</th>
+                <th>Type</th>
+                <th>Probability</th>
+                <th>Risk Level</th>
+                <th>Timestamp</th>
+                <th>Outcome</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for signal in recent_signals %}
+            <tr>
+                <td><strong>{{ signal[1] }}</strong></td>
+                <td>
+                    <span class="badge {{ 'badge-success' if signal[2] == 'LONG' else 'badge-danger' }}">
+                        {{ signal[2] }}
+                    </span>
+                </td>
+                <td class="probability-display">{{ "%.0f"|format((signal[3] * 100) if signal[3] else 0) }}%</td>
+                <td>
+                    {% if signal[4] == 'low' %}
+                        <span class="badge badge-success">🟢 Low</span>
+                    {% elif signal[4] == 'medium' %}
+                        <span class="badge badge-warning">🟡 Medium</span>
+                    {% elif signal[4] == 'high' %}
+                        <span class="badge badge-danger">🟠 High</span>
+                    {% else %}
+                        <span class="badge badge-danger">🔴 Extreme</span>
+                    {% endif %}
+                </td>
+                <td>{{ signal[5][:16] }}</td>
+                <td>
+                    {% if signal[6] == 1 %}
+                        <span class="signal-outcome win">Win</span>
+                    {% elif signal[6] == 0 %}
+                        <span class="signal-outcome loss">Loss</span>
+                    {% elif signal[6] == 2 %}
+                        <span class="signal-outcome breakeven">Breakeven</span>
+                    {% else %}
+                        <span class="signal-outcome pending">Pending</span>
+                    {% endif %}
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+
+{% if error %}
+<div class="alert alert-danger">
+    <strong>Error:</strong> {{ error }}
+</div>
+{% endif %}
+{% endblock %}
+
+{% block scripts %}
+<script>
+// Add any JavaScript for interactive features
+document.addEventListener('DOMContentLoaded', function() {
+    // Add hover effects for better UX
+    const statCards = document.querySelectorAll('.journal-stat-card');
+    statCards.forEach(card => {
+        card.addEventListener('mouseenter', function() {
+            this.style.transform = 'translateY(-8px) scale(1.02)';
+        });
+        card.addEventListener('mouseleave', function() {
+            this.style.transform = 'translateY(0) scale(1)';
+        });
+    });
+});
+</script>
+{% endblock %} 

@@ -4,68 +4,36 @@
 
 {% block content %}
 <div class="stats-grid">
-    <div class="stat-card">
-        <h3>{{ stats.total_signals }}</h3>
-        <p>Total Signals</p>
+    <div class="stacked-widgets">
+        <div class="stat-card enhanced-card stacked-card">
+            <div class="stat-icon">📊</div>
+            <h3>{{ stats.total_signals }}</h3>
+            <p>Total Signals</p>
+            <div class="stat-glow"></div>
+        </div>
+        
+        <div class="stat-card enhanced-card stacked-card">
+            <div class="stat-icon">📈</div>
+            <h3>{{ today_signals }}</h3>
+            <p>Today's Signals</p>
+            <div class="stat-glow"></div>
+        </div>
     </div>
     
-    <div class="stat-card">
-        <h3>{{ today_signals }}</h3>
-        <p>Today's Signals</p>
+    <div class="stat-card win-rate-card enhanced-card">
+        <div class="stat-icon">🎯</div>
+        <h3>{{ "%.1f"|format(win_rate_stats[4]) }}%</h3>
+        <p>Win Rate</p>
+        <div class="win-rate-breakdown">
+            <span class="win-stat">✅ {{ win_rate_stats[1] }} Wins</span>
+            <span class="loss-stat">❌ {{ win_rate_stats[2] }} Losses</span>
+            <span class="breakeven-stat">⚖️ {{ win_rate_stats[3] }} Breakevens</span>
+        </div>
+        <div class="stat-glow win-glow"></div>
     </div>
 </div>
 
-<div class="card">
-    <h2>🤖 AI Model Performance</h2>
-    {% if model_stats %}
-    <table class="table">
-        <thead>
-            <tr>
-                <th>AI Model</th>
-                <th>Usage Count</th>
-                <th>Avg Confidence</th>
-                <th>Status</th>
-            </tr>
-        </thead>
-        <tbody>
-            {% for model, count, confidence in model_stats %}
-            <tr>
-                <td>
-                    {% if model == 'gemini_new_api' %}
-                        🧠 Google Gemini
-                    {% elif model == 'local_ensemble' %}
-                        🏠 Local AI Models
-                    {% elif model == 'enhanced_keywords' %}
-                        📝 Enhanced Keywords
-                    {% else %}
-                        {{ model }}
-                    {% endif %}
-                </td>
-                <td>{{ count }}</td>
-                <td>
-                    {% if confidence %}
-                        {{ "%.1f"|format(confidence * 100) }}%
-                    {% else %}
-                        N/A
-                    {% endif %}
-                </td>
-                <td>
-                    {% if model == 'gemini_new_api' %}
-                        <span class="badge badge-success">Active</span>
-                    {% elif model == 'local_ensemble' %}
-                        <span class="badge badge-info">Available</span>
-                    {% else %}
-                        <span class="badge badge-warning">Fallback</span>
-                    {% endif %}
-                </td>
-            </tr>
-            {% endfor %}
-        </tbody>
-    </table>
-    {% else %}
-    <p>No AI model usage data available yet. Generate some signals to see AI performance!</p>
-    {% endif %}
-</div>
+
 
 <div class="card">
     <h2>📈 Recent Signals</h2>
@@ -75,7 +43,7 @@
             <tr>
                 <th>Symbol</th>
                 <th>Type</th>
-                <th>Risk Level</th>
+                <th>% Probability</th>
                 <th>Timestamp</th>
             </tr>
         </thead>
@@ -91,14 +59,19 @@
                     {% endif %}
                 </td>
                 <td>
-                    {% if signal[3] == 'low' %}
-                        <span class="badge badge-success">🟢 Low</span>
-                    {% elif signal[3] == 'medium' %}
-                        <span class="badge badge-warning">🟡 Medium</span>
-                    {% elif signal[3] == 'high' %}
-                        <span class="badge badge-danger">🟠 High</span>
+                    {% if signal[2] %}
+                        {% set probability = (signal[2] * 100) | int %}
+                        {% if probability >= 80 %}
+                            <span class="badge badge-success">🟢 {{ probability }}%</span>
+                        {% elif probability >= 65 %}
+                            <span class="badge badge-warning">🟡 {{ probability }}%</span>
+                        {% elif probability >= 50 %}
+                            <span class="badge badge-danger">🟠 {{ probability }}%</span>
+                        {% else %}
+                            <span class="badge badge-danger">🔴 {{ probability }}%</span>
+                        {% endif %}
                     {% else %}
-                        <span class="badge badge-danger">🔴 Extreme</span>
+                        <span class="badge badge-warning">🟡 65%</span>
                     {% endif %}
                 </td>
                 <td>{{ signal[4][:16] }}</td>
