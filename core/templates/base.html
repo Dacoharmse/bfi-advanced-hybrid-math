@@ -1733,6 +1733,10 @@
                             <span class="key-data-label">Today's Low:</span>
                             <span class="key-data-value" id="nasdaq-low" onclick="copyToClipboard(this)">--<span class="copy-icon">📋</span></span>
                         </div>
+                        <div class="key-data-row">
+                            <span class="key-data-label">Take Profit:</span>
+                            <span class="key-data-value" id="nasdaq-tp" onclick="copyToClipboard(this)">--<span class="copy-icon">📋</span></span>
+                        </div>
                     </div>
                 </div>
                 <div class="ticker-item">
@@ -1761,6 +1765,10 @@
                             <span class="key-data-label">Today's Low:</span>
                             <span class="key-data-value" id="gold-low" onclick="copyToClipboard(this)">--<span class="copy-icon">📋</span></span>
                         </div>
+                        <div class="key-data-row">
+                            <span class="key-data-label">Take Profit:</span>
+                            <span class="key-data-value" id="gold-tp" onclick="copyToClipboard(this)">--<span class="copy-icon">📋</span></span>
+                        </div>
                     </div>
                 </div>
                 <div class="ticker-item">
@@ -1788,6 +1796,10 @@
                         <div class="key-data-row">
                             <span class="key-data-label">Today's Low:</span>
                             <span class="key-data-value" id="dow-low" onclick="copyToClipboard(this)">--<span class="copy-icon">📋</span></span>
+                        </div>
+                        <div class="key-data-row">
+                            <span class="key-data-label">Take Profit:</span>
+                            <span class="key-data-value" id="dow-tp" onclick="copyToClipboard(this)">--<span class="copy-icon">📋</span></span>
                         </div>
                     </div>
                 </div>
@@ -2054,6 +2066,32 @@
             const lowElement = document.getElementById(`${prefix}-low`);
             if (lowElement && data.low) {
                 lowElement.innerHTML = `${data.low}<span class="copy-icon">📋</span>`;
+            }
+            
+            // Calculate and update Take Profit (Current Value +/- Net Change)
+            const tpElement = document.getElementById(`${prefix}-tp`);
+            if (tpElement && data.price && data.rawChange !== undefined) {
+                const currentPrice = parseFloat(data.price.replace(/[$,]/g, ''));
+                const netChange = data.rawChange;
+                const takeProfit = currentPrice + netChange;
+                
+                // Format the take profit value based on symbol type
+                let formattedTP;
+                if (prefix === 'gold') {
+                    formattedTP = `$${takeProfit.toFixed(2)}`;
+                } else {
+                    formattedTP = takeProfit.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+                }
+                
+                tpElement.innerHTML = `${formattedTP}<span class="copy-icon">📋</span>`;
+                
+                // Color code based on whether it's above or below current price
+                tpElement.className = 'key-data-value';
+                if (netChange > 0) {
+                    tpElement.classList.add('positive');
+                } else if (netChange < 0) {
+                    tpElement.classList.add('negative');
+                }
             }
         }
 
