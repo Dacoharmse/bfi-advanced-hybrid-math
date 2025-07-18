@@ -231,6 +231,14 @@
             color: #ffffff;
             font-weight: 600;
             text-align: right;
+            position: relative;
+            cursor: pointer;
+            padding-right: 20px;
+            transition: all 0.2s ease;
+        }
+
+        .key-data-value:hover {
+            color: #d4af37;
         }
 
         .key-data-value.positive {
@@ -239,6 +247,39 @@
 
         .key-data-value.negative {
             color: #f87171;
+        }
+
+        .copy-icon {
+            position: absolute;
+            right: 0;
+            top: 50%;
+            transform: translateY(-50%);
+            width: 14px;
+            height: 14px;
+            opacity: 0.6;
+            transition: all 0.2s ease;
+            cursor: pointer;
+            color: #d4af37;
+        }
+
+        .key-data-value:hover .copy-icon {
+            opacity: 1;
+            transform: translateY(-50%) scale(1.1);
+        }
+
+        .copy-icon:hover {
+            opacity: 1;
+            transform: translateY(-50%) scale(1.2);
+        }
+
+        .copy-success {
+            animation: copyPulse 0.6s ease;
+        }
+
+        @keyframes copyPulse {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.3); color: #4ade80; }
+            100% { transform: scale(1); }
         }
 
         /* Top Bar with Market Timer Styling */
@@ -1674,23 +1715,23 @@
                     <div class="ticker-key-data">
                         <div class="key-data-row">
                             <span class="key-data-label">Current Value:</span>
-                            <span class="key-data-value" id="nasdaq-current">--</span>
+                            <span class="key-data-value" id="nasdaq-current" onclick="copyToClipboard(this)">--<span class="copy-icon">📋</span></span>
                         </div>
                         <div class="key-data-row">
                             <span class="key-data-label">Net Change:</span>
-                            <span class="key-data-value" id="nasdaq-net-change">--</span>
+                            <span class="key-data-value" id="nasdaq-net-change" onclick="copyToClipboard(this)">--<span class="copy-icon">📋</span></span>
                         </div>
                         <div class="key-data-row">
                             <span class="key-data-label">Previous Close:</span>
-                            <span class="key-data-value" id="nasdaq-prev-close">--</span>
+                            <span class="key-data-value" id="nasdaq-prev-close" onclick="copyToClipboard(this)">--<span class="copy-icon">📋</span></span>
                         </div>
                         <div class="key-data-row">
                             <span class="key-data-label">Today's High:</span>
-                            <span class="key-data-value" id="nasdaq-high">--</span>
+                            <span class="key-data-value" id="nasdaq-high" onclick="copyToClipboard(this)">--<span class="copy-icon">📋</span></span>
                         </div>
                         <div class="key-data-row">
                             <span class="key-data-label">Today's Low:</span>
-                            <span class="key-data-value" id="nasdaq-low">--</span>
+                            <span class="key-data-value" id="nasdaq-low" onclick="copyToClipboard(this)">--<span class="copy-icon">📋</span></span>
                         </div>
                     </div>
                 </div>
@@ -1702,23 +1743,23 @@
                     <div class="ticker-key-data">
                         <div class="key-data-row">
                             <span class="key-data-label">Current Value:</span>
-                            <span class="key-data-value" id="gold-current">--</span>
+                            <span class="key-data-value" id="gold-current" onclick="copyToClipboard(this)">--<span class="copy-icon">📋</span></span>
                         </div>
                         <div class="key-data-row">
                             <span class="key-data-label">Net Change:</span>
-                            <span class="key-data-value" id="gold-net-change">--</span>
+                            <span class="key-data-value" id="gold-net-change" onclick="copyToClipboard(this)">--<span class="copy-icon">📋</span></span>
                         </div>
                         <div class="key-data-row">
                             <span class="key-data-label">Previous Close:</span>
-                            <span class="key-data-value" id="gold-prev-close">--</span>
+                            <span class="key-data-value" id="gold-prev-close" onclick="copyToClipboard(this)">--<span class="copy-icon">📋</span></span>
                         </div>
                         <div class="key-data-row">
                             <span class="key-data-label">Today's High:</span>
-                            <span class="key-data-value" id="gold-high">--</span>
+                            <span class="key-data-value" id="gold-high" onclick="copyToClipboard(this)">--<span class="copy-icon">📋</span></span>
                         </div>
                         <div class="key-data-row">
                             <span class="key-data-label">Today's Low:</span>
-                            <span class="key-data-value" id="gold-low">--</span>
+                            <span class="key-data-value" id="gold-low" onclick="copyToClipboard(this)">--<span class="copy-icon">📋</span></span>
                         </div>
                     </div>
                 </div>
@@ -1730,23 +1771,23 @@
                     <div class="ticker-key-data">
                         <div class="key-data-row">
                             <span class="key-data-label">Current Value:</span>
-                            <span class="key-data-value" id="dow-current">--</span>
+                            <span class="key-data-value" id="dow-current" onclick="copyToClipboard(this)">--<span class="copy-icon">📋</span></span>
                         </div>
                         <div class="key-data-row">
                             <span class="key-data-label">Net Change:</span>
-                            <span class="key-data-value" id="dow-net-change">--</span>
+                            <span class="key-data-value" id="dow-net-change" onclick="copyToClipboard(this)">--<span class="copy-icon">📋</span></span>
                         </div>
                         <div class="key-data-row">
                             <span class="key-data-label">Previous Close:</span>
-                            <span class="key-data-value" id="dow-prev-close">--</span>
+                            <span class="key-data-value" id="dow-prev-close" onclick="copyToClipboard(this)">--<span class="copy-icon">📋</span></span>
                         </div>
                         <div class="key-data-row">
                             <span class="key-data-label">Today's High:</span>
-                            <span class="key-data-value" id="dow-high">--</span>
+                            <span class="key-data-value" id="dow-high" onclick="copyToClipboard(this)">--<span class="copy-icon">📋</span></span>
                         </div>
                         <div class="key-data-row">
                             <span class="key-data-label">Today's Low:</span>
-                            <span class="key-data-value" id="dow-low">--</span>
+                            <span class="key-data-value" id="dow-low" onclick="copyToClipboard(this)">--<span class="copy-icon">📋</span></span>
                         </div>
                     </div>
                 </div>
@@ -1980,7 +2021,7 @@
             // Update current value
             const currentElement = document.getElementById(`${prefix}-current`);
             if (currentElement) {
-                currentElement.textContent = data.price || '--';
+                currentElement.innerHTML = `${data.price || '--'}<span class="copy-icon">📋</span>`;
             }
             
             // Update net change
@@ -1988,7 +2029,7 @@
             if (netChangeElement && data.change) {
                 const changeValue = data.change;
                 const changePercent = data.changePercent;
-                netChangeElement.textContent = `${changeValue} (${changePercent})`;
+                netChangeElement.innerHTML = `${changeValue} (${changePercent})<span class="copy-icon">📋</span>`;
                 netChangeElement.className = 'key-data-value';
                 if (changeValue > 0) {
                     netChangeElement.classList.add('positive');
@@ -2000,19 +2041,19 @@
             // Update previous close
             const prevCloseElement = document.getElementById(`${prefix}-prev-close`);
             if (prevCloseElement && data.previousClose) {
-                prevCloseElement.textContent = data.previousClose;
+                prevCloseElement.innerHTML = `${data.previousClose}<span class="copy-icon">📋</span>`;
             }
             
             // Update today's high
             const highElement = document.getElementById(`${prefix}-high`);
             if (highElement && data.high) {
-                highElement.textContent = data.high;
+                highElement.innerHTML = `${data.high}<span class="copy-icon">📋</span>`;
             }
             
             // Update today's low
             const lowElement = document.getElementById(`${prefix}-low`);
             if (lowElement && data.low) {
-                lowElement.textContent = data.low;
+                lowElement.innerHTML = `${data.low}<span class="copy-icon">📋</span>`;
             }
         }
 
@@ -2151,6 +2192,78 @@
             } else {
                 nextOpen.textContent = '';
             }
+        }
+
+        // Copy to Clipboard Function
+        function copyToClipboard(element) {
+            // Get the text content (excluding the copy icon)
+            const textToCopy = element.textContent.replace('📋', '').trim();
+            
+            // Create a temporary textarea to copy the text
+            const textarea = document.createElement('textarea');
+            textarea.value = textToCopy;
+            textarea.style.position = 'fixed';
+            textarea.style.opacity = '0';
+            document.body.appendChild(textarea);
+            
+            // Select and copy the text
+            textarea.select();
+            document.execCommand('copy');
+            
+            // Remove the temporary textarea
+            document.body.removeChild(textarea);
+            
+            // Add success animation
+            element.classList.add('copy-success');
+            
+            // Show success message
+            showAlert('Copied to clipboard!', 'success');
+            
+            // Remove animation class after animation completes
+            setTimeout(() => {
+                element.classList.remove('copy-success');
+            }, 600);
+        }
+
+        // Enhanced alert function for copy feedback
+        function showAlert(message, type) {
+            const alertDiv = document.createElement('div');
+            alertDiv.className = `alert alert-${type}`;
+            alertDiv.textContent = message;
+            alertDiv.style.cssText = `
+                position: fixed;
+                top: 20px;
+                right: 20px;
+                z-index: 9999;
+                min-width: 200px;
+                padding: 12px 20px;
+                border-radius: 8px;
+                font-weight: 600;
+                font-size: 14px;
+                transform: translateX(100%);
+                transition: transform 0.3s ease;
+                background: ${type === 'success' ? 'linear-gradient(135deg, #4ade80, #22c55e)' : 'linear-gradient(135deg, #f87171, #ef4444)'};
+                color: white;
+                box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
+                border: 1px solid ${type === 'success' ? 'rgba(74, 222, 128, 0.3)' : 'rgba(248, 113, 113, 0.3)'};
+            `;
+            
+            document.body.appendChild(alertDiv);
+            
+            // Animate in
+            setTimeout(() => {
+                alertDiv.style.transform = 'translateX(0)';
+            }, 100);
+            
+            // Remove after 3 seconds
+            setTimeout(() => {
+                alertDiv.style.transform = 'translateX(100%)';
+                setTimeout(() => {
+                    if (alertDiv.parentNode) {
+                        alertDiv.parentNode.removeChild(alertDiv);
+                    }
+                }, 300);
+            }, 3000);
         }
     </script>
     
