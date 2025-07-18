@@ -1207,6 +1207,117 @@ def api_live_prices():
             'dow': {'price': '--', 'change': '--', 'changePercent': '--'}
         })
 
+@app.route('/api/market_timer')
+def api_market_timer():
+    """Get US market status and timer information"""
+    try:
+        from datetime import datetime, timedelta
+        import pytz
+        
+        # Define timezones
+        ny_tz = pytz.timezone('America/New_York')
+        windhoek_tz = pytz.timezone('Africa/Windhoek')
+        
+        # Get current time in both timezones
+        now_ny = datetime.now(ny_tz)
+        now_windhoek = datetime.now(windhoek_tz)
+        
+        # US Market hours: 9:30 AM - 4:00 PM ET (Monday-Friday)
+        market_open = now_ny.replace(hour=9, minute=30, second=0, microsecond=0)
+        market_close = now_ny.replace(hour=16, minute=0, second=0, microsecond=0)
+        
+        # Check if it's a weekday
+        is_weekday = now_ny.weekday() < 5  # Monday = 0, Friday = 4
+        
+        if is_weekday:
+            if market_open <= now_ny <= market_close:
+                # Market is open
+                time_remaining = market_close - now_ny
+                hours, remainder = divmod(time_remaining.seconds, 3600)
+                minutes, seconds = divmod(remainder, 60)
+                
+                return jsonify({
+                    'status': 'open',
+                    'time_remaining': {
+                        'hours': hours,
+                        'minutes': minutes,
+                        'seconds': seconds
+                    },
+                    'formatted_time': f"{hours:02d}:{minutes:02d}:{seconds:02d}",
+                    'message': f"US Markets Open - {hours:02d}:{minutes:02d}:{seconds:02d} remaining",
+                    'next_open': None
+                })
+            elif now_ny < market_open:
+                # Market opens today
+                time_until_open = market_open - now_ny
+                hours, remainder = divmod(time_until_open.seconds, 3600)
+                minutes, seconds = divmod(remainder, 60)
+                
+                return jsonify({
+                    'status': 'closed',
+                    'time_until_open': {
+                        'hours': hours,
+                        'minutes': minutes,
+                        'seconds': seconds
+                    },
+                    'formatted_time': f"{hours:02d}:{minutes:02d}:{seconds:02d}",
+                    'message': f"US Markets Closed - Opens in {hours:02d}:{minutes:02d}:{seconds:02d}",
+                    'next_open': market_open.strftime('%Y-%m-%d %H:%M ET')
+                })
+            else:
+                # Market closed for today, calculate next open
+                next_open = now_ny + timedelta(days=1)
+                while next_open.weekday() >= 5:  # Skip weekends
+                    next_open += timedelta(days=1)
+                next_open = next_open.replace(hour=9, minute=30, second=0, microsecond=0)
+                
+                time_until_next = next_open - now_ny
+                days = time_until_next.days
+                hours, remainder = divmod(time_until_next.seconds, 3600)
+                minutes, seconds = divmod(remainder, 60)
+                
+                return jsonify({
+                    'status': 'closed',
+                    'time_until_open': {
+                        'days': days,
+                        'hours': hours,
+                        'minutes': minutes,
+                        'seconds': seconds
+                    },
+                    'formatted_time': f"{days}d {hours:02d}:{minutes:02d}:{seconds:02d}",
+                    'message': f"US Markets Closed - Opens {next_open.strftime('%A, %B %d at %H:%M ET')}",
+                    'next_open': next_open.strftime('%Y-%m-%d %H:%M ET')
+                })
+        else:
+            # Weekend - calculate next Monday
+            next_open = now_ny + timedelta(days=(7 - now_ny.weekday()))
+            next_open = next_open.replace(hour=9, minute=30, second=0, microsecond=0)
+            
+            time_until_next = next_open - now_ny
+            days = time_until_next.days
+            hours, remainder = divmod(time_until_next.seconds, 3600)
+            minutes, seconds = divmod(remainder, 60)
+            
+            return jsonify({
+                'status': 'closed',
+                'time_until_open': {
+                    'days': days,
+                    'hours': hours,
+                    'minutes': minutes,
+                    'seconds': seconds
+                },
+                'formatted_time': f"{days}d {hours:02d}:{minutes:02d}:{seconds:02d}",
+                'message': f"US Markets Closed (Weekend) - Opens {next_open.strftime('%A, %B %d at %H:%M ET')}",
+                'next_open': next_open.strftime('%Y-%m-%d %H:%M ET')
+            })
+            
+    except Exception as e:
+        return jsonify({
+            'status': 'error',
+            'error': f'Error getting market timer: {e}',
+            'message': 'Unable to get market status'
+        })
+
 @app.route('/api/export_data')
 def api_export_data():
     """API endpoint to export learning data"""
