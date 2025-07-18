@@ -1656,7 +1656,7 @@
         <!-- Top Bar with Market Timer -->
         <div class="top-bar">
             <div class="market-timer-top">
-                <div class="timer-icon-top">⏰</div>
+                <div class="timer-icon-top">🇺🇸</div>
                 <div class="timer-content-top">
                     <div class="timer-time-top" id="market-timer-time">--:--:--</div>
                     <div class="timer-status-top" id="market-timer-status">Loading...</div>
@@ -1816,8 +1816,8 @@
         
         // Initialize market timer
         updateMarketTimerTop();
-        // Update market timer every 30 seconds
-        setInterval(updateMarketTimerTop, 30000);
+        // Update market timer every second for live countdown
+        setInterval(updateMarketTimerTop, 1000);
         });
 
         // Live ticker functionality
@@ -1861,41 +1861,20 @@
             }
         }
 
-        // Market Timer for Top Bar
+        // Market Timer for Top Bar with Live Countdown
+        let marketTimerData = null;
+        let countdownInterval = null;
+
         function updateMarketTimerTop() {
             fetch('/api/market_timer')
                 .then(response => response.json())
                 .then(data => {
-                    const timerTime = document.getElementById('market-timer-time');
-                    const timerStatus = document.getElementById('market-timer-status');
-                    const nextOpen = document.getElementById('market-next-open');
+                    marketTimerData = data;
+                    updateTimerDisplay();
                     
-                    if (data.status === 'error') {
-                        timerTime.textContent = '--:--:--';
-                        timerStatus.textContent = 'Error loading market status';
-                        timerStatus.className = 'timer-status-top market-closed-top';
-                        nextOpen.textContent = '';
-                        return;
-                    }
-                    
-                    // Update timer display
-                    timerTime.textContent = data.formatted_time;
-                    
-                    // Update status with appropriate styling
-                    timerStatus.textContent = data.message;
-                    timerStatus.className = 'timer-status-top';
-                    
-                    if (data.status === 'open') {
-                        timerStatus.classList.add('market-open-top');
-                    } else {
-                        timerStatus.classList.add('market-closed-top');
-                    }
-                    
-                    // Update next open information
-                    if (data.next_open) {
-                        nextOpen.textContent = `Next Open: ${data.next_open}`;
-                    } else {
-                        nextOpen.textContent = '';
+                    // Start live countdown if we have valid data
+                    if (data.status !== 'error' && data.total_seconds !== undefined) {
+                        startLiveCountdown();
                     }
                 })
                 .catch(error => {
@@ -1907,6 +1886,90 @@
                     timerStatus.textContent = 'Error loading market status';
                     timerStatus.className = 'timer-status-top market-closed-top';
                 });
+        }
+
+        function startLiveCountdown() {
+            // Clear existing interval
+            if (countdownInterval) {
+                clearInterval(countdownInterval);
+            }
+            
+            // Start new countdown
+            countdownInterval = setInterval(() => {
+                if (marketTimerData && marketTimerData.total_seconds !== undefined) {
+                    marketTimerData.total_seconds--;
+                    
+                    if (marketTimerData.total_seconds <= 0) {
+                        // Timer reached zero, refresh data
+                        clearInterval(countdownInterval);
+                        updateMarketTimerTop();
+                        return;
+                    }
+                    
+                    updateTimerDisplay();
+                }
+            }, 1000);
+        }
+
+        function updateTimerDisplay() {
+            if (!marketTimerData) return;
+            
+            const timerTime = document.getElementById('market-timer-time');
+            const timerStatus = document.getElementById('market-timer-status');
+            const nextOpen = document.getElementById('market-next-open');
+            
+            if (marketTimerData.status === 'error') {
+                timerTime.textContent = '--:--:--';
+                timerStatus.textContent = 'Error loading market status';
+                timerStatus.className = 'timer-status-top market-closed-top';
+                nextOpen.textContent = '';
+                return;
+            }
+            
+            // Calculate time display
+            let hours, minutes, seconds;
+            if (marketTimerData.status === 'open') {
+                hours = Math.floor(marketTimerData.total_seconds / 3600);
+                minutes = Math.floor((marketTimerData.total_seconds % 3600) / 60);
+                seconds = marketTimerData.total_seconds % 60;
+            } else {
+                if (marketTimerData.time_until_open.days > 0) {
+                    // Multi-day countdown
+                    const totalHours = Math.floor(marketTimerData.total_seconds / 3600);
+                    const days = Math.floor(totalHours / 24);
+                    hours = totalHours % 24;
+                    minutes = Math.floor((marketTimerData.total_seconds % 3600) / 60);
+                    seconds = marketTimerData.total_seconds % 60;
+                    timerTime.textContent = `${days}d ${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+                } else {
+                    // Same day countdown
+                    hours = Math.floor(marketTimerData.total_seconds / 3600);
+                    minutes = Math.floor((marketTimerData.total_seconds % 3600) / 60);
+                    seconds = marketTimerData.total_seconds % 60;
+                    timerTime.textContent = `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+                }
+            }
+            
+            if (marketTimerData.status === 'open') {
+                timerTime.textContent = `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+                timerStatus.textContent = `US Markets Open - ${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')} remaining`;
+                timerStatus.className = 'timer-status-top market-open-top';
+            } else {
+                if (marketTimerData.time_until_open.days > 0) {
+                    const days = marketTimerData.time_until_open.days;
+                    timerStatus.textContent = `US Markets Closed - Opens ${marketTimerData.next_open}`;
+                } else {
+                    timerStatus.textContent = `US Markets Closed - Opens in ${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+                }
+                timerStatus.className = 'timer-status-top market-closed-top';
+            }
+            
+            // Update next open information
+            if (marketTimerData.next_open) {
+                nextOpen.textContent = `Next Open: ${marketTimerData.next_open}`;
+            } else {
+                nextOpen.textContent = '';
+            }
         }
     </script>
     

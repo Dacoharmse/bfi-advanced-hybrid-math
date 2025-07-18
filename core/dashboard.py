@@ -1233,11 +1233,14 @@ def api_market_timer():
             if market_open <= now_ny <= market_close:
                 # Market is open
                 time_remaining = market_close - now_ny
-                hours, remainder = divmod(time_remaining.seconds, 3600)
-                minutes, seconds = divmod(remainder, 60)
+                total_seconds = int(time_remaining.total_seconds())
+                hours = total_seconds // 3600
+                minutes = (total_seconds % 3600) // 60
+                seconds = total_seconds % 60
                 
                 return jsonify({
                     'status': 'open',
+                    'total_seconds': total_seconds,
                     'time_remaining': {
                         'hours': hours,
                         'minutes': minutes,
@@ -1245,16 +1248,20 @@ def api_market_timer():
                     },
                     'formatted_time': f"{hours:02d}:{minutes:02d}:{seconds:02d}",
                     'message': f"US Markets Open - {hours:02d}:{minutes:02d}:{seconds:02d} remaining",
-                    'next_open': None
+                    'next_open': None,
+                    'market_close_time': market_close.isoformat()
                 })
             elif now_ny < market_open:
                 # Market opens today
                 time_until_open = market_open - now_ny
-                hours, remainder = divmod(time_until_open.seconds, 3600)
-                minutes, seconds = divmod(remainder, 60)
+                total_seconds = int(time_until_open.total_seconds())
+                hours = total_seconds // 3600
+                minutes = (total_seconds % 3600) // 60
+                seconds = total_seconds % 60
                 
                 return jsonify({
                     'status': 'closed',
+                    'total_seconds': total_seconds,
                     'time_until_open': {
                         'hours': hours,
                         'minutes': minutes,
@@ -1262,7 +1269,8 @@ def api_market_timer():
                     },
                     'formatted_time': f"{hours:02d}:{minutes:02d}:{seconds:02d}",
                     'message': f"US Markets Closed - Opens in {hours:02d}:{minutes:02d}:{seconds:02d}",
-                    'next_open': market_open.strftime('%Y-%m-%d %H:%M ET')
+                    'next_open': market_open.strftime('%Y-%m-%d %H:%M ET'),
+                    'market_open_time': market_open.isoformat()
                 })
             else:
                 # Market closed for today, calculate next open
@@ -1272,12 +1280,15 @@ def api_market_timer():
                 next_open = next_open.replace(hour=9, minute=30, second=0, microsecond=0)
                 
                 time_until_next = next_open - now_ny
+                total_seconds = int(time_until_next.total_seconds())
                 days = time_until_next.days
-                hours, remainder = divmod(time_until_next.seconds, 3600)
-                minutes, seconds = divmod(remainder, 60)
+                hours = (total_seconds % (24 * 3600)) // 3600
+                minutes = (total_seconds % 3600) // 60
+                seconds = total_seconds % 60
                 
                 return jsonify({
                     'status': 'closed',
+                    'total_seconds': total_seconds,
                     'time_until_open': {
                         'days': days,
                         'hours': hours,
@@ -1286,7 +1297,8 @@ def api_market_timer():
                     },
                     'formatted_time': f"{days}d {hours:02d}:{minutes:02d}:{seconds:02d}",
                     'message': f"US Markets Closed - Opens {next_open.strftime('%A, %B %d at %H:%M ET')}",
-                    'next_open': next_open.strftime('%Y-%m-%d %H:%M ET')
+                    'next_open': next_open.strftime('%Y-%m-%d %H:%M ET'),
+                    'market_open_time': next_open.isoformat()
                 })
         else:
             # Weekend - calculate next Monday
@@ -1294,12 +1306,15 @@ def api_market_timer():
             next_open = next_open.replace(hour=9, minute=30, second=0, microsecond=0)
             
             time_until_next = next_open - now_ny
+            total_seconds = int(time_until_next.total_seconds())
             days = time_until_next.days
-            hours, remainder = divmod(time_until_next.seconds, 3600)
-            minutes, seconds = divmod(remainder, 60)
+            hours = (total_seconds % (24 * 3600)) // 3600
+            minutes = (total_seconds % 3600) // 60
+            seconds = total_seconds % 60
             
             return jsonify({
                 'status': 'closed',
+                'total_seconds': total_seconds,
                 'time_until_open': {
                     'days': days,
                     'hours': hours,
@@ -1308,7 +1323,8 @@ def api_market_timer():
                 },
                 'formatted_time': f"{days}d {hours:02d}:{minutes:02d}:{seconds:02d}",
                 'message': f"US Markets Closed (Weekend) - Opens {next_open.strftime('%A, %B %d at %H:%M ET')}",
-                'next_open': next_open.strftime('%Y-%m-%d %H:%M ET')
+                'next_open': next_open.strftime('%Y-%m-%d %H:%M ET'),
+                'market_open_time': next_open.isoformat()
             })
             
     except Exception as e:
