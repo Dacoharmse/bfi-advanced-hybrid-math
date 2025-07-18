@@ -14,6 +14,7 @@ from flask import Flask, render_template, request, jsonify, redirect, url_for
 import sqlite3
 import json
 from datetime import datetime, timedelta
+import pickle
 from ai_engine import AIEngine
 from ai_manager import AIManager
 import os
@@ -54,6 +55,80 @@ ensure_favicons()
 # Initialize AI components
 ai_engine = AIEngine()
 ai_manager = AIManager()
+
+# Market Data Storage System
+class MarketDataStorage:
+    def __init__(self, file_path='market_data.pkl'):
+        self.file_path = file_path
+        self.data = self.load_data()
+    
+    def load_data(self):
+        """Load market data from file"""
+        try:
+            if os.path.exists(self.file_path):
+                with open(self.file_path, 'rb') as f:
+                    return pickle.load(f)
+            else:
+                return {
+                    'nasdaq': {},
+                    'gold': {},
+                    'dow': {},
+                    'last_update': None,
+                    'market_close_data': {}
+                }
+        except Exception as e:
+            print(f"Error loading market data: {e}")
+            return {
+                'nasdaq': {},
+                'gold': {},
+                'dow': {},
+                'last_update': None,
+                'market_close_data': {}
+            }
+    
+    def save_data(self):
+        """Save market data to file"""
+        try:
+            with open(self.file_path, 'wb') as f:
+                pickle.dump(self.data, f)
+        except Exception as e:
+            print(f"Error saving market data: {e}")
+    
+    def update_market_data(self, symbol, data):
+        """Update market data for a symbol"""
+        self.data[symbol] = {
+            'price': data.get('price', '--'),
+            'change': data.get('change', '--'),
+            'changePercent': data.get('changePercent', '--'),
+            'rawChange': data.get('rawChange', 0),
+            'previousClose': data.get('previousClose', '--'),
+            'high': data.get('high', '--'),
+            'low': data.get('low', '--'),
+            'timestamp': datetime.now().isoformat()
+        }
+        self.data['last_update'] = datetime.now().isoformat()
+        self.save_data()
+    
+    def get_market_data(self, symbol):
+        """Get stored market data for a symbol"""
+        return self.data.get(symbol, {})
+    
+    def save_market_close_data(self):
+        """Save current data as market close data"""
+        self.data['market_close_data'] = {
+            'nasdaq': self.data.get('nasdaq', {}),
+            'gold': self.data.get('gold', {}),
+            'dow': self.data.get('dow', {}),
+            'close_timestamp': datetime.now().isoformat()
+        }
+        self.save_data()
+    
+    def get_market_close_data(self):
+        """Get market close data"""
+        return self.data.get('market_close_data', {})
+
+# Initialize market data storage
+market_data_storage = MarketDataStorage()
 
 # Debug Discord configuration
 def check_discord_config():
@@ -1128,7 +1203,7 @@ def api_clear_data():
 
 @app.route('/api/live_prices')
 def api_live_prices():
-    """Get live market prices for NASDAQ, Gold, and DOW"""
+    """Get live market prices for NASDAQ, Gold, and DOW with data persistence"""
     try:
         import yfinance as yf
         from datetime import datetime
@@ -1152,6 +1227,11 @@ def api_live_prices():
                     current_price = current_data['Close'].iloc[-1]
                     previous_price = current_data['Close'].iloc[-2]
                     
+                    # Get today's high and low
+                    today_data = current_data.iloc[-1]
+                    today_high = today_data['High']
+                    today_low = today_data['Low']
+                    
                     # Calculate change
                     change = current_price - previous_price
                     change_percent = (change / previous_price) * 100
@@ -1161,50 +1241,81 @@ def api_live_prices():
                         price_str = f"${current_price:.2f}"
                         change_str = f"{change:+.2f}"
                         change_percent_str = f"{change_percent:+.2f}%"
+                        prev_close_str = f"${previous_price:.2f}"
+                        high_str = f"${today_high:.2f}"
+                        low_str = f"${today_low:.2f}"
                     else:
                         price_str = f"{current_price:,.2f}"
                         change_str = f"{change:+.2f}"
                         change_percent_str = f"{change_percent:+.2f}%"
+                        prev_close_str = f"{previous_price:,.2f}"
+                        high_str = f"{today_high:,.2f}"
+                        low_str = f"{today_low:,.2f}"
                     
                     live_data[key] = {
                         'price': price_str,
                         'change': change_str,
                         'changePercent': change_percent_str,
-                        'rawChange': change
+                        'rawChange': change,
+                        'previousClose': prev_close_str,
+                        'high': high_str,
+                        'low': low_str
                     }
+                    
+                    # Save to storage
+                    market_data_storage.update_market_data(key, live_data[key])
+                else:
+                    # Use stored data if available, otherwise show defaults
+                    stored_data = market_data_storage.get_market_data(key)
+                    if stored_data:
+                        live_data[key] = stored_data
+                    else:
+                        live_data[key] = {
+                            'price': '--',
+                            'change': '--',
+                            'changePercent': '--',
+                            'rawChange': 0,
+                            'previousClose': '--',
+                            'high': '--',
+                            'low': '--'
+                        }
+                    
+            except Exception as e:
+                print(f"Error fetching {key} data: {str(e)}")
+                # Use stored data if available
+                stored_data = market_data_storage.get_market_data(key)
+                if stored_data:
+                    live_data[key] = stored_data
                 else:
                     live_data[key] = {
                         'price': '--',
                         'change': '--',
                         'changePercent': '--',
-                        'rawChange': 0
+                        'rawChange': 0,
+                        'previousClose': '--',
+                        'high': '--',
+                        'low': '--'
                     }
-                    
-            except Exception as e:
-                print(f"Error fetching {key} data: {str(e)}")
-                live_data[key] = {
-                    'price': '--',
-                    'change': '--',
-                    'changePercent': '--',
-                    'rawChange': 0
-                }
         
         return jsonify({
             'success': True,
             'nasdaq': live_data['nasdaq'],
             'gold': live_data['gold'],
             'dow': live_data['dow'],
-            'timestamp': datetime.now().isoformat()
+            'timestamp': datetime.now().isoformat(),
+            'last_update': market_data_storage.data.get('last_update')
         })
         
     except Exception as e:
         print(f"Error in live prices API: {str(e)}")
+        # Return stored data as fallback
         return jsonify({
             'success': False,
             'error': str(e),
-            'nasdaq': {'price': '--', 'change': '--', 'changePercent': '--'},
-            'gold': {'price': '--', 'change': '--', 'changePercent': '--'},
-            'dow': {'price': '--', 'change': '--', 'changePercent': '--'}
+            'nasdaq': market_data_storage.get_market_data('nasdaq'),
+            'gold': market_data_storage.get_market_data('gold'),
+            'dow': market_data_storage.get_market_data('dow'),
+            'timestamp': datetime.now().isoformat()
         })
 
 @app.route('/api/market_timer')
@@ -1332,6 +1443,37 @@ def api_market_timer():
             'status': 'error',
             'error': f'Error getting market timer: {e}',
             'message': 'Unable to get market status'
+        })
+
+@app.route('/api/save_market_close', methods=['POST'])
+def api_save_market_close():
+    """Save current market data as market close data"""
+    try:
+        market_data_storage.save_market_close_data()
+        return jsonify({
+            'success': True,
+            'message': 'Market close data saved successfully',
+            'timestamp': datetime.now().isoformat()
+        })
+    except Exception as e:
+        return jsonify({
+            'success': False,
+            'error': str(e)
+        })
+
+@app.route('/api/get_market_close_data')
+def api_get_market_close_data():
+    """Get saved market close data"""
+    try:
+        close_data = market_data_storage.get_market_close_data()
+        return jsonify({
+            'success': True,
+            'data': close_data
+        })
+    except Exception as e:
+        return jsonify({
+            'success': False,
+            'error': str(e)
         })
 
 @app.route('/api/export_data')

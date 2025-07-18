@@ -130,14 +130,6 @@
             gap: 30px;
             margin: 20px 0;
             padding: 15px 25px;
-            background: linear-gradient(135deg, rgba(26, 26, 26, 0.9) 0%, rgba(45, 45, 45, 0.9) 100%);
-            backdrop-filter: blur(15px);
-            border: 2px solid #d4af37;
-            border-radius: 15px;
-            box-shadow: 
-                0 8px 25px rgba(212, 175, 55, 0.2),
-                0 4px 15px rgba(0, 0, 0, 0.3),
-                inset 0 1px 0 rgba(255, 255, 255, 0.05);
         }
 
         .ticker-item {
@@ -145,12 +137,12 @@
             flex-direction: column;
             align-items: center;
             gap: 5px;
-            padding: 10px 15px;
+            padding: 15px 20px;
             background: linear-gradient(135deg, rgba(45, 45, 45, 0.8) 0%, rgba(26, 26, 26, 0.8) 100%);
             border: 1px solid rgba(212, 175, 55, 0.3);
             border-radius: 10px;
             transition: all 0.3s ease;
-            min-width: 120px;
+            min-width: 200px;
         }
 
         .ticker-item:hover {
@@ -209,6 +201,46 @@
             border: 1px solid rgba(156, 163, 175, 0.3);
         }
 
+        /* Key Data Styling */
+        .ticker-key-data {
+            margin-top: 10px;
+            padding: 8px 0;
+            border-top: 1px solid rgba(212, 175, 55, 0.2);
+        }
+
+        .key-data-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 4px;
+            font-size: 0.7rem;
+        }
+
+        .key-data-row:last-child {
+            margin-bottom: 0;
+        }
+
+        .key-data-label {
+            color: #888888;
+            font-weight: 500;
+            text-transform: uppercase;
+            letter-spacing: 0.3px;
+        }
+
+        .key-data-value {
+            color: #ffffff;
+            font-weight: 600;
+            text-align: right;
+        }
+
+        .key-data-value.positive {
+            color: #4ade80;
+        }
+
+        .key-data-value.negative {
+            color: #f87171;
+        }
+
         /* Top Bar with Market Timer Styling */
         .top-bar {
             background: linear-gradient(135deg, rgba(0, 0, 0, 0.95) 0%, rgba(26, 26, 26, 0.95) 100%);
@@ -246,11 +278,18 @@
         }
 
         .timer-icon-top {
-            font-size: 1.8rem;
-            color: #d4af37;
-            text-shadow: 0 0 15px rgba(212, 175, 55, 0.6);
+            width: 48px;
+            height: 48px;
             animation: timerPulse 2s ease-in-out infinite;
-            font-family: 'Segoe UI Emoji', 'Apple Color Emoji', 'Noto Color Emoji', 'Android Emoji', 'EmojiSymbols', 'EmojiOne Mozilla', 'Twemoji Mozilla', 'Segoe UI Symbol', Arial, sans-serif;
+        }
+
+        .timer-icon-top img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            border-radius: 0 !important;
+            border: none !important;
+            outline: none !important;
         }
 
         @keyframes timerPulse {
@@ -328,7 +367,8 @@
             }
 
             .timer-icon-top {
-                font-size: 1.5rem;
+                width: 40px;
+                height: 30px;
             }
 
             .timer-time-top {
@@ -1631,18 +1671,84 @@
                     <span class="ticker-subtitle">NAS100</span>
                     <span class="ticker-price" id="nasdaq-price">--</span>
                     <span class="ticker-change" id="nasdaq-change">--</span>
+                    <div class="ticker-key-data">
+                        <div class="key-data-row">
+                            <span class="key-data-label">Current Value:</span>
+                            <span class="key-data-value" id="nasdaq-current">--</span>
+                        </div>
+                        <div class="key-data-row">
+                            <span class="key-data-label">Net Change:</span>
+                            <span class="key-data-value" id="nasdaq-net-change">--</span>
+                        </div>
+                        <div class="key-data-row">
+                            <span class="key-data-label">Previous Close:</span>
+                            <span class="key-data-value" id="nasdaq-prev-close">--</span>
+                        </div>
+                        <div class="key-data-row">
+                            <span class="key-data-label">Today's High:</span>
+                            <span class="key-data-value" id="nasdaq-high">--</span>
+                        </div>
+                        <div class="key-data-row">
+                            <span class="key-data-label">Today's Low:</span>
+                            <span class="key-data-value" id="nasdaq-low">--</span>
+                        </div>
+                    </div>
                 </div>
                 <div class="ticker-item">
                     <span class="ticker-symbol">XAUUSD</span>
                     <span class="ticker-subtitle">GOLD</span>
                     <span class="ticker-price" id="gold-price">--</span>
                     <span class="ticker-change" id="gold-change">--</span>
+                    <div class="ticker-key-data">
+                        <div class="key-data-row">
+                            <span class="key-data-label">Current Value:</span>
+                            <span class="key-data-value" id="gold-current">--</span>
+                        </div>
+                        <div class="key-data-row">
+                            <span class="key-data-label">Net Change:</span>
+                            <span class="key-data-value" id="gold-net-change">--</span>
+                        </div>
+                        <div class="key-data-row">
+                            <span class="key-data-label">Previous Close:</span>
+                            <span class="key-data-value" id="gold-prev-close">--</span>
+                        </div>
+                        <div class="key-data-row">
+                            <span class="key-data-label">Today's High:</span>
+                            <span class="key-data-value" id="gold-high">--</span>
+                        </div>
+                        <div class="key-data-row">
+                            <span class="key-data-label">Today's Low:</span>
+                            <span class="key-data-value" id="gold-low">--</span>
+                        </div>
+                    </div>
                 </div>
                 <div class="ticker-item">
                     <span class="ticker-symbol">DOW</span>
                     <span class="ticker-subtitle">US30</span>
                     <span class="ticker-price" id="dow-price">--</span>
                     <span class="ticker-change" id="dow-change">--</span>
+                    <div class="ticker-key-data">
+                        <div class="key-data-row">
+                            <span class="key-data-label">Current Value:</span>
+                            <span class="key-data-value" id="dow-current">--</span>
+                        </div>
+                        <div class="key-data-row">
+                            <span class="key-data-label">Net Change:</span>
+                            <span class="key-data-value" id="dow-net-change">--</span>
+                        </div>
+                        <div class="key-data-row">
+                            <span class="key-data-label">Previous Close:</span>
+                            <span class="key-data-value" id="dow-prev-close">--</span>
+                        </div>
+                        <div class="key-data-row">
+                            <span class="key-data-label">Today's High:</span>
+                            <span class="key-data-value" id="dow-high">--</span>
+                        </div>
+                        <div class="key-data-row">
+                            <span class="key-data-label">Today's Low:</span>
+                            <span class="key-data-value" id="dow-low">--</span>
+                        </div>
+                    </div>
                 </div>
             </div>
             
@@ -1657,7 +1763,9 @@
         <!-- Top Bar with Market Timer -->
         <div class="top-bar">
             <div class="market-timer-top">
-                <div class="timer-icon-top">🇺🇸</div>
+                <div class="timer-icon-top">
+                    <img src="/static/usa-flag.png" alt="USA Flag" />
+                </div>
                 <div class="timer-content-top">
                     <div class="timer-time-top" id="market-timer-time">--:--:--</div>
                     <div class="timer-status-top" id="market-timer-status">Loading...</div>
@@ -1812,8 +1920,8 @@
             
                     // Initialize live ticker
         updateLiveTicker();
-        // Update ticker every 30 seconds
-        setInterval(updateLiveTicker, 30000);
+        // Update ticker every 15 seconds
+        setInterval(updateLiveTicker, 15000);
         
         // Initialize market timer
         updateMarketTimerTop();
@@ -1859,6 +1967,51 @@
                 } else {
                     changeElement.classList.add('neutral');
                 }
+                
+                // Update key data fields
+                updateKeyData(priceId, data);
+            }
+        }
+
+        function updateKeyData(priceId, data) {
+            const prefix = priceId.split('-')[0]; // nasdaq, gold, or dow
+            
+            // Update current value
+            const currentElement = document.getElementById(`${prefix}-current`);
+            if (currentElement) {
+                currentElement.textContent = data.price || '--';
+            }
+            
+            // Update net change
+            const netChangeElement = document.getElementById(`${prefix}-net-change`);
+            if (netChangeElement && data.change) {
+                const changeValue = data.change;
+                const changePercent = data.changePercent;
+                netChangeElement.textContent = `${changeValue} (${changePercent})`;
+                netChangeElement.className = 'key-data-value';
+                if (changeValue > 0) {
+                    netChangeElement.classList.add('positive');
+                } else if (changeValue < 0) {
+                    netChangeElement.classList.add('negative');
+                }
+            }
+            
+            // Update previous close
+            const prevCloseElement = document.getElementById(`${prefix}-prev-close`);
+            if (prevCloseElement && data.previousClose) {
+                prevCloseElement.textContent = data.previousClose;
+            }
+            
+            // Update today's high
+            const highElement = document.getElementById(`${prefix}-high`);
+            if (highElement && data.high) {
+                highElement.textContent = data.high;
+            }
+            
+            // Update today's low
+            const lowElement = document.getElementById(`${prefix}-low`);
+            if (lowElement && data.low) {
+                lowElement.textContent = data.low;
             }
         }
 
@@ -1870,6 +2023,12 @@
             fetch('/api/market_timer')
                 .then(response => response.json())
                 .then(data => {
+                    // Check if market just closed (was open before, now closed)
+                    if (marketTimerData && marketTimerData.status === 'open' && data.status === 'closed') {
+                        // Market just closed, save market close data
+                        saveMarketCloseData();
+                    }
+                    
                     marketTimerData = data;
                     updateTimerDisplay();
                     
@@ -1887,6 +2046,26 @@
                     timerStatus.textContent = 'Error loading market status';
                     timerStatus.className = 'timer-status-top market-closed-top';
                 });
+        }
+
+        function saveMarketCloseData() {
+            fetch('/api/save_market_close', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                }
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    console.log('Market close data saved successfully');
+                } else {
+                    console.error('Error saving market close data:', data.error);
+                }
+            })
+            .catch(error => {
+                console.error('Error saving market close data:', error);
+            });
         }
 
         function startLiveCountdown() {
