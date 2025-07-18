@@ -1,0 +1,312 @@
+//@version=5
+indicator("BFI Signals - Hybrid Math Strategy", overlay=true, max_lines_count=500, max_labels_count=500, max_boxes_count=100)
+
+// === INPUT SETTINGS ===
+show_levels = input.bool(true, "Show Trading Levels", group="Display Settings")
+show_labels = input.bool(true, "Show Level Labels", group="Display Settings")
+extend_lines = input.int(50, "Extend Lines (Bars)", minval=1, maxval=500, group="Display Settings")
+keep_history = input.bool(true, "Keep Historical Levels", group="Display Settings")
+history_days = input.int(20, "Days of History", minval=1, maxval=50, group="Display Settings")
+show_daily_boxes = input.bool(true, "Show Daily Level Boxes", group="Display Settings")
+
+// Line Colors
+cv_color = input.color(color.blue, "CV (Current Value)", group="Colors")
+prv_color = input.color(color.orange, "PRV (Previous Close)", group="Colors")
+keylevel_color = input.color(color.cyan, "Key Levels (High/Low)", group="Colors")
+tp_color = input.color(color.green, "Take Profit", group="Colors")
+entry_color = input.color(color.yellow, "Entry Levels", group="Colors")
+
+// === CORE BFI CALCULATIONS ===
+
+// Check if we're on a new trading day
+new_day = ta.change(time("1D")) != 0
+
+// Previous day's data (for calculation reference)
+prev_close = request.security(syminfo.tickerid, "1D", close[1])
+today_open = request.security(syminfo.tickerid, "1D", open)
+
+// Current values
+current_value = close  // CV - Current Value (Primary Decision Zone)
+net_change = current_value - prev_close
+change_pct = (net_change / prev_close) * 100
+
+// Daily High and Low (Key Levels)
+daily_high = request.security(syminfo.tickerid, "1D", high)
+daily_low = request.security(syminfo.tickerid, "1D", low)
+
+// === BFI STRATEGY LOGIC ===
+
+// Determine bias based on Net Change (core BFI logic)
+bias_long = net_change > 0
+bias_short = net_change <= 0
+
+// Take Profit Calculation (Hybrid Math Formula)
+// If net change positive → TP = CV + Net Change
+// If net change negative → TP = CV - Net Change  
+take_profit = bias_long ? current_value + math.abs(net_change) : current_value - math.abs(net_change)
+
+// Entry Points
+entry1 = bias_long ? daily_low : daily_high  // Primary entry at key level
+entry2 = current_value  // Secondary entry at CV
+
+// Take Profit Levels
+tp1 = current_value  // First TP at CV
+tp2 = take_profit    // Second TP using Hybrid Math
+
+// Stop Loss Levels
+sl_buffer = math.abs(net_change) * 0.5
+sl_tight = bias_long ? current_value - sl_buffer : current_value + sl_buffer
+sl_wide = bias_long ? daily_low : daily_high
+
+// === HISTORICAL DATA STORAGE ===
+type DailyLevels
+    int start_bar
+    int end_bar
+    float cv
+    float prv
+    float keylevel_high
+    float keylevel_low
+    float tp
+    float entry1
+    float entry2
+    bool bias_long
+    float net_change
+
+var array<DailyLevels> historical_levels = array.new<DailyLevels>()
+
+// === VARIABLES FOR CURRENT DAY LINE MANAGEMENT ===
+var line cv_line = na
+var line prv_line = na  
+var line keylevel_high_line = na
+var line keylevel_low_line = na
+var line tp_line = na
+var line entry1_line = na
+var line entry2_line = na
+
+var label cv_label = na
+var label prv_label = na
+var label keylevel_high_label = na
+var label keylevel_low_label = na
+var label tp_label = na
+var label entry1_label = na
+var label entry2_label = na
+
+var box daily_box = na
+
+// === DRAW LEVELS ON NEW DAY ===
+if new_day and show_levels
+    // Store previous day's data in historical array if we want to keep history
+    if keep_history and not na(cv_line)
+        current_day_data = DailyLevels.new(
+            start_bar = bar_index[1], 
+            end_bar = bar_index + extend_lines,
+            cv = current_value[1],
+            prv = prev_close[1], 
+            keylevel_high = daily_high[1],
+            keylevel_low = daily_low[1],
+            tp = take_profit[1],
+            entry1 = entry1[1],
+            entry2 = entry2[1],
+            bias_long = bias_long[1],
+            net_change = net_change[1]
+        )
+        
+        array.push(historical_levels, current_day_data)
+        
+        // Keep only the specified number of days
+        while array.size(historical_levels) > history_days
+            array.shift(historical_levels)
+    
+    // Clean up current day lines and labels (but keep historical ones)
+    if not na(cv_line)
+        line.delete(cv_line)
+        line.delete(prv_line)
+        line.delete(keylevel_high_line) 
+        line.delete(keylevel_low_line)
+        line.delete(tp_line)
+        line.delete(entry1_line)
+        line.delete(entry2_line)
+        
+    if show_labels and not na(cv_label)
+        label.delete(cv_label)
+        label.delete(prv_label)
+        label.delete(keylevel_high_label)
+        label.delete(keylevel_low_label) 
+        label.delete(tp_label)
+        label.delete(entry1_label)
+        label.delete(entry2_label)
+        
+    if show_daily_boxes and not na(daily_box)
+        box.delete(daily_box)
+    
+    // Calculate end point for lines
+    end_bar = bar_index + extend_lines
+    
+    // Draw Current Value (CV) - Primary Decision Zone
+    cv_line := line.new(bar_index, current_value, end_bar, current_value, 
+                        color=cv_color, style=line.style_solid, width=2)
+    
+    // Draw Previous Close (PRV)
+    prv_line := line.new(bar_index, prev_close, end_bar, prev_close,
+                         color=prv_color, style=line.style_dashed, width=2)
+    
+    // Draw Key Levels (Daily High/Low)
+    keylevel_high_line := line.new(bar_index, daily_high, end_bar, daily_high,
+                                   color=keylevel_color, style=line.style_dotted, width=2)
+    keylevel_low_line := line.new(bar_index, daily_low, end_bar, daily_low,
+                                  color=keylevel_color, style=line.style_dotted, width=2)
+    
+    // Draw Take Profit Level
+    tp_line := line.new(bar_index, take_profit, end_bar, take_profit,
+                        color=tp_color, style=line.style_solid, width=2)
+    
+    // Draw Entry Levels  
+    entry1_line := line.new(bar_index, entry1, end_bar, entry1,
+                            color=entry_color, style=line.style_dashed, width=1)
+    entry2_line := line.new(bar_index, entry2, end_bar, entry2,
+                            color=entry_color, style=line.style_dashed, width=1)
+    
+    // Draw daily summary box
+    if show_daily_boxes
+        box_top = math.max(daily_high, take_profit)
+        box_bottom = math.min(daily_low, take_profit)
+        box_color = bias_long ? color.new(color.green, 95) : color.new(color.red, 95)
+        border_color = bias_long ? color.new(color.green, 70) : color.new(color.red, 70)
+        
+        daily_box := box.new(bar_index, box_top, end_bar, box_bottom,
+                            bgcolor=box_color, border_color=border_color, 
+                            border_width=1, border_style=line.style_dashed)
+
+    // === LABELS ===
+    if show_labels
+        label_x = end_bar - 5
+        
+        // CV Label (Primary Decision Zone)
+        cv_text = "CV @ " + str.tostring(current_value, "#.##")
+        cv_label := label.new(label_x, current_value, cv_text, 
+                              color=cv_color, textcolor=color.white, 
+                              style=label.style_label_left, size=size.normal)
+        
+        // PRV Label  
+        prv_text = "PRV @ " + str.tostring(prev_close, "#.##")
+        prv_label := label.new(label_x, prev_close, prv_text,
+                               color=prv_color, textcolor=color.white,
+                               style=label.style_label_left, size=size.normal)
+        
+        // Key Level Labels
+        keylevel_high_text = "Keylevel @ " + str.tostring(daily_high, "#.##")
+        keylevel_high_label := label.new(label_x, daily_high, keylevel_high_text,
+                                         color=keylevel_color, textcolor=color.white,
+                                         style=label.style_label_left, size=size.normal)
+        
+        keylevel_low_text = "Keylevel @ " + str.tostring(daily_low, "#.##")
+        keylevel_low_label := label.new(label_x, daily_low, keylevel_low_text,
+                                        color=keylevel_color, textcolor=color.white,
+                                        style=label.style_label_left, size=size.normal)
+        
+        // Take Profit Label
+        bias_emoji = bias_long ? "🔵" : "🔴"
+        tp_text = "TP @ " + str.tostring(take_profit, "#.##") + " " + bias_emoji
+        tp_label := label.new(label_x, take_profit, tp_text,
+                              color=tp_color, textcolor=color.white,
+                              style=label.style_label_left, size=size.normal)
+        
+        // Entry Labels
+        entry1_text = "Entry1 @ " + str.tostring(entry1, "#.##")
+        entry1_label := label.new(label_x, entry1, entry1_text,
+                                  color=entry_color, textcolor=color.black,
+                                  style=label.style_label_left, size=size.small)
+        
+        entry2_text = "Entry2 @ " + str.tostring(entry2, "#.##")
+        entry2_label := label.new(label_x, entry2, entry2_text,
+                                  color=entry_color, textcolor=color.black,
+                                  style=label.style_label_left, size=size.small)
+
+// === UPDATE LINES ON INTRADAY ===
+if not new_day and show_levels and not na(cv_line)
+    // Update CV line to track current price
+    line.set_xy1(cv_line, bar_index, current_value)
+    line.set_xy2(cv_line, bar_index + extend_lines, current_value)
+    
+    // Update TP line with new calculation
+    line.set_xy1(tp_line, bar_index, take_profit)
+    line.set_xy2(tp_line, bar_index + extend_lines, take_profit)
+    
+    // Update labels if enabled
+    if show_labels and not na(cv_label)
+        label.set_xy(cv_label, bar_index + extend_lines - 5, current_value)
+        label.set_text(cv_label, "CV @ " + str.tostring(current_value, "#.##"))
+        
+        label.set_xy(tp_label, bar_index + extend_lines - 5, take_profit)
+        bias_emoji = bias_long ? "🔵" : "🔴"
+        label.set_text(tp_label, "TP @ " + str.tostring(take_profit, "#.##") + " " + bias_emoji)
+
+// === TRADING INFORMATION TABLE ===
+if barstate.islast and show_levels
+    var table info_table = table.new(position.top_right, 3, 8, bgcolor=color.new(color.white, 80), border_width=1)
+    
+    // Header
+    table.cell(info_table, 0, 0, "BFI SIGNALS", text_color=color.black, text_size=size.normal, bgcolor=color.yellow)
+    table.cell(info_table, 1, 0, "LEVEL", text_color=color.black, text_size=size.normal, bgcolor=color.yellow)  
+    table.cell(info_table, 2, 0, "PRICE", text_color=color.black, text_size=size.normal, bgcolor=color.yellow)
+    
+    // Data rows
+    table.cell(info_table, 0, 1, "Bias:", text_color=color.black, text_size=size.small)
+    table.cell(info_table, 1, 1, bias_long ? "LONG 🔵" : "SHORT 🔴", text_color=bias_long ? color.blue : color.red, text_size=size.small)
+    table.cell(info_table, 2, 1, str.tostring(change_pct, "#.##") + "%", text_color=color.black, text_size=size.small)
+    
+    table.cell(info_table, 0, 2, "CV:", text_color=color.black, text_size=size.small)
+    table.cell(info_table, 1, 2, "Current Value", text_color=color.blue, text_size=size.small)
+    table.cell(info_table, 2, 2, str.tostring(current_value, "#.##"), text_color=color.black, text_size=size.small)
+    
+    table.cell(info_table, 0, 3, "PRV:", text_color=color.black, text_size=size.small)
+    table.cell(info_table, 1, 3, "Previous Close", text_color=color.orange, text_size=size.small)
+    table.cell(info_table, 2, 3, str.tostring(prev_close, "#.##"), text_color=color.black, text_size=size.small)
+    
+    table.cell(info_table, 0, 4, "HIGH:", text_color=color.black, text_size=size.small)
+    table.cell(info_table, 1, 4, "Daily High", text_color=color.cyan, text_size=size.small)
+    table.cell(info_table, 2, 4, str.tostring(daily_high, "#.##"), text_color=color.black, text_size=size.small)
+    
+    table.cell(info_table, 0, 5, "LOW:", text_color=color.black, text_size=size.small)
+    table.cell(info_table, 1, 5, "Daily Low", text_color=color.cyan, text_size=size.small)
+    table.cell(info_table, 2, 5, str.tostring(daily_low, "#.##"), text_color=color.black, text_size=size.small)
+    
+    table.cell(info_table, 0, 6, "TP:", text_color=color.black, text_size=size.small)
+    table.cell(info_table, 1, 6, "Take Profit", text_color=color.green, text_size=size.small)
+    table.cell(info_table, 2, 6, str.tostring(take_profit, "#.##"), text_color=color.black, text_size=size.small)
+    
+    table.cell(info_table, 0, 7, "NET:", text_color=color.black, text_size=size.small)
+    table.cell(info_table, 1, 7, "Net Change", text_color=color.gray, text_size=size.small)
+    table.cell(info_table, 2, 7, str.tostring(net_change, "#.##"), text_color=net_change > 0 ? color.green : color.red, text_size=size.small)
+
+// === DRAW HISTORICAL LEVELS ===
+if keep_history and barstate.islast
+    for i = 0 to array.size(historical_levels) - 1
+        day_data = array.get(historical_levels, i)
+        
+        // Calculate transparency based on age (older = more transparent)
+        age_factor = (i + 1) / array.size(historical_levels)
+        transparency = math.round(50 + (age_factor * 40))  // 50-90% transparency
+        
+        hist_cv_color = color.new(cv_color, transparency)
+        hist_prv_color = color.new(prv_color, transparency)
+        hist_keylevel_color = color.new(keylevel_color, transparency)
+        hist_tp_color = color.new(tp_color, transparency)
+        
+        // Draw historical lines with reduced opacity
+        line.new(day_data.start_bar, day_data.cv, day_data.end_bar, day_data.cv,
+                color=hist_cv_color, style=line.style_solid, width=1)
+        line.new(day_data.start_bar, day_data.prv, day_data.end_bar, day_data.prv,
+                color=hist_prv_color, style=line.style_dashed, width=1)
+        line.new(day_data.start_bar, day_data.keylevel_high, day_data.end_bar, day_data.keylevel_high,
+                color=hist_keylevel_color, style=line.style_dotted, width=1)
+        line.new(day_data.start_bar, day_data.keylevel_low, day_data.end_bar, day_data.keylevel_low,
+                color=hist_keylevel_color, style=line.style_dotted, width=1)
+        line.new(day_data.start_bar, day_data.tp, day_data.end_bar, day_data.tp,
+                color=hist_tp_color, style=line.style_solid, width=1)
+
+// === PLOT INVISIBLE VALUES FOR ALERTS ===
+plot(current_value, title="CV", color=color.new(color.blue, 100))
+plot(take_profit, title="TP", color=color.new(color.green, 100))
+plot(daily_high, title="Daily High", color=color.new(color.cyan, 100))
+plot(daily_low, title="Daily Low", color=color.new(color.cyan, 100)) 

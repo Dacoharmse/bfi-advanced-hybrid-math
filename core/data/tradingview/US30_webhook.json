@@ -1,0 +1,15 @@
+{
+  "action": "update_bfi_levels",
+  "symbol": "US30",
+  "timestamp": "2025-07-18T06:40:33.486111",
+  "data": {
+    "cv": 44484.49,
+    "prv": 44254.78,
+    "high": 44558.05,
+    "low": 44200.04,
+    "tp": 44714.2,
+    "bias": "LONG",
+    "net_change": 229.71,
+    "change_pct": 0.52
+  }
+}

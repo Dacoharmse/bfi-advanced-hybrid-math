@@ -1,0 +1,28 @@
+{
+  "timestamp": "2025-07-18T06:40:33.484720",
+  "symbol": "US30",
+  "display_name": "US30",
+  "levels": {
+    "cv": 44484.49,
+    "prv": 44254.78,
+    "keylevel_high": 44558.05,
+    "keylevel_low": 44200.04,
+    "tp": 44714.2,
+    "entry1": 44200.04,
+    "entry2": 44484.49,
+    "sl_tight": 44100.04,
+    "sl_wide": 44000.04
+  },
+  "bias": {
+    "direction": "LONG",
+    "net_change": 229.71,
+    "change_pct": 0.52,
+    "bias_text": "Bullish (Net Change > 0) | News: Neutral (keywords)"
+  },
+  "meta": {
+    "trading_date": "18 July 2025",
+    "generated_at": "2025-07-18T06:40:20.086566",
+    "is_weekend_signal": false,
+    "cv_position": 0.79
+  }
+}

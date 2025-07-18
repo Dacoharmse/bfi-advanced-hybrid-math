@@ -1,0 +1,28 @@
+{
+  "timestamp": "2025-07-16T08:30:54.034198",
+  "symbol": "^NDX",
+  "display_name": "NAS100",
+  "levels": {
+    "cv": 22884.59,
+    "prv": 22855.63,
+    "keylevel_high": 23051.87,
+    "keylevel_low": 22876.47,
+    "tp": 22913.55,
+    "entry1": 22876.47,
+    "entry2": 22884.59,
+    "sl_tight": 22776.47,
+    "sl_wide": 22676.47
+  },
+  "bias": {
+    "direction": "LONG",
+    "net_change": 28.96,
+    "change_pct": 0.13,
+    "bias_text": "Bullish (Net Change > 0) | News: Neutral (keywords)"
+  },
+  "meta": {
+    "trading_date": "16 July 2025",
+    "generated_at": "2025-07-16T08:30:37.617642",
+    "is_weekend_signal": false,
+    "cv_position": 0.05
+  }
+}

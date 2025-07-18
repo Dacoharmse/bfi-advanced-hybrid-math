@@ -1,0 +1,363 @@
+{% extends "base.html" %}
+
+{% block title %}Performance - BFI Signals AI{% endblock %}
+
+{% block content %}
+<div class="card">
+    <h2>📊 Performance by Symbol</h2>
+    {% if symbol_performance %}
+    <table class="table">
+        <thead>
+            <tr>
+                <th>Symbol</th>
+                <th>Total Signals</th>
+                <th>Success Rate</th>
+                <th>Total P&L</th>
+                <th>Avg Probability</th>
+                <th>Performance</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for symbol, total, success_rate, total_pl, avg_prob in symbol_performance %}
+            <tr>
+                <td><strong>{{ symbol }}</strong></td>
+                <td>{{ total }}</td>
+                <td>
+                    {% if success_rate %}
+                        {{ "%.1f"|format(success_rate * 100) }}%
+                    {% else %}
+                        N/A
+                    {% endif %}
+                </td>
+                <td>
+                    {% if total_pl %}
+                        {% if total_pl > 0 %}
+                            <span style="color: green; font-weight: bold;">${{ "%.2f"|format(total_pl) }}</span>
+                        {% else %}
+                            <span style="color: red; font-weight: bold;">${{ "%.2f"|format(total_pl) }}</span>
+                        {% endif %}
+                    {% else %}
+                        $0.00
+                    {% endif %}
+                </td>
+                <td>
+                    {% if avg_prob %}
+                        {{ "%.1f"|format(avg_prob) }}%
+                    {% else %}
+                        N/A
+                    {% endif %}
+                </td>
+                <td>
+                    {% if success_rate %}
+                        {% if success_rate >= 0.7 %}
+                            <span class="badge badge-success">Excellent</span>
+                        {% elif success_rate >= 0.5 %}
+                            <span class="badge badge-info">Good</span>
+                        {% else %}
+                            <span class="badge badge-warning">Needs Improvement</span>
+                        {% endif %}
+                    {% else %}
+                        <span class="badge badge-info">No Data</span>
+                    {% endif %}
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    {% else %}
+    <p>No performance data available yet. Add some trading outcomes to see performance analytics!</p>
+    {% endif %}
+</div>
+
+<div class="card">
+    <h2>🎯 Performance by Signal Type</h2>
+    {% if signal_type_performance %}
+    <table class="table">
+        <thead>
+            <tr>
+                <th>Signal Type</th>
+                <th>Total Signals</th>
+                <th>Success Rate</th>
+                <th>Total P&L</th>
+                <th>Performance</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for signal_type, total, success_rate, total_pl in signal_type_performance %}
+            <tr>
+                <td>
+                    {% if signal_type == 'BUY' or signal_type == 'LONG' %}
+                        <span class="badge badge-success">{{ signal_type }}</span>
+                    {% else %}
+                        <span class="badge badge-danger">{{ signal_type }}</span>
+                    {% endif %}
+                </td>
+                <td>{{ total }}</td>
+                <td>
+                    {% if success_rate %}
+                        {{ "%.1f"|format(success_rate * 100) }}%
+                    {% else %}
+                        N/A
+                    {% endif %}
+                </td>
+                <td>
+                    {% if total_pl %}
+                        {% if total_pl > 0 %}
+                            <span style="color: green; font-weight: bold;">${{ "%.2f"|format(total_pl) }}</span>
+                        {% else %}
+                            <span style="color: red; font-weight: bold;">${{ "%.2f"|format(total_pl) }}</span>
+                        {% endif %}
+                    {% else %}
+                        $0.00
+                    {% endif %}
+                </td>
+                <td>
+                    {% if success_rate %}
+                        {% if success_rate >= 0.7 %}
+                            <span class="badge badge-success">Excellent</span>
+                        {% elif success_rate >= 0.5 %}
+                            <span class="badge badge-info">Good</span>
+                        {% else %}
+                            <span class="badge badge-warning">Needs Improvement</span>
+                        {% endif %}
+                    {% else %}
+                        <span class="badge badge-info">No Data</span>
+                    {% endif %}
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    {% else %}
+    <p>No signal type performance data available yet.</p>
+    {% endif %}
+</div>
+
+<div class="card">
+    <h2>⚖️ Performance by Risk Level</h2>
+    {% if risk_performance %}
+    <table class="table">
+        <thead>
+            <tr>
+                <th>Risk Level</th>
+                <th>Total Signals</th>
+                <th>Success Rate</th>
+                <th>Total P&L</th>
+                <th>Risk/Reward</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for risk_level, total, success_rate, total_pl in risk_performance %}
+            <tr>
+                <td>
+                    {% if risk_level == 'low' %}
+                        <span class="badge badge-success">🟢 Low</span>
+                    {% elif risk_level == 'medium' %}
+                        <span class="badge badge-warning">🟡 Medium</span>
+                    {% elif risk_level == 'high' %}
+                        <span class="badge badge-danger">🟠 High</span>
+                    {% else %}
+                        <span class="badge badge-danger">🔴 Extreme</span>
+                    {% endif %}
+                </td>
+                <td>{{ total }}</td>
+                <td>
+                    {% if success_rate %}
+                        {{ "%.1f"|format(success_rate * 100) }}%
+                    {% else %}
+                        N/A
+                    {% endif %}
+                </td>
+                <td>
+                    {% if total_pl %}
+                        {% if total_pl > 0 %}
+                            <span style="color: green; font-weight: bold;">${{ "%.2f"|format(total_pl) }}</span>
+                        {% else %}
+                            <span style="color: red; font-weight: bold;">${{ "%.2f"|format(total_pl) }}</span>
+                        {% endif %}
+                    {% else %}
+                        $0.00
+                    {% endif %}
+                </td>
+                <td>
+                    {% if risk_level == 'low' and success_rate and success_rate > 0.6 %}
+                        <span class="badge badge-success">Ideal</span>
+                    {% elif risk_level == 'medium' and success_rate and success_rate > 0.5 %}
+                        <span class="badge badge-info">Balanced</span>
+                    {% elif risk_level == 'high' and success_rate and success_rate > 0.7 %}
+                        <span class="badge badge-warning">High Reward</span>
+                    {% else %}
+                        <span class="badge badge-info">Review</span>
+                    {% endif %}
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    {% else %}
+    <p>No risk level performance data available yet.</p>
+    {% endif %}
+</div>
+
+<div class="card">
+    <h2>📈 Daily Performance (Last 30 Days)</h2>
+    {% if daily_performance %}
+    <div style="max-height: 400px; overflow-y: auto;">
+        <table class="table">
+            <thead>
+                <tr>
+                    <th>Date</th>
+                    <th>Signals</th>
+                    <th>Wins</th>
+                    <th>Win Rate</th>
+                    <th>Daily P&L</th>
+                    <th>Performance</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for date, signals, wins, daily_pl in daily_performance %}
+                <tr>
+                    <td>{{ date }}</td>
+                    <td>{{ signals }}</td>
+                    <td>{{ wins }}</td>
+                    <td>
+                        {% if signals > 0 %}
+                            {{ "%.1f"|format((wins / signals) * 100) }}%
+                        {% else %}
+                            N/A
+                        {% endif %}
+                    </td>
+                    <td>
+                        {% if daily_pl %}
+                            {% if daily_pl > 0 %}
+                                <span style="color: green; font-weight: bold;">${{ "%.2f"|format(daily_pl) }}</span>
+                            {% else %}
+                                <span style="color: red; font-weight: bold;">${{ "%.2f"|format(daily_pl) }}</span>
+                            {% endif %}
+                        {% else %}
+                            $0.00
+                        {% endif %}
+                    </td>
+                    <td>
+                        {% if signals > 0 %}
+                            {% set win_rate = (wins / signals) %}
+                            {% if win_rate >= 0.8 %}
+                                <span class="badge badge-success">Excellent</span>
+                            {% elif win_rate >= 0.6 %}
+                                <span class="badge badge-info">Good</span>
+                            {% elif win_rate >= 0.4 %}
+                                <span class="badge badge-warning">Average</span>
+                            {% else %}
+                                <span class="badge badge-danger">Poor</span>
+                            {% endif %}
+                        {% else %}
+                            <span class="badge badge-info">No Data</span>
+                        {% endif %}
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% else %}
+    <p>No daily performance data available yet. Add trading outcomes to see daily analytics!</p>
+    {% endif %}
+</div>
+
+<div class="card">
+    <h2>🎯 Performance Insights</h2>
+    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 20px;">
+        <div style="padding: 20px; background: linear-gradient(135deg, #2d2d2d 0%, #1a1a1a 100%); border-radius: 10px; border: 1px solid #d4af37; backdrop-filter: blur(10px);">
+            <h4 style="color: #d4af37;">📊 Overall Analysis</h4>
+            {% if symbol_performance %}
+                {% set total_trades = symbol_performance|sum(attribute=1) %}
+                {% set profitable_symbols = symbol_performance|selectattr(4, '>', 0)|list|length %}
+                <p style="color: #cccccc;"><strong>Total Trades:</strong> {{ total_trades }}</p>
+                <p style="color: #cccccc;"><strong>Profitable Symbols:</strong> {{ profitable_symbols }}/{{ symbol_performance|length }}</p>
+            {% else %}
+                <p style="color: #cccccc;">No data available yet.</p>
+            {% endif %}
+        </div>
+        
+        <div style="padding: 20px; background: linear-gradient(135deg, #2d2d2d 0%, #1a1a1a 100%); border-radius: 10px; border: 1px solid #d4af37; backdrop-filter: blur(10px);">
+            <h4 style="color: #d4af37;">🎯 Best Performing</h4>
+            {% if symbol_performance %}
+                {% set best_symbol = symbol_performance|sort(attribute=3, reverse=true)|first %}
+                <p style="color: #cccccc;"><strong>Best Symbol:</strong> {{ best_symbol[0] }}</p>
+                <p style="color: #cccccc;"><strong>P&L:</strong> ${{ "%.2f"|format(best_symbol[3] or 0) }}</p>
+            {% else %}
+                <p style="color: #cccccc;">No performance data yet.</p>
+            {% endif %}
+        </div>
+        
+        <div style="padding: 20px; background: linear-gradient(135deg, #2d2d2d 0%, #1a1a1a 100%); border-radius: 10px; border: 1px solid #d4af37; backdrop-filter: blur(10px);">
+            <h4 style="color: #d4af37;">⚠️ Risk Analysis</h4>
+            {% if risk_performance %}
+                {% set low_risk_trades = risk_performance|selectattr(0, 'eq', 'low')|first %}
+                {% if low_risk_trades %}
+                    <p style="color: #cccccc;"><strong>Low Risk Trades:</strong> {{ low_risk_trades[1] }}</p>
+                    <p style="color: #cccccc;"><strong>Success Rate:</strong> {{ "%.1f"|format((low_risk_trades[2] or 0) * 100) }}%</p>
+                {% else %}
+                    <p style="color: #cccccc;">No low risk trades yet.</p>
+                {% endif %}
+            {% else %}
+                <p style="color: #cccccc;">No risk data available yet.</p>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<div class="card">
+    <h2>💡 Recommendations</h2>
+    <div style="background: linear-gradient(135deg, #2d2d2d 0%, #1a1a1a 100%); padding: 20px; border-radius: 10px; border: 1px solid #d4af37; backdrop-filter: blur(10px);">
+        {% if symbol_performance %}
+            {% set avg_success_rate = (symbol_performance|sum(attribute=2) / symbol_performance|length) if symbol_performance else 0 %}
+            {% if avg_success_rate > 0.7 %}
+                <p style="color: #cccccc;"><strong>🎉 Excellent Performance!</strong> Your AI-enhanced system is performing very well with an average success rate above 70%.</p>
+            {% elif avg_success_rate > 0.5 %}
+                <p style="color: #cccccc;"><strong>📈 Good Performance!</strong> Your system shows positive results. Consider analyzing which symbols perform best.</p>
+            {% else %}
+                <p style="color: #cccccc;"><strong>🔍 Analysis Needed:</strong> Performance could be improved. Review risk levels and add more trading outcomes for better learning.</p>
+            {% endif %}
+        {% else %}
+            <p style="color: #cccccc;"><strong>🚀 Getting Started:</strong> Add trading outcomes to see performance analytics and get AI-powered insights!</p>
+        {% endif %}
+        
+        <h4 style="margin-top: 15px; color: #d4af37;">Next Steps:</h4>
+        <ul style="margin-left: 20px; color: #cccccc;">
+            <li>🎯 <a href="/add_outcome" style="color: #d4af37;">Add more trading outcomes</a> for better AI learning</li>
+            <li>📊 Review signals with poor performance for pattern recognition</li>
+            <li>⚖️ Focus on low-risk, high-success-rate opportunities</li>
+        </ul>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+// Auto-refresh performance data every 5 minutes
+setInterval(function() {
+    // Only refresh if user hasn't interacted recently
+    if (document.hidden === false) {
+        location.reload();
+    }
+}, 300000); // 5 minutes
+
+// Add click handlers for better UX
+document.addEventListener('DOMContentLoaded', function() {
+    // Highlight best performing rows
+    const tables = document.querySelectorAll('.table');
+    tables.forEach(table => {
+        const rows = table.querySelectorAll('tbody tr');
+        rows.forEach(row => {
+            row.addEventListener('click', function() {
+                // Remove previous highlights
+                rows.forEach(r => r.style.backgroundColor = '');
+                // Highlight clicked row
+                this.style.backgroundColor = '#f0f9ff';
+            });
+        });
+    });
+});
+</script>
+{% endblock %} 

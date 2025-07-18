@@ -1,0 +1,28 @@
+{
+  "timestamp": "2025-07-17T22:28:19.675107",
+  "symbol": "NAS100",
+  "display_name": "NAS100",
+  "levels": {
+    "cv": 23078.03,
+    "prv": 22907.97,
+    "keylevel_high": 23104.72,
+    "keylevel_low": 22905.51,
+    "tp": 23248.1,
+    "entry1": 22905.51,
+    "entry2": 23078.03,
+    "sl_tight": 22805.51,
+    "sl_wide": 22705.51
+  },
+  "bias": {
+    "direction": "LONG",
+    "net_change": 170.06,
+    "change_pct": 0.74,
+    "bias_text": "Bullish (Net Change > 0) | News: Bearish (keywords)"
+  },
+  "meta": {
+    "trading_date": "17 July 2025",
+    "generated_at": "2025-07-17T22:28:14.104357",
+    "is_weekend_signal": false,
+    "cv_position": 0.87
+  }
+}

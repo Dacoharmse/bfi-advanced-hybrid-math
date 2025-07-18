@@ -1,0 +1,200 @@
+{% extends "base.html" %}
+
+{% block title %}Dashboard - BFI Signals AI{% endblock %}
+
+{% block content %}
+<div class="stats-grid">
+    <div class="stat-card">
+        <h3>{{ stats.total_signals }}</h3>
+        <p>Total Signals</p>
+    </div>
+    
+    <div class="stat-card">
+        <h3>{{ today_signals }}</h3>
+        <p>Today's Signals</p>
+    </div>
+</div>
+
+<div class="card">
+    <h2>🤖 AI Model Performance</h2>
+    {% if model_stats %}
+    <table class="table">
+        <thead>
+            <tr>
+                <th>AI Model</th>
+                <th>Usage Count</th>
+                <th>Avg Confidence</th>
+                <th>Status</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for model, count, confidence in model_stats %}
+            <tr>
+                <td>
+                    {% if model == 'gemini_new_api' %}
+                        🧠 Google Gemini
+                    {% elif model == 'local_ensemble' %}
+                        🏠 Local AI Models
+                    {% elif model == 'enhanced_keywords' %}
+                        📝 Enhanced Keywords
+                    {% else %}
+                        {{ model }}
+                    {% endif %}
+                </td>
+                <td>{{ count }}</td>
+                <td>
+                    {% if confidence %}
+                        {{ "%.1f"|format(confidence * 100) }}%
+                    {% else %}
+                        N/A
+                    {% endif %}
+                </td>
+                <td>
+                    {% if model == 'gemini_new_api' %}
+                        <span class="badge badge-success">Active</span>
+                    {% elif model == 'local_ensemble' %}
+                        <span class="badge badge-info">Available</span>
+                    {% else %}
+                        <span class="badge badge-warning">Fallback</span>
+                    {% endif %}
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    {% else %}
+    <p>No AI model usage data available yet. Generate some signals to see AI performance!</p>
+    {% endif %}
+</div>
+
+<div class="card">
+    <h2>📈 Recent Signals</h2>
+    {% if recent_signals %}
+    <table class="table">
+        <thead>
+            <tr>
+                <th>Symbol</th>
+                <th>Type</th>
+                <th>Risk Level</th>
+                <th>Timestamp</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for signal in recent_signals %}
+            <tr>
+                <td><strong>{{ signal[0] }}</strong></td>
+                <td>
+                    {% if signal[1] == 'BUY' or signal[1] == 'LONG' %}
+                        <span class="badge badge-success">{{ signal[1] }}</span>
+                    {% else %}
+                        <span class="badge badge-danger">{{ signal[1] }}</span>
+                    {% endif %}
+                </td>
+                <td>
+                    {% if signal[3] == 'low' %}
+                        <span class="badge badge-success">🟢 Low</span>
+                    {% elif signal[3] == 'medium' %}
+                        <span class="badge badge-warning">🟡 Medium</span>
+                    {% elif signal[3] == 'high' %}
+                        <span class="badge badge-danger">🟠 High</span>
+                    {% else %}
+                        <span class="badge badge-danger">🔴 Extreme</span>
+                    {% endif %}
+                </td>
+                <td>{{ signal[4][:16] }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    {% else %}
+    <p>No signals found. Run your BFI Signals system to see data here!</p>
+    {% endif %}
+</div>
+
+<div class="card">
+    <h2>ℹ️ System Info</h2>
+    <div class="system-info-grid">
+        <div class="info-item">
+            <div class="info-icon">🤖</div>
+            <div class="info-content">
+                <h4>AI Status</h4>
+                {% if stats.models_available %}
+                    <p class="status-text success">✅ Local models available</p>
+                {% else %}
+                    <p class="status-text info">📡 Using cloud/fallback models</p>
+                {% endif %}
+            </div>
+        </div>
+        
+        <div class="info-item">
+            <div class="info-icon">🔗</div>
+            <div class="info-content">
+                <h4>API Status</h4>
+                <p class="status-text success">✅ Gemini API connected</p>
+            </div>
+        </div>
+        
+        <div class="info-item">
+            <div class="info-icon">📊</div>
+            <div class="info-content">
+                <h4>Learning Database</h4>
+                <p class="status-text success">✅ Active and learning</p>
+            </div>
+        </div>
+        
+        <div class="info-item">
+            <div class="info-icon">🎯</div>
+            <div class="info-content">
+                <h4>Risk Assessment</h4>
+                <p class="status-text success">✅ AI-powered risk calculation</p>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+// Fallback showAlert function in case the one from base.html isn't available
+if (typeof showAlert === 'undefined') {
+    function showAlert(message, type) {
+        alert(`${type.toUpperCase()}: ${message}`);
+    }
+}
+
+function exportData() {
+    fetch('/api/export_data')
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                showAlert(data.message, 'success');
+            } else {
+                showAlert(data.error, 'error');
+            }
+        })
+        .catch(error => {
+            showAlert('Error exporting data: ' + error, 'error');
+        });
+}
+
+function clearData() {
+    if (confirm('Are you sure you want to clear all learning data? This action cannot be undone.')) {
+        fetch('/api/clear_data', { method: 'POST' })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    showAlert(data.message, 'success');
+                    setTimeout(() => {
+                        location.reload();
+                    }, 2000);
+                } else {
+                    showAlert(data.error, 'error');
+                }
+            })
+            .catch(error => {
+                showAlert('Error clearing data: ' + error, 'error');
+            });
+    }
+}
+</script>
+{% endblock %} 

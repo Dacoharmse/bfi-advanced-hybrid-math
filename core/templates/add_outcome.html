@@ -1,0 +1,199 @@
+{% extends "base.html" %}
+
+{% block title %}Add Trading Outcome - BFI Signals AI{% endblock %}
+
+{% block content %}
+<div class="card">
+    <h2>🎯 Add Trading Outcome</h2>
+    <p style="margin-bottom: 20px;">Help your AI learn by adding trading outcomes. The more data you provide, the smarter your AI becomes!</p>
+    
+    {% if pending_signals %}
+    <h3>📋 Pending Signals</h3>
+    <p>Add outcomes for these recent signals:</p>
+    
+    <div style="max-height: 400px; overflow-y: auto; margin-bottom: 30px;">
+        <table class="table">
+            <thead>
+                <tr>
+                    <th>Signal</th>
+                    <th>Details</th>
+                    <th>Probability</th>
+                    <th>Date</th>
+                    <th>Action</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for signal_id, symbol, signal_type, probability, timestamp in pending_signals %}
+                <tr id="signal-{{ signal_id }}">
+                    <td><strong>{{ symbol }}</strong></td>
+                    <td>
+                        {% if signal_type == 'BUY' or signal_type == 'LONG' %}
+                            <span class="badge badge-success">{{ signal_type }}</span>
+                        {% else %}
+                            <span class="badge badge-danger">{{ signal_type }}</span>
+                        {% endif %}
+                    </td>
+                    <td>{{ "%.1f"|format(probability) }}%</td>
+                    <td>{{ timestamp[:16] }}</td>
+                    <td>
+                        <button onclick="showOutcomeForm({{ signal_id }}, '{{ symbol }}', '{{ signal_type }}')" class="btn" style="padding: 8px 16px; font-size: 0.9rem;">
+                            📝 Add Outcome
+                        </button>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% else %}
+    <div style="background: #1a202c !important; border: 1px solid #4a5568; padding: 20px; border-radius: 10px; margin-bottom: 30px; color: #e2e8f0 !important;">
+        <p style="color: #e2e8f0 !important; margin: 0 0 10px 0;">🔍 No pending signals found. Generate some signals first, then return here to add outcomes!</p>
+        <a href="/" class="btn" style="margin-top: 10px; background: #2d3748 !important; border: 1px solid #d4af37 !important;">📊 Go to Dashboard</a>
+    </div>
+    {% endif %}
+</div>
+
+<!-- Outcome Form Modal -->
+<div id="outcomeModal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 1000;">
+    <div style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); background: #2d3748; border: 1px solid #4a5568; padding: 30px; border-radius: 20px; width: 90%; max-width: 500px; color: #e2e8f0;">
+        <h3 id="modalTitle">📝 Add Outcome for Signal</h3>
+        
+        <form id="outcomeForm" onsubmit="submitOutcome(event)">
+            <input type="hidden" id="signalId" name="signal_id">
+            
+            <div class="form-group">
+                <label>Signal Details:</label>
+                <div id="signalDetails" style="background: #4a5568; padding: 15px; border-radius: 10px; margin-bottom: 15px; color: #e2e8f0;">
+                    <!-- Signal details will be populated here -->
+                </div>
+            </div>
+            
+            <div class="form-group">
+                <label for="outcome">Trading Outcome:</label>
+                <select id="outcome" name="outcome" required>
+                    <option value="">Select outcome...</option>
+                    <option value="true">✅ Profitable Trade</option>
+                    <option value="false">❌ Loss Trade</option>
+                </select>
+            </div>
+            
+            <div class="form-group">
+                <label for="profitLoss">Profit/Loss Amount ($):</label>
+                <input type="number" id="profitLoss" name="profit_loss" step="0.01" placeholder="Enter positive for profit, negative for loss" required>
+                <small style="color: #666;">Examples: 150.50 for profit, -75.25 for loss</small>
+            </div>
+            
+            <div style="display: flex; gap: 10px; justify-content: flex-end;">
+                <button type="button" onclick="closeOutcomeModal()" class="btn btn-danger">❌ Cancel</button>
+                <button type="submit" class="btn btn-success">✅ Add Outcome</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+
+
+<div class="card">
+    <h2>💡 Tips for Better AI Learning</h2>
+    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 20px;">
+        <div style="background: linear-gradient(135deg, #1a2332 0%, #0f1419 100%); padding: 20px; border-radius: 10px; border-left: 4px solid #3b82f6; backdrop-filter: blur(10px);">
+            <h4 style="color: #60a5fa;">🎯 Accuracy is Key</h4>
+            <p style="color: #cccccc;">Enter accurate profit/loss amounts. The AI uses this data to identify successful patterns and improve future predictions.</p>
+        </div>
+        
+        <div style="background: linear-gradient(135deg, #172b1e 0%, #0c1710 100%); padding: 20px; border-radius: 10px; border-left: 4px solid #22c55e; backdrop-filter: blur(10px);">
+            <h4 style="color: #4ade80;">📊 Track Everything</h4>
+            <p style="color: #cccccc;">Add outcomes for both winning and losing trades. The AI learns from both successes and failures to improve risk assessment.</p>
+        </div>
+        
+        <div style="background: linear-gradient(135deg, #2d2416 0%, #1a1509 100%); padding: 20px; border-radius: 10px; border-left: 4px solid #f59e0b; backdrop-filter: blur(10px);">
+            <h4 style="color: #fbbf24;">⏰ Regular Updates</h4>
+            <p style="color: #cccccc;">Add outcomes regularly to keep the AI learning current market conditions and adapting to changing patterns.</p>
+        </div>
+        
+        <div style="background: linear-gradient(135deg, #2d1a1a 0%, #1a0f0f 100%); padding: 20px; border-radius: 10px; border-left: 4px solid #ef4444; backdrop-filter: blur(10px);">
+            <h4 style="color: #f87171;">🎓 Learning Impact</h4>
+            <p style="color: #cccccc;">Each outcome helps the AI adjust probabilities, improve risk levels, and identify which strategies work best in different market conditions.</p>
+        </div>
+    </div>
+</div>
+
+
+{% endblock %}
+
+{% block scripts %}
+<script>
+function showOutcomeForm(signalId, symbol, signalType) {
+    document.getElementById('signalId').value = signalId;
+    document.getElementById('modalTitle').textContent = `📝 Add Outcome for ${symbol} ${signalType}`;
+    document.getElementById('signalDetails').innerHTML = `
+        <strong>Symbol:</strong> ${symbol}<br>
+        <strong>Type:</strong> <span class="badge ${signalType === 'BUY' || signalType === 'LONG' ? 'badge-success' : 'badge-danger'}">${signalType}</span><br>
+        <strong>Signal ID:</strong> ${signalId}
+    `;
+    document.getElementById('outcomeModal').style.display = 'block';
+    document.body.style.overflow = 'hidden';
+}
+
+function closeOutcomeModal() {
+    document.getElementById('outcomeModal').style.display = 'none';
+    document.body.style.overflow = 'auto';
+    document.getElementById('outcomeForm').reset();
+}
+
+function submitOutcome(event) {
+    event.preventDefault();
+    
+    const formData = new FormData(event.target);
+    
+    fetch('/api/add_outcome', {
+        method: 'POST',
+        body: formData
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            showAlert(data.message, 'success');
+            
+            // Remove the signal from the pending list
+            const signalId = formData.get('signal_id');
+            const signalRow = document.getElementById(`signal-${signalId}`);
+            if (signalRow) {
+                signalRow.style.backgroundColor = '#f0fff4';
+                signalRow.innerHTML = `
+                    <td colspan="5" style="text-align: center; color: #22c55e; font-weight: bold;">
+                        ✅ Outcome Added Successfully!
+                    </td>
+                `;
+                setTimeout(() => {
+                    signalRow.remove();
+                }, 3000);
+            }
+            
+            closeOutcomeModal();
+        } else {
+            showAlert(data.error, 'error');
+        }
+    })
+    .catch(error => {
+        showAlert('Error adding outcome: ' + error, 'error');
+    });
+}
+
+
+
+// Close modal when clicking outside
+document.getElementById('outcomeModal').addEventListener('click', function(event) {
+    if (event.target === this) {
+        closeOutcomeModal();
+    }
+});
+
+// Close modal with Escape key
+document.addEventListener('keydown', function(event) {
+    if (event.key === 'Escape') {
+        closeOutcomeModal();
+    }
+});
+</script>
+{% endblock %} 

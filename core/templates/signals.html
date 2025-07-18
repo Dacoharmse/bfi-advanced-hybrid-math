@@ -1,0 +1,1096 @@
+{% extends "base.html" %}
+
+{% block title %}Signals History - BFI Signals AI{% endblock %}
+
+{% block content %}
+<style>
+/* Enhanced Professional Signals History Styling */
+.signals-container {
+    background: linear-gradient(135deg, #1a1a1a, #2d2d2d);
+    border: 2px solid #d4af37;
+    border-radius: 20px;
+    padding: 30px;
+    margin-bottom: 30px;
+    box-shadow: 
+        0 15px 50px rgba(212, 175, 55, 0.15),
+        0 8px 25px rgba(0, 0, 0, 0.6),
+        inset 0 1px 0 rgba(255, 255, 255, 0.1);
+    backdrop-filter: blur(10px);
+    position: relative;
+}
+
+.signals-container::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: linear-gradient(135deg, transparent 0%, rgba(212, 175, 55, 0.03) 50%, transparent 100%);
+    pointer-events: none;
+    border-radius: 20px;
+}
+
+.signals-title {
+    color: #d4af37;
+    font-size: 2.5rem;
+    margin-bottom: 15px;
+    text-align: center;
+    font-weight: 800;
+    text-shadow: 0 0 20px rgba(212, 175, 55, 0.3);
+    letter-spacing: 1px;
+}
+
+.signals-subtitle {
+    color: #cccccc;
+    text-align: center;
+    margin-bottom: 35px;
+    font-size: 1.2rem;
+    font-weight: 400;
+    opacity: 0.9;
+}
+
+.table-wrapper {
+    background: linear-gradient(135deg, #000000, #1a1a1a);
+    border: 3px solid #d4af37;
+    border-radius: 20px;
+    overflow: hidden;
+    box-shadow: 
+        0 15px 40px rgba(212, 175, 55, 0.25),
+        0 8px 20px rgba(0, 0, 0, 0.5),
+        inset 0 2px 0 rgba(212, 175, 55, 0.1);
+    backdrop-filter: blur(15px);
+    position: relative;
+}
+
+.table-wrapper::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 4px;
+    background: linear-gradient(90deg, transparent, #d4af37, #ffd700, #d4af37, transparent);
+    z-index: 1;
+}
+
+.enhanced-table {
+    width: 100%;
+    border-collapse: collapse;
+    background: transparent;
+    font-size: 0.95rem;
+}
+
+.enhanced-table thead {
+    background: linear-gradient(135deg, #d4af37 0%, #ffd700 50%, #d4af37 100%);
+    position: relative;
+}
+
+.enhanced-table thead::after {
+    content: '';
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    height: 3px;
+    background: linear-gradient(90deg, transparent, rgba(0, 0, 0, 0.3), transparent);
+}
+
+.enhanced-table th {
+    padding: 14px 12px;
+    font-weight: 700;
+    text-transform: uppercase;
+    font-size: 0.75rem;
+    letter-spacing: 0.8px;
+    text-align: center;
+    color: #000000;
+    border-right: 1px solid rgba(0, 0, 0, 0.15);
+    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+    position: relative;
+}
+
+.enhanced-table th:last-child {
+    border-right: none;
+}
+
+.enhanced-table td {
+    padding: 12px 10px;
+    border-bottom: 1px solid rgba(212, 175, 55, 0.12);
+    border-right: 1px solid rgba(212, 175, 55, 0.08);
+    color: #ffffff;
+    vertical-align: middle;
+    text-align: center;
+    font-size: 0.8rem;
+    font-weight: 500;
+    position: relative;
+    transition: all 0.3s ease;
+}
+
+.enhanced-table td:last-child {
+    border-right: none;
+}
+
+.enhanced-table tbody tr {
+    transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+    position: relative;
+}
+
+.enhanced-table tbody tr:hover {
+    background: linear-gradient(135deg, rgba(212, 175, 55, 0.12), rgba(212, 175, 55, 0.06));
+    transform: translateY(-2px);
+    box-shadow: 0 8px 25px rgba(212, 175, 55, 0.2);
+}
+
+.enhanced-table tbody tr:hover td {
+    border-bottom-color: rgba(212, 175, 55, 0.25);
+    color: #ffffff;
+}
+
+.enhanced-table tr.win-row {
+    background: linear-gradient(135deg, rgba(34, 197, 94, 0.08), rgba(34, 197, 94, 0.04));
+    border-left: 4px solid #22c55e;
+}
+
+.enhanced-table tr.loss-row {
+    background: linear-gradient(135deg, rgba(239, 68, 68, 0.08), rgba(239, 68, 68, 0.04));
+    border-left: 4px solid #ef4444;
+}
+
+.enhanced-table tr.breakeven-row {
+    background: linear-gradient(135deg, rgba(245, 158, 11, 0.08), rgba(245, 158, 11, 0.04));
+    border-left: 4px solid #f59e0b;
+}
+
+.enhanced-badge {
+    padding: 6px 12px;
+    border-radius: 20px;
+    font-size: 0.65rem;
+    font-weight: 700;
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+    border: 1px solid rgba(255, 255, 255, 0.15);
+    transition: all 0.3s ease;
+    white-space: nowrap;
+}
+
+.enhanced-badge:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(0, 0, 0, 0.4);
+}
+
+.badge-long {
+    background: linear-gradient(135deg, #22c55e, #16a34a);
+    color: white;
+    box-shadow: 0 4px 12px rgba(34, 197, 94, 0.3);
+}
+
+.badge-short {
+    background: linear-gradient(135deg, #ef4444, #dc2626);
+    color: white;
+    box-shadow: 0 4px 12px rgba(239, 68, 68, 0.3);
+}
+
+.badge-pending {
+    background: linear-gradient(135deg, #3b82f6, #2563eb);
+    color: white;
+    box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);
+}
+
+.badge-win {
+    background: linear-gradient(135deg, #22c55e, #16a34a);
+    color: white;
+    box-shadow: 0 4px 12px rgba(34, 197, 94, 0.3);
+}
+
+.badge-loss {
+    background: linear-gradient(135deg, #ef4444, #dc2626);
+    color: white;
+    box-shadow: 0 4px 12px rgba(239, 68, 68, 0.3);
+}
+
+.badge-breakeven {
+    background: linear-gradient(135deg, #f59e0b, #d97706);
+    color: white;
+    box-shadow: 0 4px 12px rgba(245, 158, 11, 0.3);
+}
+
+.enhanced-quick-stats {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+    gap: 25px;
+    margin-bottom: 35px;
+}
+
+.stat-card {
+    background: linear-gradient(135deg, #2d2d2d, #1a1a1a);
+    border: 2px solid #d4af37;
+    border-radius: 20px;
+    padding: 30px;
+    text-align: center;
+    transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+    position: relative;
+    overflow: hidden;
+    box-shadow: 
+        0 10px 30px rgba(212, 175, 55, 0.1),
+        0 5px 15px rgba(0, 0, 0, 0.4),
+        inset 0 1px 0 rgba(255, 255, 255, 0.1);
+}
+
+.stat-card::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: linear-gradient(135deg, transparent 0%, rgba(212, 175, 55, 0.05) 50%, transparent 100%);
+    pointer-events: none;
+    transition: all 0.4s ease;
+}
+
+.stat-card:hover {
+    transform: translateY(-8px) scale(1.02);
+    box-shadow: 
+        0 20px 50px rgba(212, 175, 55, 0.25),
+        0 10px 25px rgba(0, 0, 0, 0.5),
+        inset 0 2px 0 rgba(255, 255, 255, 0.15);
+    border-color: #ffd700;
+}
+
+.stat-card:hover::before {
+    background: linear-gradient(135deg, transparent 0%, rgba(212, 175, 55, 0.08) 50%, transparent 100%);
+}
+
+.stat-number {
+    font-size: 3rem;
+    font-weight: 800;
+    margin-bottom: 15px;
+    text-shadow: 0 0 20px currentColor;
+    position: relative;
+    z-index: 1;
+}
+
+.stat-label {
+    color: #cccccc;
+    font-size: 1.1rem;
+    text-transform: uppercase;
+    letter-spacing: 1.5px;
+    font-weight: 600;
+    position: relative;
+    z-index: 1;
+}
+
+.enhanced-filters {
+    background: linear-gradient(135deg, #1a1a1a, #2d2d2d);
+    border: 2px solid #d4af37;
+    border-radius: 20px;
+    padding: 30px;
+    margin-bottom: 30px;
+    box-shadow: 
+        0 15px 50px rgba(212, 175, 55, 0.15),
+        0 8px 25px rgba(0, 0, 0, 0.6),
+        inset 0 1px 0 rgba(255, 255, 255, 0.1);
+}
+
+.filter-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    gap: 20px;
+    margin-bottom: 25px;
+}
+
+.enhanced-select {
+    padding: 15px 20px;
+    border: 2px solid #d4af37;
+    border-radius: 12px;
+    background: linear-gradient(135deg, #000000, #1a1a1a);
+    color: #ffffff;
+    font-size: 1rem;
+    font-weight: 600;
+    transition: all 0.3s ease;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+    cursor: pointer;
+}
+
+.enhanced-select:focus {
+    outline: none;
+    border-color: #ffd700;
+    box-shadow: 0 0 20px rgba(212, 175, 55, 0.4);
+    transform: translateY(-2px);
+}
+
+.enhanced-select:hover {
+    border-color: #ffd700;
+    box-shadow: 0 6px 20px rgba(212, 175, 55, 0.2);
+}
+
+.enhanced-button {
+    padding: 15px 25px;
+    border: 2px solid #d4af37;
+    border-radius: 12px;
+    background: linear-gradient(135deg, #d4af37, #ffd700);
+    color: #000000;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    text-decoration: none;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    box-shadow: 0 4px 12px rgba(212, 175, 55, 0.3);
+    font-size: 0.9rem;
+}
+
+.enhanced-button:hover {
+    background: linear-gradient(135deg, #ffd700, #d4af37);
+    transform: translateY(-3px);
+    box-shadow: 0 8px 25px rgba(212, 175, 55, 0.4);
+}
+
+.enhanced-button.danger {
+    background: linear-gradient(135deg, #ef4444, #dc2626);
+    border-color: #ef4444;
+    color: white;
+    box-shadow: 0 4px 12px rgba(239, 68, 68, 0.3);
+}
+
+.enhanced-button.danger:hover {
+    background: linear-gradient(135deg, #dc2626, #ef4444);
+    box-shadow: 0 8px 25px rgba(239, 68, 68, 0.4);
+}
+
+.outcome-dropdown {
+    padding: 8px 12px;
+    border: 2px solid #d4af37;
+    border-radius: 10px;
+    background: linear-gradient(135deg, #1a1a1a, #000000);
+    color: #ffffff;
+    font-size: 0.7rem;
+    font-weight: 600;
+    min-width: 100px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    box-shadow: 0 3px 10px rgba(0, 0, 0, 0.4);
+    appearance: none;
+    -webkit-appearance: none;
+    -moz-appearance: none;
+    position: relative;
+    background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23d4af37' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6,9 12,15 18,9'%3e%3c/polyline%3e%3c/svg%3e");
+    background-repeat: no-repeat;
+    background-position: right 8px center;
+    background-size: 16px;
+    padding-right: 30px;
+}
+
+.outcome-dropdown:focus {
+    outline: none;
+    border-color: #ffd700;
+    box-shadow: 0 0 20px rgba(212, 175, 55, 0.5);
+    transform: translateY(-1px);
+}
+
+.outcome-dropdown:hover {
+    border-color: #ffd700;
+    box-shadow: 0 6px 20px rgba(212, 175, 55, 0.3);
+    transform: translateY(-1px);
+}
+
+.outcome-dropdown option {
+    background: #1a1a1a;
+    color: #ffffff;
+    padding: 8px 12px;
+    border: none;
+    font-size: 0.7rem;
+    font-weight: 600;
+}
+
+.outcome-dropdown option:hover {
+    background: #2d2d2d;
+}
+
+.outcome-dropdown option:checked {
+    background: #d4af37;
+    color: #000000;
+}
+
+.action-buttons {
+    display: flex;
+    gap: 10px;
+    align-items: center;
+    justify-content: center;
+}
+
+.action-button {
+    padding: 6px 10px;
+    border: 1px solid #d4af37;
+    border-radius: 6px;
+    background: linear-gradient(135deg, #d4af37, #ffd700);
+    color: #000000;
+    font-size: 0.65rem;
+    font-weight: 700;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    text-decoration: none;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.3);
+    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+    display: inline-flex;
+    align-items: center;
+    gap: 3px;
+}
+
+.action-button:hover {
+    background: linear-gradient(135deg, #ffd700, #d4af37);
+    transform: translateY(-2px);
+    box-shadow: 0 5px 15px rgba(212, 175, 55, 0.4);
+}
+
+.action-button.delete {
+    background: linear-gradient(135deg, #ef4444, #dc2626);
+    border-color: #ef4444;
+    color: white;
+}
+
+.action-button.delete:hover {
+    background: linear-gradient(135deg, #dc2626, #ef4444);
+    box-shadow: 0 5px 15px rgba(239, 68, 68, 0.4);
+}
+
+.enhanced-modal {
+    display: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.8);
+    z-index: 1000;
+    backdrop-filter: blur(5px);
+}
+
+.modal-content {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    background: linear-gradient(135deg, #1a1a1a, #2d2d2d);
+    border: 2px solid #d4af37;
+    border-radius: 20px;
+    padding: 30px;
+    width: 90%;
+    max-width: 500px;
+    box-shadow: 0 20px 60px rgba(212, 175, 55, 0.3);
+}
+
+.modal-title {
+    color: #d4af37;
+    font-size: 1.5rem;
+    margin-bottom: 20px;
+    text-align: center;
+    font-weight: 700;
+}
+
+.form-group {
+    margin-bottom: 20px;
+}
+
+.form-group label {
+    display: block;
+    color: #d4af37;
+    font-weight: 600;
+    margin-bottom: 8px;
+}
+
+.form-group select,
+.form-group input {
+    width: 100%;
+    padding: 12px;
+    border: 2px solid #d4af37;
+    border-radius: 8px;
+    background: #000000;
+    color: #ffffff;
+    font-size: 1rem;
+}
+
+.form-group select:focus,
+.form-group input:focus {
+    outline: none;
+    border-color: #ffd700;
+    box-shadow: 0 0 15px rgba(212, 175, 55, 0.3);
+}
+
+.modal-actions {
+    display: flex;
+    gap: 15px;
+    justify-content: flex-end;
+    margin-top: 25px;
+}
+
+.signal-details {
+    background: rgba(212, 175, 55, 0.1);
+    border: 1px solid #d4af37;
+    border-radius: 10px;
+    padding: 15px;
+    margin-bottom: 20px;
+    color: #ffffff;
+}
+
+.risky-play-section {
+    background: rgba(245, 158, 11, 0.1);
+    border: 1px solid #f59e0b;
+    border-radius: 10px;
+    padding: 15px;
+    margin-top: 15px;
+}
+
+.risky-play-title {
+    color: #f59e0b;
+    font-weight: 600;
+    margin-bottom: 10px;
+}
+
+.no-signals {
+    background: linear-gradient(135deg, #2d2d2d, #1a1a1a);
+    border: 2px solid #d4af37;
+    padding: 80px 40px;
+    border-radius: 20px;
+    text-align: center;
+    box-shadow: 0 10px 30px rgba(212, 175, 55, 0.15);
+}
+
+.no-signals h3 {
+    color: #d4af37;
+    margin-bottom: 20px;
+    font-size: 2.2rem;
+    font-weight: 700;
+}
+
+.no-signals p {
+    color: #cccccc;
+    margin-bottom: 30px;
+    font-size: 1.2rem;
+    line-height: 1.6;
+}
+
+.pagination-wrapper {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 20px;
+    margin-top: 30px;
+}
+
+.pagination-info {
+    padding: 15px 25px;
+    background: linear-gradient(135deg, #d4af37, #ffd700);
+    color: #000000;
+    border-radius: 12px;
+    font-weight: 700;
+    font-size: 1rem;
+    box-shadow: 0 4px 12px rgba(212, 175, 55, 0.3);
+}
+
+/* Responsive Design */
+@media (max-width: 1200px) {
+    .enhanced-quick-stats {
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        gap: 20px;
+    }
+    
+    .filter-grid {
+        grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+    }
+}
+
+@media (max-width: 768px) {
+    .signals-container {
+        padding: 20px;
+        margin-bottom: 20px;
+    }
+    
+    .signals-title {
+        font-size: 2rem;
+    }
+    
+    .signals-subtitle {
+        font-size: 1rem;
+    }
+    
+    .enhanced-table {
+        font-size: 0.7rem;
+    }
+    
+    .enhanced-table th,
+    .enhanced-table td {
+        padding: 8px 6px;
+    }
+    
+    .enhanced-badge {
+        padding: 4px 8px;
+        font-size: 0.6rem;
+    }
+    
+    .outcome-dropdown {
+        font-size: 0.65rem;
+        padding: 6px 8px;
+        min-width: 80px;
+    }
+    
+    .action-button {
+        padding: 4px 8px;
+        font-size: 0.6rem;
+    }
+    
+    .enhanced-quick-stats {
+        grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+        gap: 15px;
+    }
+    
+    .stat-card {
+        padding: 20px;
+    }
+    
+    .stat-number {
+        font-size: 2.2rem;
+    }
+    
+    .filter-grid {
+        grid-template-columns: 1fr;
+        gap: 15px;
+    }
+    
+    .enhanced-filters {
+        padding: 20px;
+    }
+}
+
+@media (max-width: 480px) {
+    .signals-container {
+        padding: 15px;
+    }
+    
+    .table-wrapper {
+        border-radius: 15px;
+    }
+    
+    .enhanced-table th,
+    .enhanced-table td {
+        padding: 6px 4px;
+        font-size: 0.65rem;
+    }
+    
+    .enhanced-badge {
+        padding: 3px 6px;
+        font-size: 0.55rem;
+        gap: 2px;
+    }
+    
+    .outcome-dropdown {
+        font-size: 0.6rem;
+        padding: 4px 6px;
+        min-width: 70px;
+    }
+    
+    .action-button {
+        padding: 3px 6px;
+        font-size: 0.55rem;
+    }
+    
+    .stat-number {
+        font-size: 1.8rem;
+    }
+    
+    .stat-label {
+        font-size: 0.9rem;
+    }
+    
+    .action-buttons {
+        flex-direction: column;
+        gap: 3px;
+    }
+    
+    .pagination-wrapper {
+        flex-direction: column;
+        gap: 15px;
+    }
+}
+</style>
+
+<div class="signals-container">
+    <h1 class="signals-title">📋 Signals History</h1>
+    <p class="signals-subtitle">Complete history of all AI-enhanced trading signals with outcomes and performance tracking</p>
+    
+    {% if signals %}
+    <div class="table-wrapper">
+        <div style="max-height: 700px; overflow-y: auto;">
+            <table class="enhanced-table">
+                <thead>
+                    <tr>
+                        <th>ID</th>
+                        <th>Symbol</th>
+                        <th>Type</th>
+                        <th>Risk Level</th>
+                        <th>Date</th>
+                        <th>Main Outcome</th>
+                        <th>Risky Play</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for signal_id, symbol, signal_type, probability, risk_level, timestamp, outcome, profit_loss, risky_outcome in signals %}
+                    <tr class="{% if outcome == 1 %}win-row{% elif outcome == 0 %}loss-row{% elif outcome == 2 %}breakeven-row{% endif %}">
+                        <td><strong>{{ signal_id }}</strong></td>
+                        <td><strong>{{ symbol }}</strong></td>
+                        <td>
+                            {% if signal_type == 'BUY' or signal_type == 'LONG' %}
+                                <span class="enhanced-badge badge-long">📈 {{ signal_type }}</span>
+                            {% else %}
+                                <span class="enhanced-badge badge-short">📉 {{ signal_type }}</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            {% if risk_level == 'low' %}
+                                <span class="enhanced-badge" style="background: linear-gradient(135deg, #22c55e, #16a34a); color: white;">🟢 Low</span>
+                            {% elif risk_level == 'medium' %}
+                                <span class="enhanced-badge" style="background: linear-gradient(135deg, #f59e0b, #d97706); color: white;">🟡 Medium</span>
+                            {% elif risk_level == 'high' %}
+                                <span class="enhanced-badge" style="background: linear-gradient(135deg, #f97316, #ea580c); color: white;">🟠 High</span>
+                            {% else %}
+                                <span class="enhanced-badge" style="background: linear-gradient(135deg, #ef4444, #dc2626); color: white;">🔴 Extreme</span>
+                            {% endif %}
+                        </td>
+                        <td>{{ timestamp[:16] }}</td>
+                        <td>
+                            {% if outcome is none %}
+                                <select class="outcome-dropdown" onchange="updateOutcome({{ signal_id }}, this.value, 'main')">
+                                    <option value="">⏳ Pending</option>
+                                    <option value="1">✅ Win</option>
+                                    <option value="0">❌ Loss</option>
+                                    <option value="2">➖ Breakeven</option>
+                                </select>
+                            {% elif outcome == 1 %}
+                                <span class="enhanced-badge badge-win">✅ Win</span>
+                            {% elif outcome == 0 %}
+                                <span class="enhanced-badge badge-loss">❌ Loss</span>
+                            {% else %}
+                                <span class="enhanced-badge badge-breakeven">➖ Breakeven</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            {% if risky_outcome is none %}
+                                <select class="outcome-dropdown" onchange="updateOutcome({{ signal_id }}, this.value, 'risky')">
+                                    <option value="">⏳ Pending</option>
+                                    <option value="1">✅ Win</option>
+                                    <option value="0">❌ Loss</option>
+                                    <option value="2">➖ Breakeven</option>
+                                </select>
+                            {% elif risky_outcome == 1 %}
+                                <span class="enhanced-badge badge-win">✅ Win</span>
+                            {% elif risky_outcome == 0 %}
+                                <span class="enhanced-badge badge-loss">❌ Loss</span>
+                            {% else %}
+                                <span class="enhanced-badge badge-breakeven">➖ Breakeven</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            <div class="action-buttons">
+                                <button class="action-button delete" onclick="deleteSignal({{ signal_id }})" title="Delete signal">
+                                    🗑️ Delete
+                                </button>
+                            </div>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+    
+    <!-- Pagination -->
+    {% if total_pages > 1 %}
+    <div class="pagination-wrapper">
+        {% if has_prev %}
+            <a href="?page={{ page - 1 }}" class="enhanced-button">← Previous</a>
+        {% endif %}
+        
+        <span class="pagination-info">
+            Page {{ page }} of {{ total_pages }}
+        </span>
+        
+        {% if has_next %}
+            <a href="?page={{ page + 1 }}" class="enhanced-button">Next →</a>
+        {% endif %}
+    </div>
+    {% endif %}
+    
+    {% else %}
+    <div class="no-signals">
+        <h3>📭 No Signals Found</h3>
+        <p>No trading signals have been generated yet. Run your BFI Signals system to start collecting data!</p>
+        <a href="/" class="enhanced-button">📊 Go to Dashboard</a>
+    </div>
+    {% endif %}
+</div>
+
+<div class="signals-container">
+    <h2 style="color: #d4af37; margin-bottom: 30px; text-align: center; font-size: 2.2rem; font-weight: 700;">📊 Quick Stats</h2>
+    <div class="enhanced-quick-stats">
+        {% if signals %}
+            {% set total_signals = signals|length %}
+            {% set completed_signals = signals|selectattr(6, 'ne', none)|list %}
+            {% set win_signals = signals|selectattr(6, 'eq', 1)|list %}
+            {% set loss_signals = signals|selectattr(6, 'eq', 0)|list %}
+            {% set breakeven_signals = signals|selectattr(6, 'eq', 2)|list %}
+            {% set pending_signals = signals|selectattr(6, 'eq', none)|list %}
+            
+            <div class="stat-card">
+                <div class="stat-number" style="color: #3b82f6;">{{ total_signals }}</div>
+                <div class="stat-label">Total Signals</div>
+            </div>
+            
+            <div class="stat-card">
+                <div class="stat-number" style="color: #22c55e;">{{ win_signals|length }}</div>
+                <div class="stat-label">Wins</div>
+            </div>
+            
+            <div class="stat-card">
+                <div class="stat-number" style="color: #ef4444;">{{ loss_signals|length }}</div>
+                <div class="stat-label">Losses</div>
+            </div>
+            
+            <div class="stat-card">
+                <div class="stat-number" style="color: #f59e0b;">{{ breakeven_signals|length }}</div>
+                <div class="stat-label">Breakeven</div>
+            </div>
+            
+            <div class="stat-card">
+                <div class="stat-number" style="color: #6366f1;">{{ pending_signals|length }}</div>
+                <div class="stat-label">Pending</div>
+            </div>
+        {% endif %}
+    </div>
+</div>
+
+<div class="enhanced-filters">
+    <h2 style="color: #d4af37; margin-bottom: 30px; text-align: center; font-size: 2rem; font-weight: 700;">🔍 Filter & Search</h2>
+    <div class="filter-grid">
+        <select id="symbolFilter" class="enhanced-select" onchange="applyFilters()">
+            <option value="">All Symbols</option>
+            <option value="^NDX">^NDX</option>
+            <option value="US30">US30</option>
+            <option value="NAS100">NAS100</option>
+        </select>
+        
+        <select id="typeFilter" class="enhanced-select" onchange="applyFilters()">
+            <option value="">All Types</option>
+            <option value="BUY">BUY/LONG</option>
+            <option value="SELL">SELL/SHORT</option>
+        </select>
+        
+        <select id="outcomeFilter" class="enhanced-select" onchange="applyFilters()">
+            <option value="">All Outcomes</option>
+            <option value="pending">Pending</option>
+            <option value="win">Win</option>
+            <option value="loss">Loss</option>
+            <option value="breakeven">Breakeven</option>
+        </select>
+        
+        <select id="riskFilter" class="enhanced-select" onchange="applyFilters()">
+            <option value="">All Risk Levels</option>
+            <option value="low">Low Risk</option>
+            <option value="medium">Medium Risk</option>
+            <option value="high">High Risk</option>
+            <option value="extreme">Extreme Risk</option>
+        </select>
+    </div>
+    
+    <div style="display: flex; gap: 20px; justify-content: center; flex-wrap: wrap;">
+        <button class="enhanced-button danger" onclick="clearFilters()">🗑️ Clear Filters</button>
+        <button class="enhanced-button" onclick="exportSignals()">📤 Export Signals</button>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+// Enhanced filter functionality
+function applyFilters() {
+    const symbolFilter = document.getElementById('symbolFilter').value;
+    const typeFilter = document.getElementById('typeFilter').value;
+    const outcomeFilter = document.getElementById('outcomeFilter').value;
+    const riskFilter = document.getElementById('riskFilter').value;
+    
+    const rows = document.querySelectorAll('.enhanced-table tbody tr');
+    
+    rows.forEach(row => {
+        const cells = row.querySelectorAll('td');
+        if (cells.length < 7) return;
+        
+        const symbol = cells[1].textContent.trim();
+        const type = cells[2].textContent.trim();
+        const outcome = cells[5].textContent.trim();
+        const risk = cells[3].textContent.trim();
+        
+        let show = true;
+        
+        if (symbolFilter && !symbol.includes(symbolFilter)) show = false;
+        if (typeFilter && !type.includes(typeFilter)) show = false;
+        if (riskFilter && !risk.toLowerCase().includes(riskFilter)) show = false;
+        
+        if (outcomeFilter) {
+            if (outcomeFilter === 'pending' && !outcome.includes('Pending')) show = false;
+            if (outcomeFilter === 'win' && !outcome.includes('Win')) show = false;
+            if (outcomeFilter === 'loss' && !outcome.includes('Loss')) show = false;
+            if (outcomeFilter === 'breakeven' && !outcome.includes('Breakeven')) show = false;
+        }
+        
+        row.style.display = show ? '' : 'none';
+    });
+}
+
+function clearFilters() {
+    document.getElementById('symbolFilter').value = '';
+    document.getElementById('typeFilter').value = '';
+    document.getElementById('outcomeFilter').value = '';
+    document.getElementById('riskFilter').value = '';
+    applyFilters();
+}
+
+function exportSignals() {
+    const rows = document.querySelectorAll('.enhanced-table tbody tr:not([style*="display: none"])');
+    let csvContent = "ID,Symbol,Type,Risk Level,Date,Main Outcome,Risky Play Outcome\n";
+    
+    rows.forEach(row => {
+        const cells = row.querySelectorAll('td');
+        if (cells.length >= 7) {
+            const rowData = [
+                cells[0].textContent.trim(),
+                cells[1].textContent.trim(),
+                cells[2].textContent.trim(),
+                cells[3].textContent.trim(),
+                cells[4].textContent.trim(),
+                cells[5].textContent.trim(),
+                cells[6].textContent.trim()
+            ];
+            csvContent += rowData.map(field => `"${field}"`).join(',') + '\n';
+        }
+    });
+    
+    const blob = new Blob([csvContent], { type: 'text/csv' });
+    const url = window.URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `bfi_signals_export_${new Date().toISOString().slice(0, 10)}.csv`;
+    a.click();
+    window.URL.revokeObjectURL(url);
+    
+    showAlert('Signals exported successfully!', 'success');
+}
+
+// Update outcome functionality
+function updateOutcome(signalId, outcome, type) {
+    if (!outcome) return;
+    
+    const data = {
+        signal_id: signalId,
+        outcome: outcome,
+        type: type
+    };
+    
+    fetch('/api/update_outcome', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(data)
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            showAlert('Outcome updated successfully!', 'success');
+            setTimeout(() => {
+                location.reload();
+            }, 1000);
+        } else {
+            showAlert(data.error || 'Failed to update outcome', 'error');
+        }
+    })
+    .catch(error => {
+        showAlert('Error updating outcome: ' + error.message, 'error');
+    });
+}
+
+// Delete signal functionality
+function deleteSignal(signalId) {
+    if (!confirm('Are you sure you want to delete this signal? This action cannot be undone.')) {
+        return;
+    }
+    
+    fetch(`/api/delete_signal/${signalId}`, {
+        method: 'DELETE'
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            showAlert('Signal deleted successfully!', 'success');
+            setTimeout(() => {
+                location.reload();
+            }, 1000);
+        } else {
+            showAlert(data.error || 'Failed to delete signal', 'error');
+        }
+    })
+    .catch(error => {
+        showAlert('Error deleting signal: ' + error.message, 'error');
+    });
+}
+
+// Alert functionality
+function showAlert(message, type) {
+    const alertDiv = document.createElement('div');
+    alertDiv.className = `alert alert-${type}`;
+    alertDiv.style.cssText = `
+        position: fixed;
+        top: 20px;
+        right: 20px;
+        padding: 15px 25px;
+        border-radius: 10px;
+        color: white;
+        font-weight: 600;
+        z-index: 10000;
+        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+        transition: all 0.3s ease;
+    `;
+    
+    if (type === 'success') {
+        alertDiv.style.background = 'linear-gradient(135deg, #22c55e, #16a34a)';
+    } else {
+        alertDiv.style.background = 'linear-gradient(135deg, #ef4444, #dc2626)';
+    }
+    
+    alertDiv.textContent = message;
+    document.body.appendChild(alertDiv);
+    
+    setTimeout(() => {
+        alertDiv.style.opacity = '0';
+        alertDiv.style.transform = 'translateX(100%)';
+        setTimeout(() => {
+            document.body.removeChild(alertDiv);
+        }, 300);
+    }, 3000);
+}
+
+// Auto-refresh every 5 minutes for new signals
+setInterval(function() {
+    if (document.hidden === false) {
+        location.reload();
+    }
+}, 300000); // 5 minutes
+</script>
+{% endblock %} 

@@ -1,0 +1,1408 @@
+{% extends "base.html" %}
+
+{% block title %}Generate Signals - BFI Signals AI Dashboard{% endblock %}
+
+{% block content %}
+
+<script>
+// JavaScript functions available immediately when page loads
+function showAlert(message, type = 'info') {
+    alert(message);
+}
+
+function showAutoGenerateForm() {
+    console.log('showAutoGenerateForm clicked!');
+    hideAllForms();
+    const form = document.getElementById('autoGenerateForm');
+    if (form) {
+        form.style.display = 'block';
+        form.scrollIntoView({ behavior: 'smooth' });
+    } else {
+        alert('Error: autoGenerateForm not found');
+    }
+}
+
+function showSemiAutoForm() {
+    console.log('showSemiAutoForm clicked!');
+    hideAllForms();
+    const form = document.getElementById('semiAutoForm');
+    if (form) {
+        form.style.display = 'block';
+        form.scrollIntoView({ behavior: 'smooth' });
+    } else {
+        alert('Error: semiAutoForm not found');
+    }
+}
+
+function showManualForm() {
+    console.log('showManualForm clicked!');
+    hideAllForms();
+    const form = document.getElementById('manualForm');
+    if (form) {
+        form.style.display = 'block';
+        form.scrollIntoView({ behavior: 'smooth' });
+    } else {
+        alert('Error: manualForm not found');
+    }
+}
+
+function hideAllForms() {
+    console.log('hideAllForms called');
+    const forms = ['autoGenerateForm', 'semiAutoForm', 'manualForm'];
+    forms.forEach(formId => {
+        const form = document.getElementById(formId);
+        if (form) {
+            form.style.display = 'none';
+        }
+    });
+    hideSignalResult();
+}
+
+function hideSignalResult() {
+    const result = document.getElementById('signalResult');
+    if (result) {
+        result.style.display = 'none';
+    }
+}
+
+async function testDiscordConnection() {
+    try {
+        alert('Testing Discord connection...');
+        
+        const response = await fetch('/api/test_discord_connection', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            }
+        });
+        
+        const data = await response.json();
+        
+        if (data.success) {
+            alert('✅ Discord connection successful! The bot is ready to post signals.');
+        } else {
+            let errorMsg = '❌ Discord connection failed: ' + data.error;
+            if (data.debug) {
+                errorMsg += '\n\nDebug Info:';
+                errorMsg += '\n• .env file exists: ' + data.debug.env_file_exists;
+                errorMsg += '\n• Webhook configured: ' + data.debug.webhook_configured;
+                if (data.debug.webhook_url) {
+                    errorMsg += '\n• Webhook URL: ' + data.debug.webhook_url;
+                }
+            }
+            alert(errorMsg);
+        }
+    } catch (error) {
+        alert('❌ Network error testing Discord: ' + error.message);
+    }
+}
+
+async function handleAutoGenerateSubmit(event) {
+    event.preventDefault();
+    
+    const formData = new FormData(event.target);
+    const symbol = formData.get('symbol');
+    
+    if (!symbol) {
+        alert('Please select a symbol');
+        return;
+    }
+    
+    const submitBtn = event.target.querySelector('button[type="submit"]');
+    const originalText = submitBtn.textContent;
+    
+    try {
+        submitBtn.textContent = '🔄 Generating...';
+        submitBtn.disabled = true;
+        
+        const response = await fetch('/api/auto_generate_signal', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ symbol: symbol })
+        });
+        
+        const data = await response.json();
+        
+        if (data.success) {
+            alert('✅ Signal generated and posted to Discord successfully!');
+            hideAllForms();
+            if (data.discord_posted) {
+                alert('📢 Check your Discord channel for the signal!');
+            }
+        } else {
+            alert('❌ Error: ' + data.error);
+        }
+    } catch (error) {
+        alert('❌ Network error: ' + error.message);
+    } finally {
+        const submitBtn = event.target.querySelector('button[type="submit"]');
+        submitBtn.textContent = originalText;
+        submitBtn.disabled = false;
+    }
+}
+
+// Fetch market data for selected symbol
+async function fetchMarketData() {
+    const symbol = document.getElementById('semiSymbol').value;
+    if (!symbol) {
+        document.getElementById('marketDataDisplay').style.display = 'none';
+        document.getElementById('entryPriceInputs').style.display = 'none';
+        document.getElementById('tpslInputs').style.display = 'none';
+        document.getElementById('advancedOptions').style.display = 'none';
+        return;
+    }
+    
+    try {
+        const response = await fetch('/api/fetch_market_data', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ symbol: symbol })
+        });
+        
+        const data = await response.json();
+        
+        if (data.success) {
+            const marketData = data.market_data;
+            
+            // Update market data display
+            document.getElementById('cvValue').textContent = marketData.current_value.toFixed(2);
+            document.getElementById('prevCloseValue').textContent = marketData.previous_close.toFixed(2);
+            document.getElementById('highValue').textContent = marketData.today_high.toFixed(2);
+            document.getElementById('lowValue').textContent = marketData.today_low.toFixed(2);
+            
+            // Net change with color coding
+            const netChange = marketData.net_change;
+            const netChangeEl = document.getElementById('netChangeValue');
+            netChangeEl.textContent = (netChange >= 0 ? '+' : '') + netChange.toFixed(2);
+            netChangeEl.className = 'data-value ' + (netChange >= 0 ? 'positive' : 'negative');
+            
+            // Signal bias with color coding
+            const biasEl = document.getElementById('biasValue');
+            biasEl.textContent = marketData.bias;
+            biasEl.className = 'data-value ' + (marketData.bias === 'LONG' ? 'positive' : 'negative');
+            
+            // TP value with color coding
+            const tpEl = document.getElementById('tpValue');
+            tpEl.textContent = marketData.tp_value.toFixed(2);
+            tpEl.className = 'data-value ' + (marketData.bias === 'LONG' ? 'positive' : 'negative');
+            
+            // Show market data, TP/SL inputs, and advanced options
+            document.getElementById('marketDataDisplay').style.display = 'block';
+            document.getElementById('entryPriceInputs').style.display = 'block';
+            document.getElementById('tpslInputs').style.display = 'block';
+            document.getElementById('advancedOptions').style.display = 'block';
+            
+        } else {
+            alert('❌ Error fetching market data: ' + data.error);
+        }
+    } catch (error) {
+        alert('❌ Network error: ' + error.message);
+    }
+}
+
+// Set value from dropdown selection
+function setValueFromDropdown(inputId, valueType) {
+    if (!valueType) return;
+    
+    const input = document.getElementById(inputId);
+    let value = 0;
+    
+    switch(valueType) {
+        case 'cv':
+            value = parseFloat(document.getElementById('cvValue').textContent);
+            break;
+        case 'prev_close':
+            value = parseFloat(document.getElementById('prevCloseValue').textContent);
+            break;
+        case 'today_high':
+            value = parseFloat(document.getElementById('highValue').textContent);
+            break;
+        case 'today_low':
+            value = parseFloat(document.getElementById('lowValue').textContent);
+            break;
+        case 'tp_value':
+            value = parseFloat(document.getElementById('tpValue').textContent);
+            break;
+    }
+    
+    if (value > 0) {
+        input.value = value.toFixed(2);
+    }
+    
+    // Reset dropdown
+    document.getElementById(inputId + 'Dropdown').selectedIndex = 0;
+}
+
+// Toggle comments input based on checkbox
+function toggleCommentsInput() {
+    const checkbox = document.getElementById('additionalComments');
+    const commentsDiv = document.getElementById('commentsInput');
+    
+    if (checkbox.checked) {
+        commentsDiv.style.display = 'block';
+    } else {
+        commentsDiv.style.display = 'none';
+    }
+}
+
+// Toggle risky play inputs based on checkbox
+function toggleRiskyPlayInputs() {
+    const checkbox = document.getElementById('includeRiskyPlay');
+    const riskyPlayDiv = document.getElementById('riskyPlayInputs');
+    
+    if (checkbox.checked) {
+        riskyPlayDiv.style.display = 'block';
+    } else {
+        riskyPlayDiv.style.display = 'none';
+    }
+}
+
+// Handle semi-auto form submission
+async function handleSemiAutoSubmit(event) {
+    event.preventDefault();
+    
+    const formData = new FormData(event.target);
+    const symbol = formData.get('symbol');
+    const tp1 = formData.get('tp1');
+    const tp2 = formData.get('tp2');
+    const sl1 = formData.get('sl1');
+    const sl2 = formData.get('sl2');
+    const includeRiskyPlay = document.getElementById('includeRiskyPlay').checked;
+    const additionalComments = document.getElementById('additionalComments').checked;
+    const customComments = document.getElementById('customComments').value;
+    
+    // Get manual risky play values if risky play is enabled
+    let riskyPlayValues = null;
+    if (includeRiskyPlay) {
+        riskyPlayValues = {
+            risky_entry: document.getElementById('riskyEntry').value,
+            risky_tp1: document.getElementById('riskyTP1').value,
+            risky_tp2: document.getElementById('riskyTP2').value,
+            risky_sl: document.getElementById('riskySL').value,
+            risky_strategy: document.getElementById('riskyStrategy').value
+        };
+    }
+    
+    if (!symbol || !tp1 || !tp2 || !sl1 || !sl2) {
+        alert('Please fill in all fields');
+        return;
+    }
+    
+    // Basic validation for TP/SL values
+    const tp1Val = parseFloat(tp1);
+    const tp2Val = parseFloat(tp2);
+    const sl1Val = parseFloat(sl1);
+    const sl2Val = parseFloat(sl2);
+    
+    if (tp1Val <= 0 || tp2Val <= 0 || sl1Val <= 0 || sl2Val <= 0) {
+        alert('All TP/SL values must be positive numbers');
+        return;
+    }
+    
+    const submitBtn = event.target.querySelector('button[type="submit"]');
+    const originalText = submitBtn.textContent;
+    
+    try {
+        submitBtn.textContent = '🔄 Generating...';
+        submitBtn.disabled = true;
+        
+        const response = await fetch('/api/semi_auto_generate_signal', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ 
+                symbol: symbol,
+                tp1: tp1Val,
+                tp2: tp2Val,
+                sl1: sl1Val,
+                sl2: sl2Val,
+                include_risky_play: includeRiskyPlay,
+                additional_comments: additionalComments,
+                custom_comments: customComments,
+                risky_play_values: riskyPlayValues
+            })
+        });
+        
+        const data = await response.json();
+        
+        if (data.success) {
+            alert('✅ Semi-auto signal generated and posted to Discord successfully!');
+            hideAllForms();
+        } else {
+            alert('❌ Error: ' + data.error);
+        }
+    } catch (error) {
+        alert('❌ Network error: ' + error.message);
+    } finally {
+        const submitBtn = event.target.querySelector('button[type="submit"]');
+        submitBtn.textContent = originalText;
+        submitBtn.disabled = false;
+    }
+}
+
+// Handle manual form submission
+async function handleManualSubmit(event) {
+    event.preventDefault();
+    
+    const formData = new FormData(event.target);
+    const symbol = formData.get('symbol');
+    const bias = formData.get('bias');
+    const entryPrice = formData.get('entry_price');
+    const takeProfit = formData.get('take_profit');
+    const stopLoss = formData.get('stop_loss');
+    const confidence = formData.get('confidence');
+    const riskLevel = formData.get('risk_level');
+    
+    // Optional TP2 and TP3
+    const takeProfit2 = formData.get('take_profit_2');
+    const takeProfit3 = formData.get('take_profit_3');
+    
+    if (!symbol || !bias || !entryPrice || !takeProfit || !stopLoss || !confidence || !riskLevel) {
+        alert('Please fill in all required fields');
+        return;
+    }
+    
+    const submitBtn = event.target.querySelector('button[type="submit"]');
+    const originalText = submitBtn.textContent;
+    
+    try {
+        submitBtn.textContent = '🔄 Creating...';
+        submitBtn.disabled = true;
+        
+        const response = await fetch('/api/manual_generate_signal', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+                symbol: symbol,
+                bias: bias,
+                entry_price: parseFloat(entryPrice),
+                take_profit: parseFloat(takeProfit),
+                take_profit_2: takeProfit2 ? parseFloat(takeProfit2) : null,
+                take_profit_3: takeProfit3 ? parseFloat(takeProfit3) : null,
+                stop_loss: parseFloat(stopLoss),
+                confidence: parseInt(confidence),
+                risk_level: riskLevel
+            })
+        });
+        
+        const data = await response.json();
+        
+        if (data.success) {
+            alert('✅ Manual signal created and posted to Discord successfully!');
+            hideAllForms();
+        } else {
+            alert('❌ Error: ' + data.error);
+        }
+    } catch (error) {
+        alert('❌ Network error: ' + error.message);
+    } finally {
+        submitBtn.textContent = originalText;
+        submitBtn.disabled = false;
+    }
+}
+
+// Update confidence value display
+function updateConfidenceValue(value) {
+    const confidenceValueSpan = document.getElementById('confidenceValue');
+    if (confidenceValueSpan) {
+        confidenceValueSpan.textContent = value + '%';
+    }
+}
+
+// Initialize form handlers when page loads
+document.addEventListener('DOMContentLoaded', function() {
+    console.log('Generate Signals page loaded and ready');
+    
+    const autoForm = document.getElementById('autoForm');
+    if (autoForm) {
+        autoForm.addEventListener('submit', handleAutoGenerateSubmit);
+    }
+    
+    const semiAutoForm = document.getElementById('semiAutoFormData');
+    if (semiAutoForm) {
+        semiAutoForm.addEventListener('submit', handleSemiAutoSubmit);
+    }
+
+    const manualForm = document.getElementById('manualFormData');
+    if (manualForm) {
+        manualForm.addEventListener('submit', handleManualSubmit);
+    }
+    
+    // Add event listener for comments checkbox
+    const commentsCheckbox = document.getElementById('additionalComments');
+    if (commentsCheckbox) {
+        commentsCheckbox.addEventListener('change', toggleCommentsInput);
+    }
+    
+    // Add event listener for risky play checkbox
+    const riskyPlayCheckbox = document.getElementById('includeRiskyPlay');
+    if (riskyPlayCheckbox) {
+        riskyPlayCheckbox.addEventListener('change', toggleRiskyPlayInputs);
+    }
+});
+</script>
+
+<div class="card">
+    <h2>🎯 Generate Trading Signals</h2>
+    <p>Create trading signals for US30 and NAS100 using our advanced signal generation methods</p>
+    
+    <!-- Discord Integration Info -->
+    <div style="margin-top: 15px; text-align: center; padding: 15px; background: linear-gradient(135deg, #2d2d2d 0%, #1a1a1a 100%); border: 1px solid #d4af37; border-radius: 10px;">
+        <h4 style="color: #d4af37; margin-bottom: 10px;">🚀 Discord Integration Active</h4>
+        <p style="color: #cccccc; margin: 10px 0; font-size: 0.9rem;">Auto Generate will post signals directly to your Discord channel using the BFI Signals bot.</p>
+        <button onclick="testDiscordConnection()" style="margin: 5px; padding: 8px 15px; background: linear-gradient(135deg, #5865F2, #4752C4); color: white; border: none; border-radius: 5px; cursor: pointer; font-weight: bold;">
+            🔧 Test Discord Connection
+        </button>
+    </div>
+    
+
+</div>
+
+<!-- Signal Generation Options -->
+<div class="card">
+    <h2>🚀 Signal Generation Methods</h2>
+    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(350px, 1fr)); gap: 25px; margin-top: 20px;">
+        
+        <!-- Auto Generate Signal -->
+        <div class="signal-method-card" id="autoGenerateCard">
+            <div class="method-header">
+                <span class="method-icon">🤖</span>
+                <h3>Auto Generate Signal</h3>
+            </div>
+            <p>Automatically generate signals using our Hybrid Math strategy and live market data feeds</p>
+            <div class="method-features">
+                <span class="feature-tag">✨ Hybrid Math Strategy</span>
+                <span class="feature-tag">📊 Live Data Feed</span>
+                <span class="feature-tag">🔮 AI Confidence</span>
+            </div>
+            <button class="generate-btn" onclick="showAutoGenerateForm();">🚀 Auto Generate & Post to Discord</button>
+        </div>
+
+        <!-- Semi-Auto Generate Signal -->
+        <div class="signal-method-card" id="semiAutoCard">
+            <div class="method-header">
+                <span class="method-icon">⚡</span>
+                <h3>Semi-Auto Generate</h3>
+            </div>
+            <p>Use market data analysis but set your own Take Profit and Stop Loss levels manually</p>
+            <div class="method-features">
+                <span class="feature-tag">📈 Market Analysis</span>
+                <span class="feature-tag">🎯 Custom TP/SL</span>
+                <span class="feature-tag">🛡️ Risk Control</span>
+            </div>
+            <button class="generate-btn" onclick="showSemiAutoForm();">Generate Semi-Auto</button>
+        </div>
+
+        <!-- Manual Generate Signal -->
+        <div class="signal-method-card" id="manualCard">
+            <div class="method-header">
+                <span class="method-icon">✋</span>
+                <h3>Manual Signal</h3>
+            </div>
+            <p>Create completely custom signals with your own analysis and parameters</p>
+            <div class="method-features">
+                <span class="feature-tag">🎨 Full Control</span>
+                <span class="feature-tag">📝 Custom Analysis</span>
+                <span class="feature-tag">⚙️ All Parameters</span>
+            </div>
+            <button class="generate-btn" onclick="showManualForm();">Create Manual Signal</button>
+        </div>
+    </div>
+</div>
+
+<!-- Auto Generate Form -->
+<div class="card form-card" id="autoGenerateForm" style="display: none;">
+    <h2>🤖 Auto Generate Signal</h2>
+    <form id="autoForm">
+        <div class="form-group">
+            <label for="autoSymbol">Select Symbol:</label>
+            <select id="autoSymbol" name="symbol" required>
+                <option value="">Choose symbol...</option>
+                <option value="US30">US30 (Dow Jones Industrial Average)</option>
+                <option value="NAS100">NAS100 (NASDAQ-100)</option>
+            </select>
+        </div>
+        
+
+        
+        <div class="form-actions">
+            <button type="submit" class="btn btn-primary">🚀 Generate Signal</button>
+            <button type="button" class="btn btn-secondary" onclick="hideAllForms()">Cancel</button>
+        </div>
+    </form>
+</div>
+
+<!-- Semi-Auto Generate Form -->
+<div class="card form-card" id="semiAutoForm" style="display: none;">
+    <h2>⚡ Semi-Auto Generate Signal</h2>
+    <form id="semiAutoFormData">
+        <div class="form-group">
+            <label for="semiSymbol">Select Symbol:</label>
+            <select id="semiSymbol" name="symbol" required onchange="fetchMarketData()">
+                <option value="">Choose symbol...</option>
+                <option value="US30">US30 (Dow Jones Industrial Average)</option>
+                <option value="NAS100">NAS100 (NASDAQ-100)</option>
+            </select>
+        </div>
+        
+        <!-- Market Data Display -->
+        <div id="marketDataDisplay" style="display: none; margin: 20px 0; padding: 20px; background: linear-gradient(135deg, #1a2332 0%, #0f1419 100%); border: 1px solid #d4af37; border-radius: 10px;">
+            <h3 style="color: #d4af37; margin-bottom: 15px;">📊 Live Market Data</h3>
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 15px;">
+                <div class="market-data-item">
+                    <div class="data-label">Current Value (CV)</div>
+                    <div class="data-value" id="cvValue">-</div>
+                </div>
+                <div class="market-data-item">
+                    <div class="data-label">Previous Close</div>
+                    <div class="data-value" id="prevCloseValue">-</div>
+                </div>
+                <div class="market-data-item">
+                    <div class="data-label">Today's High</div>
+                    <div class="data-value" id="highValue">-</div>
+                </div>
+                <div class="market-data-item">
+                    <div class="data-label">Today's Low</div>
+                    <div class="data-value" id="lowValue">-</div>
+                </div>
+                <div class="market-data-item">
+                    <div class="data-label">Net Change</div>
+                    <div class="data-value" id="netChangeValue">-</div>
+                </div>
+                <div class="market-data-item">
+                    <div class="data-label">Signal Bias</div>
+                    <div class="data-value" id="biasValue">-</div>
+                </div>
+                <div class="market-data-item">
+                    <div class="data-label">TP Value</div>
+                    <div class="data-value" id="tpValue">-</div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Entry Price Input -->
+        <div id="entryPriceInputs" style="display: none;">
+            <h3 style="color: #d4af37; margin-bottom: 15px;">🎯 Entry Price</h3>
+            <div class="form-row">
+                <div class="form-group">
+                    <label for="entryPrice">Entry Price:</label>
+                    <div class="input-with-dropdown">
+                        <input type="number" id="entryPrice" name="entry_price" step="0.01" required placeholder="e.g., 44450.00">
+                        <select id="entryPriceDropdown" class="value-dropdown" onchange="setValueFromDropdown('entryPrice', this.value)">
+                            <option value="">Quick Fill</option>
+                            <option value="cv">Current Value</option>
+                            <option value="prev_close">Previous Close</option>
+                            <option value="today_high">Today's High</option>
+                            <option value="today_low">Today's Low</option>
+                            <option value="tp_value">TP Value</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Manual TP/SL Input -->
+        <div id="tpslInputs" style="display: none;">
+            <h3 style="color: #d4af37; margin-bottom: 15px;">🎯 Manual Take Profit & Stop Loss</h3>
+            <div class="form-row">
+                <div class="form-group">
+                    <label for="tp1">Take Profit 1:</label>
+                    <div class="input-with-dropdown">
+                        <input type="number" id="tp1" name="tp1" step="0.01" required placeholder="e.g., 35000.50">
+                        <select id="tp1Dropdown" class="value-dropdown" onchange="setValueFromDropdown('tp1', this.value)">
+                            <option value="">Quick Fill</option>
+                            <option value="cv">Current Value</option>
+                            <option value="prev_close">Previous Close</option>
+                            <option value="today_high">Today's High</option>
+                            <option value="today_low">Today's Low</option>
+                            <option value="tp_value">TP Value</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label for="tp2">Take Profit 2:</label>
+                    <div class="input-with-dropdown">
+                        <input type="number" id="tp2" name="tp2" step="0.01" required placeholder="e.g., 35100.75">
+                        <select id="tp2Dropdown" class="value-dropdown" onchange="setValueFromDropdown('tp2', this.value)">
+                            <option value="">Quick Fill</option>
+                            <option value="cv">Current Value</option>
+                            <option value="prev_close">Previous Close</option>
+                            <option value="today_high">Today's High</option>
+                            <option value="today_low">Today's Low</option>
+                            <option value="tp_value">TP Value</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+            <div class="form-row">
+                <div class="form-group">
+                    <label for="sl1">Stop Loss 1 (Tight):</label>
+                    <div class="input-with-dropdown">
+                        <input type="number" id="sl1" name="sl1" step="0.01" required placeholder="e.g., 34800.25">
+                        <select id="sl1Dropdown" class="value-dropdown" onchange="setValueFromDropdown('sl1', this.value)">
+                            <option value="">Quick Fill</option>
+                            <option value="cv">Current Value</option>
+                            <option value="prev_close">Previous Close</option>
+                            <option value="today_high">Today's High</option>
+                            <option value="today_low">Today's Low</option>
+                            <option value="tp_value">TP Value</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label for="sl2">Stop Loss 2 (Wide):</label>
+                    <div class="input-with-dropdown">
+                        <input type="number" id="sl2" name="sl2" step="0.01" required placeholder="e.g., 34750.00">
+                        <select id="sl2Dropdown" class="value-dropdown" onchange="setValueFromDropdown('sl2', this.value)">
+                            <option value="">Quick Fill</option>
+                            <option value="cv">Current Value</option>
+                            <option value="prev_close">Previous Close</option>
+                            <option value="today_high">Today's High</option>
+                            <option value="today_low">Today's Low</option>
+                            <option value="tp_value">TP Value</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Advanced Options -->
+        <div id="advancedOptions" style="display: none;">
+            <h3 style="color: #d4af37; margin-bottom: 15px;">⚙️ Advanced Options</h3>
+            <div class="form-row">
+                <div class="form-group">
+                    <label for="includeRiskyPlay">Include Risky Play Section:</label>
+                    <div class="toggle-switch">
+                        <input type="checkbox" id="includeRiskyPlay" name="include_risky_play" onchange="toggleRiskyPlayInputs()">
+                        <label for="includeRiskyPlay" class="toggle-label">
+                            <span class="toggle-inner"></span>
+                            <span class="toggle-switch-element"></span>
+                        </label>
+                        <span class="toggle-description">Enable risky play strategies in the signal</span>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Manual Risky Play Inputs -->
+            <div id="riskyPlayInputs" style="display: none; margin-top: 20px;">
+                <h4 style="color: #d4af37; margin-bottom: 15px;">🎯 Manual Risky Play Settings</h4>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="riskyEntry">Risky Entry Price:</label>
+                        <div class="input-with-dropdown">
+                            <input type="number" id="riskyEntry" name="risky_entry" step="0.01" placeholder="e.g., 44420.00">
+                            <select id="riskyEntryDropdown" class="value-dropdown" onchange="setValueFromDropdown('riskyEntry', this.value)">
+                                <option value="">Quick Fill</option>
+                                <option value="cv">Current Value</option>
+                                <option value="prev_close">Previous Close</option>
+                                <option value="today_high">Today's High</option>
+                                <option value="today_low">Today's Low</option>
+                                <option value="tp_value">TP Value</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label for="riskyTP1">Risky TP1:</label>
+                        <div class="input-with-dropdown">
+                            <input type="number" id="riskyTP1" name="risky_tp1" step="0.01" placeholder="e.g., 44500.00">
+                            <select id="riskyTP1Dropdown" class="value-dropdown" onchange="setValueFromDropdown('riskyTP1', this.value)">
+                                <option value="">Quick Fill</option>
+                                <option value="cv">Current Value</option>
+                                <option value="prev_close">Previous Close</option>
+                                <option value="today_high">Today's High</option>
+                                <option value="today_low">Today's Low</option>
+                                <option value="tp_value">TP Value</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="riskyTP2">Risky TP2:</label>
+                        <div class="input-with-dropdown">
+                            <input type="number" id="riskyTP2" name="risky_tp2" step="0.01" placeholder="e.g., 44550.00">
+                            <select id="riskyTP2Dropdown" class="value-dropdown" onchange="setValueFromDropdown('riskyTP2', this.value)">
+                                <option value="">Quick Fill</option>
+                                <option value="cv">Current Value</option>
+                                <option value="prev_close">Previous Close</option>
+                                <option value="today_high">Today's High</option>
+                                <option value="today_low">Today's Low</option>
+                                <option value="tp_value">TP Value</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label for="riskySL">Risky Stop Loss:</label>
+                        <div class="input-with-dropdown">
+                            <input type="number" id="riskySL" name="risky_sl" step="0.01" placeholder="e.g., 44300.00">
+                            <select id="riskySLDropdown" class="value-dropdown" onchange="setValueFromDropdown('riskySL', this.value)">
+                                <option value="">Quick Fill</option>
+                                <option value="cv">Current Value</option>
+                                <option value="prev_close">Previous Close</option>
+                                <option value="today_high">Today's High</option>
+                                <option value="today_low">Today's Low</option>
+                                <option value="tp_value">TP Value</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label for="riskyStrategy">Risky Play Strategy Description:</label>
+                    <textarea id="riskyStrategy" name="risky_strategy" rows="2" placeholder="e.g., Buy from CV targeting Daily High with tight SL" style="width: 100%; padding: 12px; border: 2px solid rgba(212, 175, 55, 0.3); border-radius: 8px; background: rgba(45, 45, 45, 0.8); color: #ffffff; font-family: inherit; resize: vertical;"></textarea>
+                </div>
+            </div>
+            
+            <div class="form-row">
+                <div class="form-group">
+                    <label for="additionalComments">Additional Comments:</label>
+                    <div class="toggle-switch">
+                        <input type="checkbox" id="additionalComments" name="additional_comments">
+                        <label for="additionalComments" class="toggle-label">
+                            <span class="toggle-inner"></span>
+                            <span class="toggle-switch-element"></span>
+                        </label>
+                        <span class="toggle-description">Add extra analysis comments</span>
+                    </div>
+                </div>
+            </div>
+            <div id="commentsInput" style="display: none; margin-top: 15px;">
+                <label for="customComments">Custom Comments:</label>
+                <textarea id="customComments" name="custom_comments" rows="3" placeholder="Add any additional analysis or notes..." style="width: 100%; padding: 12px; border: 2px solid rgba(212, 175, 55, 0.3); border-radius: 8px; background: rgba(45, 45, 45, 0.8); color: #ffffff; font-family: inherit; resize: vertical;"></textarea>
+            </div>
+        </div>
+        
+
+        
+        <div class="form-actions">
+            <button type="submit" class="btn btn-primary">⚡ Generate Semi-Auto Signal</button>
+            <button type="button" class="btn btn-secondary" onclick="hideAllForms()">Cancel</button>
+        </div>
+    </form>
+</div>
+
+<!-- Manual Generate Form -->
+<div class="card form-card" id="manualForm" style="display: none;">
+    <h2>✋ Manual Signal Creation</h2>
+    <form id="manualFormData">
+        <div class="form-row">
+            <div class="form-group">
+                <label for="manualSymbol">Select Symbol:</label>
+                <select id="manualSymbol" name="symbol" required>
+                    <option value="">Choose symbol...</option>
+                    <option value="US30">US30 (Dow Jones Industrial Average)</option>
+                    <option value="NAS100">NAS100 (NASDAQ-100)</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label for="manualBias">Signal Direction:</label>
+                <select id="manualBias" name="bias" required>
+                    <option value="">Choose direction...</option>
+                    <option value="LONG">LONG (Buy)</option>
+                    <option value="SHORT">SHORT (Sell)</option>
+                </select>
+            </div>
+        </div>
+        
+        <div class="form-row">
+            <div class="form-group">
+                <label for="manualEntryPrice">Entry Price:</label>
+                <input type="number" id="manualEntryPrice" name="entry_price" step="0.01" required placeholder="e.g., 34950.00">
+            </div>
+            <div class="form-group">
+                <label for="takeProfit">Take Profit 1:</label>
+                <input type="number" id="takeProfit" name="take_profit" step="0.01" required placeholder="e.g., 35100.00">
+            </div>
+        </div>
+        
+        <div class="form-row">
+            <div class="form-group">
+                <label for="takeProfit2">Take Profit 2 (Optional):</label>
+                <input type="number" id="takeProfit2" name="take_profit_2" step="0.01" placeholder="e.g., 35200.00">
+            </div>
+            <div class="form-group">
+                <label for="takeProfit3">Take Profit 3 (Optional):</label>
+                <input type="number" id="takeProfit3" name="take_profit_3" step="0.01" placeholder="e.g., 35300.00">
+            </div>
+        </div>
+        
+        <div class="form-row">
+            <div class="form-group">
+                <label for="stopLoss">Stop Loss:</label>
+                <input type="number" id="stopLoss" name="stop_loss" step="0.01" required placeholder="e.g., 34800.00">
+            </div>
+            <div class="form-group">
+                <label for="confidence">Confidence (%):</label>
+                <input type="range" id="confidence" name="confidence" min="1" max="100" value="50" oninput="updateConfidenceValue(this.value)" class="golden-slider">
+                <span id="confidenceValue">50%</span>
+            </div>
+        </div>
+        
+        <div class="form-group">
+            <label for="riskLevel">Risk Level:</label>
+            <select id="riskLevel" name="risk_level" required>
+                <option value="low">🟢 Low Risk</option>
+                <option value="medium" selected>🟡 Medium Risk</option>
+                <option value="high">🟠 High Risk</option>
+                <option value="extreme">🔴 Extreme Risk</option>
+            </select>
+        </div>
+        
+        <div class="form-actions">
+            <button type="submit" class="btn btn-primary">✋ Create Manual Signal</button>
+            <button type="button" class="btn btn-secondary" onclick="hideAllForms()">Cancel</button>
+        </div>
+    </form>
+</div>
+
+<!-- Signal Result Display -->
+<div class="card" id="signalResult" style="display: none;">
+    <h2>🎯 Generated Signal</h2>
+    <div id="signalOutput"></div>
+    <div class="form-actions" style="margin-top: 20px;">
+        <button class="btn btn-primary" onclick="viewAllSignals()">📊 View All Signals</button>
+        <button class="btn btn-secondary" onclick="hideSignalResult()">Generate Another</button>
+    </div>
+</div>
+
+<style>
+/* Signal Generation Styles */
+.signal-method-card {
+    background: linear-gradient(135deg, #2d2d2d 0%, #1a1a1a 100%);
+    border: 2px solid rgba(212, 175, 55, 0.3);
+    border-radius: 20px;
+    padding: 25px;
+    text-align: center;
+    transition: all 0.4s ease;
+    backdrop-filter: blur(15px);
+    position: relative;
+    overflow: hidden;
+    box-shadow: 
+        0 8px 32px rgba(0, 0, 0, 0.4),
+        0 4px 16px rgba(212, 175, 55, 0.1);
+}
+
+.signal-method-card:hover {
+    border-color: #d4af37;
+    transform: translateY(-5px);
+    box-shadow: 
+        0 12px 40px rgba(212, 175, 55, 0.3),
+        0 8px 25px rgba(0, 0, 0, 0.5);
+}
+
+.method-header {
+    margin-bottom: 15px;
+}
+
+.method-icon {
+    font-size: 3rem;
+    display: block;
+    margin-bottom: 10px;
+}
+
+.method-header h3 {
+    color: #d4af37;
+    font-size: 1.3rem;
+    margin: 0;
+    font-weight: 700;
+}
+
+.signal-method-card p {
+    color: #cccccc;
+    margin: 15px 0;
+    line-height: 1.5;
+}
+
+.method-features {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    justify-content: center;
+    margin: 20px 0;
+}
+
+.feature-tag {
+    background: linear-gradient(135deg, rgba(212, 175, 55, 0.2), rgba(244, 233, 113, 0.1));
+    color: #d4af37;
+    padding: 5px 12px;
+    border-radius: 20px;
+    font-size: 0.85rem;
+    font-weight: 600;
+    border: 1px solid rgba(212, 175, 55, 0.3);
+}
+
+.generate-btn {
+    background: linear-gradient(135deg, #d4af37, #f4e971);
+    color: #000000;
+    border: none;
+    padding: 12px 25px;
+    border-radius: 25px;
+    font-weight: 700;
+    font-size: 1rem;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    margin-top: 15px;
+    box-shadow: 0 4px 15px rgba(212, 175, 55, 0.3);
+}
+
+.generate-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 25px rgba(212, 175, 55, 0.4);
+}
+
+.form-card {
+    animation: fadeInUp 0.5s ease-out;
+}
+
+.form-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 20px;
+}
+
+.form-group {
+    margin-bottom: 20px;
+}
+
+.form-group label {
+    display: block;
+    color: #d4af37;
+    font-weight: 600;
+    margin-bottom: 8px;
+}
+
+.form-group select,
+.form-group input {
+    width: 100%;
+    padding: 12px 15px;
+    border: 2px solid rgba(212, 175, 55, 0.3);
+    border-radius: 8px;
+    background: rgba(45, 45, 45, 0.8);
+    color: #ffffff;
+    font-size: 1rem;
+    transition: all 0.3s ease;
+}
+
+.form-group select:focus,
+.form-group input:focus {
+    outline: none;
+    border-color: #d4af37;
+    box-shadow: 0 0 10px rgba(212, 175, 55, 0.3);
+}
+
+.form-group input[type="range"] {
+    padding: 5px 0;
+}
+
+#confidenceValue {
+    color: #d4af37;
+    font-weight: 700;
+    margin-left: 10px;
+}
+
+.form-actions {
+    display: flex;
+    gap: 15px;
+    justify-content: center;
+    margin-top: 25px;
+}
+
+@keyframes fadeInUp {
+    from {
+        opacity: 0;
+        transform: translateY(30px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* Signal Result Styles */
+.signal-display {
+    background: linear-gradient(135deg, #1a2332 0%, #0f1419 100%);
+    border: 2px solid #d4af37;
+    border-radius: 15px;
+    padding: 25px;
+    margin: 15px 0;
+}
+
+.signal-header {
+    text-align: center;
+    margin-bottom: 20px;
+}
+
+.signal-title {
+    color: #d4af37;
+    font-size: 1.5rem;
+    font-weight: 700;
+    margin: 0;
+}
+
+.signal-subtitle {
+    color: #cccccc;
+    margin: 5px 0 0 0;
+}
+
+.signal-details {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 15px;
+    margin-top: 20px;
+}
+
+.signal-item {
+    background: rgba(45, 45, 45, 0.5);
+    padding: 15px;
+    border-radius: 10px;
+    text-align: center;
+}
+
+.signal-label {
+    color: #d4af37;
+    font-size: 0.9rem;
+    font-weight: 600;
+    margin-bottom: 5px;
+}
+
+.signal-value {
+    color: #ffffff;
+    font-size: 1.1rem;
+    font-weight: 700;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+    .form-row {
+        grid-template-columns: 1fr;
+        gap: 15px;
+    }
+    
+    .signal-details {
+        grid-template-columns: 1fr;
+    }
+    
+    .method-features {
+        flex-direction: column;
+        align-items: center;
+    }
+    
+    .input-with-dropdown {
+        flex-direction: column;
+        align-items: stretch;
+        gap: 10px;
+    }
+    
+    .value-dropdown {
+        width: 100%;
+        max-width: none;
+    }
+}
+
+/* Market Data Display Styles */
+.market-data-item {
+    background: rgba(45, 45, 45, 0.5);
+    padding: 15px;
+    border-radius: 8px;
+    text-align: center;
+    border: 1px solid rgba(212, 175, 55, 0.3);
+}
+
+.data-label {
+    color: #d4af37;
+    font-size: 0.9rem;
+    font-weight: 600;
+    margin-bottom: 8px;
+}
+
+.data-value {
+    color: #ffffff;
+    font-size: 1.2rem;
+    font-weight: 700;
+}
+
+.data-value.positive {
+    color: #22c55e;
+}
+
+.data-value.negative {
+    color: #ef4444;
+}
+
+/* Input with dropdown styles */
+.input-with-dropdown {
+    display: flex;
+    gap: 8px;
+    align-items: stretch;
+    width: 100%;
+}
+
+.input-with-dropdown input {
+    flex: 1;
+    min-width: 0;
+    width: auto;
+}
+
+.value-dropdown {
+    width: auto;
+    min-width: 120px;
+    max-width: 140px;
+    padding: 8px 12px;
+    font-size: 0.9rem;
+    border: 2px solid rgba(212, 175, 55, 0.3);
+    border-radius: 6px;
+    background: rgba(45, 45, 45, 0.8);
+    color: #ffffff;
+    cursor: pointer;
+    flex-shrink: 0;
+}
+
+.value-dropdown:hover {
+    border-color: rgba(212, 175, 55, 0.5);
+}
+
+.value-dropdown:focus {
+    outline: none;
+    border-color: #d4af37;
+    box-shadow: 0 0 8px rgba(212, 175, 55, 0.3);
+}
+
+/* Toggle switch styles */
+.toggle-switch {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+    margin-top: 8px;
+}
+
+.toggle-switch input[type="checkbox"] {
+    display: none;
+}
+
+.toggle-label {
+    position: relative;
+    display: inline-block;
+    width: 60px;
+    height: 34px;
+    cursor: pointer;
+}
+
+.toggle-inner {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: linear-gradient(135deg, #444444, #2d2d2d);
+    border: 2px solid rgba(212, 175, 55, 0.3);
+    border-radius: 17px;
+    transition: all 0.3s ease;
+}
+
+.toggle-switch-element {
+    position: absolute;
+    top: 2px;
+    left: 2px;
+    width: 26px;
+    height: 26px;
+    background: linear-gradient(135deg, #cccccc, #999999);
+    border-radius: 50%;
+    transition: all 0.3s ease;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+}
+
+.toggle-switch input[type="checkbox"]:checked + .toggle-label .toggle-inner {
+    background: linear-gradient(135deg, #d4af37, #f4e971);
+    border-color: #d4af37;
+}
+
+.toggle-switch input[type="checkbox"]:checked + .toggle-label .toggle-switch-element {
+    transform: translateX(26px);
+    background: linear-gradient(135deg, #ffffff, #f0f0f0);
+}
+
+.toggle-description {
+    color: #cccccc;
+    font-size: 0.9rem;
+    font-weight: 500;
+}
+
+/* Advanced options section */
+#advancedOptions {
+    margin-top: 25px;
+    padding: 20px;
+    background: linear-gradient(135deg, rgba(45, 45, 45, 0.3), rgba(26, 26, 26, 0.3));
+    border: 1px solid rgba(212, 175, 55, 0.2);
+    border-radius: 10px;
+}
+
+#commentsInput {
+    margin-top: 15px;
+    padding: 15px;
+    background: rgba(45, 45, 45, 0.2);
+    border-radius: 8px;
+    border: 1px solid rgba(212, 175, 55, 0.1);
+}
+
+#commentsInput label {
+    color: #d4af37;
+    font-weight: 600;
+    margin-bottom: 8px;
+    display: block;
+}
+
+#commentsInput textarea {
+    width: 100%;
+    padding: 12px;
+    border: 2px solid rgba(212, 175, 55, 0.3);
+    border-radius: 8px;
+    background: rgba(45, 45, 45, 0.8);
+    color: #ffffff;
+    font-family: inherit;
+    resize: vertical;
+    min-height: 80px;
+}
+
+#commentsInput textarea:focus {
+    outline: none;
+    border-color: #d4af37;
+    box-shadow: 0 0 10px rgba(212, 175, 55, 0.3);
+}
+
+#commentsInput textarea::placeholder {
+    color: rgba(204, 204, 204, 0.6);
+    font-style: italic;
+}
+
+/* Risky play inputs section */
+#riskyPlayInputs {
+    margin-top: 20px;
+    padding: 20px;
+    background: linear-gradient(135deg, rgba(212, 175, 55, 0.1), rgba(244, 233, 113, 0.05));
+    border: 1px solid rgba(212, 175, 55, 0.3);
+    border-radius: 10px;
+}
+
+#riskyPlayInputs h4 {
+    color: #d4af37;
+    margin-bottom: 15px;
+    font-size: 1.1rem;
+    font-weight: 600;
+}
+
+#riskyPlayInputs .form-group label {
+    color: #d4af37;
+    font-weight: 600;
+    margin-bottom: 8px;
+}
+
+#riskyPlayInputs textarea {
+    width: 100%;
+    padding: 12px;
+    border: 2px solid rgba(212, 175, 55, 0.3);
+    border-radius: 8px;
+    background: rgba(45, 45, 45, 0.8);
+    color: #ffffff;
+    font-family: inherit;
+    resize: vertical;
+    min-height: 60px;
+}
+
+#riskyPlayInputs textarea:focus {
+    outline: none;
+    border-color: #d4af37;
+    box-shadow: 0 0 10px rgba(212, 175, 55, 0.3);
+}
+
+#riskyPlayInputs textarea::placeholder {
+    color: rgba(204, 204, 204, 0.6);
+    font-style: italic;
+}
+
+/* Golden Slider Styles */
+.golden-slider {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 100%;
+    height: 8px;
+    background: linear-gradient(90deg, #2d2d2d 0%, #d4af37 100%);
+    outline: none;
+    border-radius: 10px;
+    margin: 10px 0;
+    box-shadow: 0 0 5px rgba(212, 175, 55, 0.5);
+}
+
+.golden-slider::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 20px;
+    height: 20px;
+    background: linear-gradient(45deg, #d4af37, #ffd700);
+    cursor: pointer;
+    border-radius: 50%;
+    box-shadow: 0 0 10px rgba(212, 175, 55, 0.7);
+    border: 2px solid #d4af37;
+}
+
+.golden-slider::-moz-range-thumb {
+    width: 20px;
+    height: 20px;
+    background: linear-gradient(45deg, #d4af37, #ffd700);
+    cursor: pointer;
+    border-radius: 50%;
+    box-shadow: 0 0 10px rgba(212, 175, 55, 0.7);
+    border: 2px solid #d4af37;
+}
+
+.golden-slider::-webkit-slider-track {
+    background: linear-gradient(90deg, #2d2d2d 0%, #d4af37 100%);
+    height: 8px;
+    border-radius: 10px;
+}
+
+.golden-slider::-moz-range-track {
+    background: linear-gradient(90deg, #2d2d2d 0%, #d4af37 100%);
+    height: 8px;
+    border-radius: 10px;
+}
+
+/* Data Quality Slider Styles */
+input[type="range"] {
+    -webkit-appearance: none;
+    appearance: none;
+    background: transparent;
+    cursor: pointer;
+}
+
+input[type="range"]::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 18px;
+    height: 18px;
+    background: linear-gradient(45deg, #ffa500, #ff8c00);
+    border-radius: 50%;
+    box-shadow: 0 0 8px rgba(255, 165, 0, 0.6);
+    border: 2px solid #ffa500;
+}
+
+input[type="range"]::-moz-range-thumb {
+    width: 18px;
+    height: 18px;
+    background: linear-gradient(45deg, #ffa500, #ff8c00);
+    border-radius: 50%;
+    box-shadow: 0 0 8px rgba(255, 165, 0, 0.6);
+    border: 2px solid #ffa500;
+}
+</style>
+
+<script>
+
+</script>
+
+{% endblock %} 

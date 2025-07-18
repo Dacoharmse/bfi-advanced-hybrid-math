@@ -1,0 +1,15 @@
+{
+  "action": "update_bfi_levels",
+  "symbol": "^DJI",
+  "timestamp": "2025-07-16T08:13:12.725009",
+  "data": {
+    "cv": 44023.29,
+    "prv": 44459.65,
+    "high": 44504.27,
+    "low": 44002.39,
+    "tp": 43586.93,
+    "bias": "SHORT",
+    "net_change": -436.36,
+    "change_pct": -0.98
+  }
+}

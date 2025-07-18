@@ -1,0 +1,17 @@
+// BFI Signals Data - Generated 2025-07-16 22:11:43
+// Symbol: US30
+// Bias: LONG (0.53%)
+
+bfi_cv = 44254.78              // Current Value
+bfi_prv = 44023.29            // Previous Close
+bfi_keylevel_high = 44260.19      // Daily High
+bfi_keylevel_low = 43758.98        // Daily Low  
+bfi_tp = 44486.27                // Take Profit
+bfi_entry1 = 43758.98                 // Primary Entry
+bfi_entry2 = 44254.78                 // Secondary Entry
+bfi_sl_tight = 43658.98             // Tight Stop Loss
+bfi_sl_wide = 43558.98               // Wide Stop Loss
+
+bfi_bias_long = true
+bfi_net_change = 231.49
+bfi_change_pct = 0.53

@@ -1,0 +1,16 @@
+yfinance>=0.2.18
+requests>=2.31.0
+python-dotenv>=1.0.0
+beautifulsoup4>=4.12.0
+pandas>=2.0.0
+feedparser>=6.0.0 
+# AI Dependencies
+google-genai>=0.8.0
+flask>=3.0.0
+
+# Optional Local AI Models (uncomment to enable local AI processing)
+# transformers>=4.30.0
+# torch>=2.0.0
+# sentencepiece>=0.1.99
+# To enable local AI models, run: pip install transformers torch sentencepiece
+# For GPU support, run: pip install transformers[torch] 

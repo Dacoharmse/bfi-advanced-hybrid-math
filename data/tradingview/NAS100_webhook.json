@@ -1,0 +1,15 @@
+{
+  "action": "update_bfi_levels",
+  "symbol": "NAS100",
+  "timestamp": "2025-07-16T22:16:19.538232",
+  "data": {
+    "cv": 22907.97,
+    "prv": 22884.59,
+    "high": 22928.55,
+    "low": 22669.37,
+    "tp": 22931.34,
+    "bias": "LONG",
+    "net_change": 23.38,
+    "change_pct": 0.1
+  }
+}

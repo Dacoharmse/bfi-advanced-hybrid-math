@@ -1,0 +1,17 @@
+// BFI Signals Data - Generated 2025-07-18 06:45:33
+// Symbol: NAS100
+// Bias: LONG (0.76%)
+
+bfi_cv = 23081.05              // Current Value
+bfi_prv = 22907.97            // Previous Close
+bfi_keylevel_high = 23104.72      // Daily High
+bfi_keylevel_low = 22905.51        // Daily Low  
+bfi_tp = 23254.12                // Take Profit
+bfi_entry1 = 22905.51                 // Primary Entry
+bfi_entry2 = 23081.05                 // Secondary Entry
+bfi_sl_tight = 22805.51             // Tight Stop Loss
+bfi_sl_wide = 22705.51               // Wide Stop Loss
+
+bfi_bias_long = true
+bfi_net_change = 173.08
+bfi_change_pct = 0.76
