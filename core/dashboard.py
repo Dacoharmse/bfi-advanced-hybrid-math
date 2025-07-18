@@ -95,8 +95,8 @@ class MarketDataStorage:
             print(f"Error saving market data: {e}")
     
     def update_market_data(self, symbol, data):
-        """Update market data for a symbol"""
-        self.data[symbol] = {
+        """Update market data for a symbol (current data only)"""
+        current_data = {
             'price': data.get('price', '--'),
             'change': data.get('change', '--'),
             'changePercent': data.get('changePercent', '--'),
@@ -106,22 +106,35 @@ class MarketDataStorage:
             'low': data.get('low', '--'),
             'timestamp': datetime.now().isoformat()
         }
+        
+        # Update current data only
+        self.data[symbol] = current_data
         self.data['last_update'] = datetime.now().isoformat()
+        self.save_data()
+    
+    def save_market_close_data(self):
+        """Save current data as market close data with date tracking"""
+        today = datetime.now().strftime('%Y-%m-%d')
+        
+        # Initialize market close data structure
+        if 'market_close_history' not in self.data:
+            self.data['market_close_history'] = {}
+        
+        # Save today's close data for each symbol
+        symbols = ['nasdaq', 'gold', 'dow']
+        for symbol in symbols:
+            if symbol in self.data and self.data[symbol]:
+                if symbol not in self.data['market_close_history']:
+                    self.data['market_close_history'][symbol] = {}
+                
+                # Save with date as key
+                self.data['market_close_history'][symbol][today] = self.data[symbol].copy()
+        
         self.save_data()
     
     def get_market_data(self, symbol):
         """Get stored market data for a symbol"""
         return self.data.get(symbol, {})
-    
-    def save_market_close_data(self):
-        """Save current data as market close data"""
-        self.data['market_close_data'] = {
-            'nasdaq': self.data.get('nasdaq', {}),
-            'gold': self.data.get('gold', {}),
-            'dow': self.data.get('dow', {}),
-            'close_timestamp': datetime.now().isoformat()
-        }
-        self.save_data()
     
     def get_market_close_data(self):
         """Get market close data"""
@@ -1203,74 +1216,35 @@ def api_clear_data():
 
 @app.route('/api/live_prices')
 def api_live_prices():
-    """Get live market prices for NASDAQ, Gold, and DOW with data persistence"""
+    """Get live market prices using enhanced data feed with multiple sources"""
     try:
-        import yfinance as yf
         from datetime import datetime
-        
-        # Define symbols
-        symbols = {
-            'nasdaq': '^NDX',   # NASDAQ-100
-            'gold': 'GC=F',     # Gold Futures
-            'dow': '^DJI'       # Dow Jones Industrial Average
-        }
+        from data_feed import enhanced_data_feed
         
         live_data = {}
         
-        for key, symbol in symbols.items():
+        # Get data for each symbol using enhanced data feed
+        for symbol_key in ['nasdaq', 'gold', 'dow']:
             try:
-                # Get current data
-                ticker = yf.Ticker(symbol)
-                current_data = ticker.history(period='2d')
+                # Get raw data from enhanced data feed
+                raw_data = enhanced_data_feed.get_market_data(symbol_key)
                 
-                if len(current_data) >= 2:
-                    current_price = current_data['Close'].iloc[-1]
-                    previous_price = current_data['Close'].iloc[-2]
-                    
-                    # Get today's high and low
-                    today_data = current_data.iloc[-1]
-                    today_high = today_data['High']
-                    today_low = today_data['Low']
-                    
-                    # Calculate change
-                    change = current_price - previous_price
-                    change_percent = (change / previous_price) * 100
-                    
-                    # Format prices
-                    if key == 'gold':
-                        price_str = f"${current_price:.2f}"
-                        change_str = f"{change:+.2f}"
-                        change_percent_str = f"{change_percent:+.2f}%"
-                        prev_close_str = f"${previous_price:.2f}"
-                        high_str = f"${today_high:.2f}"
-                        low_str = f"${today_low:.2f}"
-                    else:
-                        price_str = f"{current_price:,.2f}"
-                        change_str = f"{change:+.2f}"
-                        change_percent_str = f"{change_percent:+.2f}%"
-                        prev_close_str = f"{previous_price:,.2f}"
-                        high_str = f"{today_high:,.2f}"
-                        low_str = f"{today_low:,.2f}"
-                    
-                    live_data[key] = {
-                        'price': price_str,
-                        'change': change_str,
-                        'changePercent': change_percent_str,
-                        'rawChange': change,
-                        'previousClose': prev_close_str,
-                        'high': high_str,
-                        'low': low_str
-                    }
+                if raw_data:
+                    # Format the data for display
+                    formatted_data = enhanced_data_feed.format_market_data(raw_data, symbol_key)
                     
                     # Save to storage
-                    market_data_storage.update_market_data(key, live_data[key])
+                    market_data_storage.update_market_data(symbol_key, formatted_data)
+                    
+                    live_data[symbol_key] = formatted_data
                 else:
-                    # Use stored data if available, otherwise show defaults
-                    stored_data = market_data_storage.get_market_data(key)
+                    # Use stored data if available
+                    stored_data = market_data_storage.get_market_data(symbol_key)
                     if stored_data:
-                        live_data[key] = stored_data
+                        live_data[symbol_key] = stored_data
+                        print(f"📦 Using stored data for {symbol_key}")
                     else:
-                        live_data[key] = {
+                        live_data[symbol_key] = {
                             'price': '--',
                             'change': '--',
                             'changePercent': '--',
@@ -1279,15 +1253,17 @@ def api_live_prices():
                             'high': '--',
                             'low': '--'
                         }
-                    
+                        print(f"❌ No data available for {symbol_key}")
+                        
             except Exception as e:
-                print(f"Error fetching {key} data: {str(e)}")
+                print(f"❌ Error fetching {symbol_key} data: {str(e)}")
                 # Use stored data if available
-                stored_data = market_data_storage.get_market_data(key)
+                stored_data = market_data_storage.get_market_data(symbol_key)
                 if stored_data:
-                    live_data[key] = stored_data
+                    live_data[symbol_key] = stored_data
+                    print(f"📦 Using stored data for {symbol_key}")
                 else:
-                    live_data[key] = {
+                    live_data[symbol_key] = {
                         'price': '--',
                         'change': '--',
                         'changePercent': '--',
@@ -1296,6 +1272,7 @@ def api_live_prices():
                         'high': '--',
                         'low': '--'
                     }
+                    print(f"❌ No data available for {symbol_key}")
         
         return jsonify({
             'success': True,
@@ -1307,7 +1284,7 @@ def api_live_prices():
         })
         
     except Exception as e:
-        print(f"Error in live prices API: {str(e)}")
+        print(f"❌ Error in live prices API: {str(e)}")
         # Return stored data as fallback
         return jsonify({
             'success': False,
@@ -1485,6 +1462,62 @@ def api_export_data():
         return jsonify({'success': True, 'message': f'Data exported to {filename}'})
     except Exception as e:
         return jsonify({'error': f'Error exporting data: {str(e)}'})
+
+@app.route('/data_feed_history')
+def data_feed_history():
+    """Data Feed History page showing historical market data"""
+    try:
+        # Get date filter from query parameters
+        date_filter = request.args.get('date', '')
+        
+        # Get historical data from storage
+        symbol_data = {
+            'nasdaq': [],
+            'gold': [],
+            'dow': []
+        }
+        
+        # Load market data storage
+        if os.path.exists('market_data.pkl'):
+            try:
+                with open('market_data.pkl', 'rb') as f:
+                    stored_data = pickle.load(f)
+                
+                # Process market close history data
+                if 'market_close_history' in stored_data:
+                    for symbol in stored_data['market_close_history']:
+                        for date, data in stored_data['market_close_history'][symbol].items():
+                            # Apply date filter if specified
+                            if date_filter and date != date_filter:
+                                continue
+                            
+                            symbol_data[symbol].append({
+                                'date': date,
+                                'current_value': data.get('price', '--'),
+                                'net_change': data.get('change', '--'),
+                                'previous_close': data.get('previousClose', '--'),
+                                'today_high': data.get('high', '--'),
+                                'today_low': data.get('low', '--'),
+                                'timestamp': data.get('timestamp', ''),
+                                'raw_change': data.get('rawChange', 0)
+                            })
+                
+                # Sort by date (newest first) for each symbol
+                for symbol in symbol_data:
+                    symbol_data[symbol].sort(key=lambda x: x['date'], reverse=True)
+                
+            except Exception as e:
+                print(f"Error loading historical data: {e}")
+        
+        return render_template('data_feed_history.html', 
+                             symbol_data=symbol_data,
+                             date_filter=date_filter)
+                             
+    except Exception as e:
+        return render_template('data_feed_history.html', 
+                             symbol_data={'nasdaq': [], 'gold': [], 'dow': []},
+                             date_filter='',
+                             error=f"Error loading data feed history: {e}")
 
 if __name__ == '__main__':
     print("🚀 Starting BFI Signals AI Dashboard...")

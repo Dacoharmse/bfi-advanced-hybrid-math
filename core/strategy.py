@@ -51,8 +51,8 @@ def get_display_name(symbol: str) -> str:
         "DJI": "US30",
         "^GSPC": "SPX500",
         "SPX": "SPX500",
-        "^IXIC": "NASDAQ",
-        "IXIC": "NASDAQ"
+        "^IXIC": "NAS100",
+        "IXIC": "NAS100"
     }
     
     return symbol_display_map.get(symbol, symbol)

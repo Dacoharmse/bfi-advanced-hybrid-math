@@ -85,6 +85,7 @@ class NewsAnalyzer:
         symbol_mapping = {
             'US30': ['dow jones', 'dow 30', 'djia'],
             '^NDX': ['nasdaq 100', 'nasdaq', 'ndx'],
+            '^IXIC': ['nasdaq 100', 'nasdaq', 'ndx'],
             'SPX': ['s&p 500', 'sp 500', 'spx'],
             'EURUSD': ['euro dollar', 'eur usd', 'forex'],
             'GBPUSD': ['pound dollar', 'gbp usd', 'forex'],
