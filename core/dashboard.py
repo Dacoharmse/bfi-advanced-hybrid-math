@@ -138,7 +138,7 @@ class MarketDataStorage:
     
     def get_market_close_data(self):
         """Get market close data"""
-        return self.data.get('market_close_data', {})
+        return self.data.get('market_close_history', {})
 
 # Initialize market data storage
 market_data_storage = MarketDataStorage()
@@ -1219,13 +1219,19 @@ def api_live_prices():
     """Get live market prices using enhanced data feed with multiple sources"""
     try:
         from datetime import datetime
+        import time
         from data_feed import enhanced_data_feed
         
         live_data = {}
         
-        # Get data for each symbol using enhanced data feed
-        for symbol_key in ['nasdaq', 'gold', 'dow']:
+        # Get data for each symbol using enhanced data feed with spacing
+        symbols = ['nasdaq', 'gold', 'dow']
+        for i, symbol_key in enumerate(symbols):
             try:
+                # Add spacing between requests to avoid rate limits
+                if i > 0:
+                    time.sleep(2)  # 2 second delay between symbol requests
+                
                 # Get raw data from enhanced data feed
                 raw_data = enhanced_data_feed.get_market_data(symbol_key)
                 
@@ -1235,6 +1241,27 @@ def api_live_prices():
                     
                     # Save to storage
                     market_data_storage.update_market_data(symbol_key, formatted_data)
+                    
+                    # Auto-save market close data every 15 seconds
+                    current_time = datetime.now()
+                    last_save = market_data_storage.data.get('last_close_save')
+                    
+                    if last_save:
+                        last_save_time = datetime.fromisoformat(last_save)
+                        time_diff = (current_time - last_save_time).total_seconds()
+                        
+                        # Save every 15 seconds
+                        if time_diff >= 15:
+                            market_data_storage.save_market_close_data()
+                            market_data_storage.data['last_close_save'] = current_time.isoformat()
+                            market_data_storage.save_data()
+                            print(f"💾 Auto-saved market close data for {symbol_key}")
+                    else:
+                        # First time saving
+                        market_data_storage.save_market_close_data()
+                        market_data_storage.data['last_close_save'] = current_time.isoformat()
+                        market_data_storage.save_data()
+                        print(f"💾 Auto-saved market close data for {symbol_key}")
                     
                     live_data[symbol_key] = formatted_data
                 else:
@@ -1274,13 +1301,19 @@ def api_live_prices():
                     }
                     print(f"❌ No data available for {symbol_key}")
         
+        # Get connection status and last successful fetch times
+        connection_status = enhanced_data_feed.get_connection_status()
+        last_successful_fetch = enhanced_data_feed.get_last_successful_fetch()
+        
         return jsonify({
             'success': True,
             'nasdaq': live_data['nasdaq'],
             'gold': live_data['gold'],
             'dow': live_data['dow'],
             'timestamp': datetime.now().isoformat(),
-            'last_update': market_data_storage.data.get('last_update')
+            'last_update': market_data_storage.data.get('last_update'),
+            'connection_status': connection_status,
+            'last_successful_fetch': {k: v.isoformat() if v else None for k, v in last_successful_fetch.items()}
         })
         
     except Exception as e:
@@ -1292,7 +1325,9 @@ def api_live_prices():
             'nasdaq': market_data_storage.get_market_data('nasdaq'),
             'gold': market_data_storage.get_market_data('gold'),
             'dow': market_data_storage.get_market_data('dow'),
-            'timestamp': datetime.now().isoformat()
+            'timestamp': datetime.now().isoformat(),
+            'connection_status': enhanced_data_feed.get_connection_status() if 'enhanced_data_feed' in locals() else {},
+            'last_successful_fetch': enhanced_data_feed.get_last_successful_fetch() if 'enhanced_data_feed' in locals() else {}
         })
 
 @app.route('/api/market_timer')
@@ -1347,6 +1382,9 @@ def api_market_timer():
                 minutes = (total_seconds % 3600) // 60
                 seconds = total_seconds % 60
                 
+                # Convert to UTC+2 (Windhoek timezone)
+                market_open_utc2 = market_open.astimezone(windhoek_tz)
+                
                 return jsonify({
                     'status': 'closed',
                     'total_seconds': total_seconds,
@@ -1356,8 +1394,9 @@ def api_market_timer():
                         'seconds': seconds
                     },
                     'formatted_time': f"{hours:02d}:{minutes:02d}:{seconds:02d}",
-                    'message': f"US Markets Closed - Opens in {hours:02d}:{minutes:02d}:{seconds:02d}",
+                    'message': f"US Markets Closed - Opens {market_open_utc2.strftime('%Y-%m-%d %H:%M UTC+2')}",
                     'next_open': market_open.strftime('%Y-%m-%d %H:%M ET'),
+                    'next_open_utc2': market_open_utc2.strftime('%Y-%m-%d %H:%M UTC+2'),
                     'market_open_time': market_open.isoformat()
                 })
             else:
@@ -1374,6 +1413,9 @@ def api_market_timer():
                 minutes = (total_seconds % 3600) // 60
                 seconds = total_seconds % 60
                 
+                # Convert to UTC+2 (Windhoek timezone)
+                next_open_utc2 = next_open.astimezone(windhoek_tz)
+                
                 return jsonify({
                     'status': 'closed',
                     'total_seconds': total_seconds,
@@ -1384,8 +1426,9 @@ def api_market_timer():
                         'seconds': seconds
                     },
                     'formatted_time': f"{days}d {hours:02d}:{minutes:02d}:{seconds:02d}",
-                    'message': f"US Markets Closed - Opens {next_open.strftime('%A, %B %d at %H:%M ET')}",
+                    'message': f"US Markets Closed - Opens {next_open_utc2.strftime('%Y-%m-%d %H:%M UTC+2')}",
                     'next_open': next_open.strftime('%Y-%m-%d %H:%M ET'),
+                    'next_open_utc2': next_open_utc2.strftime('%Y-%m-%d %H:%M UTC+2'),
                     'market_open_time': next_open.isoformat()
                 })
         else:
@@ -1400,6 +1443,9 @@ def api_market_timer():
             minutes = (total_seconds % 3600) // 60
             seconds = total_seconds % 60
             
+            # Convert to UTC+2 (Windhoek timezone)
+            next_open_utc2 = next_open.astimezone(windhoek_tz)
+            
             return jsonify({
                 'status': 'closed',
                 'total_seconds': total_seconds,
@@ -1410,8 +1456,9 @@ def api_market_timer():
                     'seconds': seconds
                 },
                 'formatted_time': f"{days}d {hours:02d}:{minutes:02d}:{seconds:02d}",
-                'message': f"US Markets Closed (Weekend) - Opens {next_open.strftime('%A, %B %d at %H:%M ET')}",
+                'message': f"US Markets Closed (Weekend) - Opens {next_open_utc2.strftime('%Y-%m-%d %H:%M UTC+2')}",
                 'next_open': next_open.strftime('%Y-%m-%d %H:%M ET'),
+                'next_open_utc2': next_open_utc2.strftime('%Y-%m-%d %H:%M UTC+2'),
                 'market_open_time': next_open.isoformat()
             })
             

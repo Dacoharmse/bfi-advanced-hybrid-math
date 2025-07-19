@@ -1,519 +1,1458 @@
 {% extends "base.html" %}
 
 {% block content %}
-<div class="container">
-    <div class="header-section">
-        <h1 class="main-title">Data Feed History</h1>
-        <p class="subtitle">Historical Market Data Analysis</p>
-    </div>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>BFI Signals - Market Data History</title>
+    <style>
+        /* Reset and base styles */
+        * {
+            box-sizing: border-box;
+        }
 
-    {% if error %}
-    <div class="alert alert-danger">
-        {{ error }}
-    </div>
-    {% endif %}
+        body {
+            background: #0a0a0a;
+            color: #ffffff;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            margin: 0;
+            padding: 20px;
+            line-height: 1.6;
+        }
 
-    <!-- Filter Section -->
-    <div class="filter-section">
-        <div class="filter-card">
-            <h3>🔍 Filter Options</h3>
-            <form method="GET" action="{{ url_for('data_feed_history') }}" class="filter-form">
-                <div class="filter-row">
-                    <label for="date">Filter by Date:</label>
-                    <input type="date" id="date" name="date" value="{{ date_filter }}" class="filter-input">
-                    <button type="submit" class="filter-button">Apply Filter</button>
-                    <a href="{{ url_for('data_feed_history') }}" class="clear-button">Clear Filter</a>
-                </div>
-            </form>
-        </div>
-    </div>
+        /* Container */
+        .market-section {
+            max-width: 800px;
+            margin: 0 auto 40px;
+        }
 
-    <!-- Data Tables Section -->
-    <div class="data-section">
-        <!-- NASDAQ Table -->
-        <div class="data-card">
-            <h3>📈 NASDAQ (NAS100) Market Close Data</h3>
+        /* Section titles */
+        .market-title {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-bottom: 16px;
+            padding: 0 4px;
+        }
+
+        .symbol-icon {
+            width: 20px;
+            height: 20px;
+            object-fit: contain;
+        }
+
+        /* Larger gold logo */
+        .symbol-icon[alt="GOLD"] {
+            width: 32px;
+            height: 32px;
+        }
+
+        .table-icon {
+            width: 16px;
+            height: 16px;
+            object-fit: contain;
+            margin-right: 8px;
+            vertical-align: middle;
+        }
+
+        /* Larger gold logo in tables */
+        .table-icon[alt="GOLD"] {
+            width: 24px;
+            height: 24px;
+        }
+
+        .market-title h3 {
+            font-size: 18px;
+            font-weight: 600;
+            color: #ffffff;
+            margin: 0;
+            letter-spacing: -0.025em;
+        }
+
+        /* Card container */
+        .market-card {
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            border-radius: 12px;
+            padding: 24px;
+            backdrop-filter: blur(20px);
+            transition: all 0.2s ease;
+        }
+
+        .market-card:hover {
+            border-color: rgba(255, 255, 255, 0.12);
+            background: rgba(255, 255, 255, 0.05);
+        }
+
+        /* Grid layout */
+        .data-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+            gap: 20px;
+        }
+
+        /* Grid items */
+        .grid-item {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+            position: relative;
+        }
+
+        .label {
+            font-size: 13px;
+            color: rgba(255, 255, 255, 0.6);
+            font-weight: 500;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .value {
+            font-size: 16px;
+            font-weight: 600;
+            color: #ffffff;
+            font-variant-numeric: tabular-nums;
+            cursor: pointer;
+            padding: 4px 8px;
+            border-radius: 6px;
+            transition: background-color 0.2s ease;
+            user-select: all;
+        }
+
+        .value:hover {
+            background: rgba(255, 255, 255, 0.05);
+        }
+
+        .value.primary {
+            font-size: 20px;
+            font-weight: 700;
+            color: #f4c842;
+        }
+
+        /* Change indicators */
+        .change.positive .value {
+            color: #22c55e;
+        }
+
+        .change.negative .value {
+            color: #ef4444;
+        }
+
+        /* Responsive adjustments */
+        @media (max-width: 600px) {
+            .data-grid {
+                grid-template-columns: repeat(2, 1fr);
+                gap: 16px;
+            }
             
-            {% if symbol_data.nasdaq %}
-            <div class="table-container">
-                <table class="data-table">
-                    <thead>
-                        <tr>
-                            <th>Date</th>
-                            <th>Current Value</th>
-                            <th>Net Change</th>
-                            <th>Previous Close</th>
-                            <th>Today's High</th>
-                            <th>Today's Low</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {% for data in symbol_data.nasdaq %}
-                        <tr class="data-row {% if data.raw_change > 0 %}positive{% elif data.raw_change < 0 %}negative{% endif %}">
-                            <td class="date-cell">
-                                <span class="date-value">{{ data.date }}</span>
-                            </td>
-                            <td class="value-cell">
-                                <span class="current-value">{{ data.current_value }}</span>
-                            </td>
-                            <td class="change-cell">
-                                <span class="net-change {% if data.raw_change > 0 %}positive{% elif data.raw_change < 0 %}negative{% endif %}">
-                                    {{ data.net_change }}
-                                </span>
-                            </td>
-                            <td class="value-cell">
-                                <span class="previous-close">{{ data.previous_close }}</span>
-                            </td>
-                            <td class="value-cell">
-                                <span class="high-value">{{ data.today_high }}</span>
-                            </td>
-                            <td class="value-cell">
-                                <span class="low-value">{{ data.today_low }}</span>
-                            </td>
-                        </tr>
-                        {% endfor %}
-                    </tbody>
-                </table>
+            .market-card {
+                padding: 20px;
+            }
+            
+            .value {
+                font-size: 15px;
+            }
+            
+            .value.primary {
+                font-size: 18px;
+            }
+        }
+
+        @media (max-width: 400px) {
+            .data-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        /* Copy feedback animation */
+        @keyframes copyFlash {
+            0% { background: rgba(74, 222, 128, 0.2); }
+            100% { background: transparent; }
+        }
+
+        .value.copied {
+            animation: copyFlash 0.5s ease;
+        }
+
+        /* Loading state */
+        .loading .value {
+            background: linear-gradient(90deg, rgba(255,255,255,0.05) 25%, rgba(255,255,255,0.1) 50%, rgba(255,255,255,0.05) 75%);
+            background-size: 200% 100%;
+            animation: shimmer 1.5s infinite;
+            color: transparent;
+        }
+
+        @keyframes shimmer {
+            0% { background-position: 200% 0; }
+            100% { background-position: -200% 0; }
+        }
+
+        /* Page title */
+        .page-title {
+            text-align: center;
+            margin-bottom: 40px;
+            font-size: 28px;
+            font-weight: 700;
+            color: #ffffff;
+            letter-spacing: -0.025em;
+        }
+
+        /* Subtle separator */
+        .section-divider {
+            height: 1px;
+            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.1), transparent);
+            margin: 40px 0;
+        }
+
+        /* No data state */
+        .no-data {
+            text-align: center;
+            padding: 40px 20px;
+            color: rgba(255, 255, 255, 0.6);
+        }
+
+        .no-data-icon {
+            font-size: 48px;
+            margin-bottom: 16px;
+        }
+
+        .no-data h3 {
+            margin: 0 0 8px 0;
+            font-size: 18px;
+            font-weight: 600;
+        }
+
+        .no-data p {
+            margin: 0;
+            font-size: 14px;
+        }
+
+        /* Data Tables Container */
+        .data-tables-container {
+            max-width: 1200px;
+            margin: 60px auto 0;
+            padding: 0 20px;
+        }
+
+        .ticker-section {
+            margin-bottom: 80px;
+            background: rgba(255, 255, 255, 0.02);
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            border-radius: 12px;
+            overflow: hidden;
+        }
+
+        /* Table Header */
+        .table-header {
+            padding: 24px 32px;
+            background: rgba(255, 255, 255, 0.03);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 20px;
+        }
+
+        .table-title h4 {
+            font-size: 18px;
+            font-weight: 600;
+            color: #ffffff;
+            margin: 0 0 4px 0;
+        }
+
+        .record-count {
+            font-size: 13px;
+            color: rgba(255, 255, 255, 0.5);
+            font-weight: 500;
+        }
+
+        /* Controls */
+        .table-controls {
+            display: flex;
+            gap: 24px;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+
+        .filter-group {
+            display: flex;
+            gap: 12px;
+            align-items: center;
+        }
+
+        .action-group {
+            display: flex;
+            gap: 8px;
+            align-items: center;
+        }
+
+        /* Input Styling */
+        .date-filter {
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 6px;
+            padding: 8px 12px;
+            color: #ffffff;
+            font-size: 13px;
+            width: 140px;
+            transition: all 0.2s ease;
+        }
+
+        .date-filter:focus {
+            outline: none;
+            border-color: rgba(244, 196, 66, 0.5);
+            background: rgba(255, 255, 255, 0.08);
+        }
+
+        /* Button Styling */
+        .filter-btn, .clear-btn, .export-btn, .refresh-btn {
+            background: rgba(255, 255, 255, 0.08);
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            border-radius: 6px;
+            padding: 8px 16px;
+            color: #ffffff;
+            font-size: 13px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .filter-btn:hover, .export-btn:hover {
+            background: rgba(244, 196, 66, 0.2);
+            border-color: rgba(244, 196, 66, 0.4);
+        }
+
+        .clear-btn:hover {
+            background: rgba(239, 68, 68, 0.2);
+            border-color: rgba(239, 68, 68, 0.4);
+        }
+
+        .refresh-btn {
+            width: 36px;
+            height: 36px;
+            padding: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 16px;
+        }
+
+        .refresh-btn:hover {
+            background: rgba(34, 197, 94, 0.2);
+            border-color: rgba(34, 197, 94, 0.4);
+        }
+
+        /* Table Wrapper */
+        .table-wrapper {
+            overflow-x: auto;
+            background: rgba(0, 0, 0, 0.2);
+        }
+
+        /* Minimal Table */
+        .minimal-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 14px;
+        }
+
+        .minimal-table th {
+            background: rgba(255, 255, 255, 0.03);
+            padding: 16px 20px;
+            text-align: left;
+            font-weight: 600;
+            font-size: 12px;
+            color: rgba(255, 255, 255, 0.7);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+            white-space: nowrap;
+        }
+
+        .minimal-table th.sortable {
+            cursor: pointer;
+            user-select: none;
+            position: relative;
+            transition: background-color 0.2s ease;
+        }
+
+        .minimal-table th.sortable:hover {
+            background: rgba(255, 255, 255, 0.08);
+            color: rgba(255, 255, 255, 0.9);
+        }
+
+        .sort-icon {
+            margin-left: 8px;
+            opacity: 0.5;
+            font-size: 10px;
+        }
+
+        .minimal-table th.sorted-asc .sort-icon::before {
+            content: '↑';
+        }
+
+        .minimal-table th.sorted-desc .sort-icon::before {
+            content: '↓';
+        }
+
+        .minimal-table td {
+            padding: 16px 20px;
+            color: #ffffff;
+            font-weight: 500;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.03);
+            font-variant-numeric: tabular-nums;
+        }
+
+        .minimal-table tbody tr {
+            transition: background-color 0.2s ease;
+        }
+
+        .minimal-table tbody tr:hover {
+            background: rgba(255, 255, 255, 0.03);
+        }
+
+        /* Value Styling */
+        .value-cell {
+            cursor: pointer;
+            padding: 4px 8px;
+            border-radius: 4px;
+            transition: background-color 0.2s ease;
+        }
+
+        .value-cell:hover {
+            background: rgba(255, 255, 255, 0.1);
+        }
+
+        .change-positive {
+            color: #22c55e;
+        }
+
+        .change-negative {
+            color: #ef4444;
+        }
+
+        /* Action Buttons in Rows */
+        .row-actions {
+            display: flex;
+            gap: 8px;
+        }
+
+        .action-btn {
+            background: transparent;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 4px;
+            padding: 4px 8px;
+            color: rgba(255, 255, 255, 0.7);
+            font-size: 11px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .action-btn:hover {
+            background: rgba(255, 255, 255, 0.1);
+            color: #ffffff;
+        }
+
+        /* Empty State */
+        .empty-state {
+            text-align: center;
+            padding: 60px 20px;
+            color: rgba(255, 255, 255, 0.5);
+        }
+
+        .empty-state h5 {
+            font-size: 16px;
+            margin: 0 0 8px 0;
+        }
+
+        .empty-state p {
+            font-size: 13px;
+            margin: 0;
+        }
+
+        /* Loading State */
+        .loading-row td {
+            background: linear-gradient(90deg, rgba(255,255,255,0.02) 25%, rgba(255,255,255,0.05) 50%, rgba(255,255,255,0.02) 75%);
+            background-size: 200% 100%;
+            animation: shimmer 1.5s infinite;
+            color: transparent;
+        }
+
+        @keyframes shimmer {
+            0% { background-position: 200% 0; }
+            100% { background-position: -200% 0; }
+        }
+
+        /* Responsive Design */
+        @media (max-width: 768px) {
+            .table-header {
+                flex-direction: column;
+                align-items: stretch;
+            }
+            
+            .table-controls {
+                flex-direction: column;
+                gap: 16px;
+            }
+            
+            .filter-group, .action-group {
+                justify-content: center;
+            }
+            
+            .date-filter {
+                width: 120px;
+            }
+            
+            .minimal-table {
+                font-size: 12px;
+            }
+            
+            .minimal-table th,
+            .minimal-table td {
+                padding: 12px 16px;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .data-tables-container {
+                padding: 0 10px;
+            }
+            
+            .table-header {
+                padding: 16px 20px;
+            }
+            
+            .filter-group {
+                flex-wrap: wrap;
+            }
+            
+            .date-filter {
+                width: 100px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <h1 class="page-title">Previous Days Market Data</h1>
+
+            <!-- NASDAQ Section -->
+        <div class="market-section">
+            <div class="market-title">
+                <img src="{{ url_for('static', filename='nasdaq.svg') }}" alt="NASDAQ" class="symbol-icon">
+                <h3>NASDAQ (NAS100)</h3>
             </div>
-            {% else %}
+        
+        {% if symbol_data.nasdaq %}
+            {% for data in symbol_data.nasdaq %}
+            <div class="market-card">
+                <div class="data-grid">
+                    <div class="grid-item">
+                        <span class="label">Current</span>
+                        <span class="value primary copyable" onclick="copyValue('{{ data.current_value }}')" title="Click to copy">
+                            {{ data.current_value }}
+                        </span>
+                    </div>
+                    <div class="grid-item change {% if data.raw_change > 0 %}positive{% elif data.raw_change < 0 %}negative{% endif %}">
+                        <span class="label">Change</span>
+                        <span class="value copyable" onclick="copyValue('{{ data.net_change }}')" title="Click to copy">
+                            {{ data.net_change }}
+                        </span>
+                    </div>
+                    <div class="grid-item">
+                        <span class="label">Previous</span>
+                        <span class="value copyable" onclick="copyValue('{{ data.previous_close }}')" title="Click to copy">
+                            {{ data.previous_close }}
+                        </span>
+                    </div>
+                    <div class="grid-item">
+                        <span class="label">High</span>
+                        <span class="value copyable" onclick="copyValue('{{ data.today_high }}')" title="Click to copy">
+                            {{ data.today_high }}
+                        </span>
+                    </div>
+                    <div class="grid-item">
+                        <span class="label">Low</span>
+                        <span class="value copyable" onclick="copyValue('{{ data.today_low }}')" title="Click to copy">
+                            {{ data.today_low }}
+                        </span>
+                    </div>
+                    <div class="grid-item">
+                        <span class="label">Date</span>
+                        <span class="value">{{ data.date }}</span>
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        {% else %}
             <div class="no-data">
                 <div class="no-data-icon">📊</div>
                 <h3>No NASDAQ Data Available</h3>
                 <p>No market close data found for NASDAQ.</p>
             </div>
-            {% endif %}
-        </div>
+        {% endif %}
+    </div>
 
-        <!-- GOLD Table -->
-        <div class="data-card">
-            <h3>📈 XAUUSD (GOLD) Market Close Data</h3>
-            
-            {% if symbol_data.gold %}
-            <div class="table-container">
-                <table class="data-table">
-                    <thead>
-                        <tr>
-                            <th>Date</th>
-                            <th>Current Value</th>
-                            <th>Net Change</th>
-                            <th>Previous Close</th>
-                            <th>Today's High</th>
-                            <th>Today's Low</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {% for data in symbol_data.gold %}
-                        <tr class="data-row {% if data.raw_change > 0 %}positive{% elif data.raw_change < 0 %}negative{% endif %}">
-                            <td class="date-cell">
-                                <span class="date-value">{{ data.date }}</span>
-                            </td>
-                            <td class="value-cell">
-                                <span class="current-value">{{ data.current_value }}</span>
-                            </td>
-                            <td class="change-cell">
-                                <span class="net-change {% if data.raw_change > 0 %}positive{% elif data.raw_change < 0 %}negative{% endif %}">
-                                    {{ data.net_change }}
-                                </span>
-                            </td>
-                            <td class="value-cell">
-                                <span class="previous-close">{{ data.previous_close }}</span>
-                            </td>
-                            <td class="value-cell">
-                                <span class="high-value">{{ data.today_high }}</span>
-                            </td>
-                            <td class="value-cell">
-                                <span class="low-value">{{ data.today_low }}</span>
-                            </td>
-                        </tr>
-                        {% endfor %}
-                    </tbody>
-                </table>
-            </div>
-            {% else %}
-            <div class="no-data">
-                <div class="no-data-icon">📊</div>
-                <h3>No GOLD Data Available</h3>
-                <p>No market close data found for XAUUSD (GOLD).</p>
-            </div>
-            {% endif %}
-        </div>
+    <div class="section-divider"></div>
 
-        <!-- DOW Table -->
-        <div class="data-card">
-            <h3>📈 DOW (US30) Market Close Data</h3>
-            
-            {% if symbol_data.dow %}
-            <div class="table-container">
-                <table class="data-table">
-                    <thead>
-                        <tr>
-                            <th>Date</th>
-                            <th>Current Value</th>
-                            <th>Net Change</th>
-                            <th>Previous Close</th>
-                            <th>Today's High</th>
-                            <th>Today's Low</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {% for data in symbol_data.dow %}
-                        <tr class="data-row {% if data.raw_change > 0 %}positive{% elif data.raw_change < 0 %}negative{% endif %}">
-                            <td class="date-cell">
-                                <span class="date-value">{{ data.date }}</span>
-                            </td>
-                            <td class="value-cell">
-                                <span class="current-value">{{ data.current_value }}</span>
-                            </td>
-                            <td class="change-cell">
-                                <span class="net-change {% if data.raw_change > 0 %}positive{% elif data.raw_change < 0 %}negative{% endif %}">
-                                    {{ data.net_change }}
-                                </span>
-                            </td>
-                            <td class="value-cell">
-                                <span class="previous-close">{{ data.previous_close }}</span>
-                            </td>
-                            <td class="value-cell">
-                                <span class="high-value">{{ data.today_high }}</span>
-                            </td>
-                            <td class="value-cell">
-                                <span class="low-value">{{ data.today_low }}</span>
-                            </td>
-                        </tr>
-                        {% endfor %}
-                    </tbody>
-                </table>
+            <!-- DOW Section -->
+        <div class="market-section">
+            <div class="market-title">
+                <img src="{{ url_for('static', filename='dow.png') }}" alt="DOW" class="symbol-icon">
+                <h3>DOW (US30)</h3>
             </div>
-            {% else %}
+        
+        {% if symbol_data.dow %}
+            {% for data in symbol_data.dow %}
+            <div class="market-card">
+                <div class="data-grid">
+                    <div class="grid-item">
+                        <span class="label">Current</span>
+                        <span class="value primary copyable" onclick="copyValue('{{ data.current_value }}')" title="Click to copy">
+                            {{ data.current_value }}
+                        </span>
+                    </div>
+                    <div class="grid-item change {% if data.raw_change > 0 %}positive{% elif data.raw_change < 0 %}negative{% endif %}">
+                        <span class="label">Change</span>
+                        <span class="value copyable" onclick="copyValue('{{ data.net_change }}')" title="Click to copy">
+                            {{ data.net_change }}
+                        </span>
+                    </div>
+                    <div class="grid-item">
+                        <span class="label">Previous</span>
+                        <span class="value copyable" onclick="copyValue('{{ data.previous_close }}')" title="Click to copy">
+                            {{ data.previous_close }}
+                        </span>
+                    </div>
+                    <div class="grid-item">
+                        <span class="label">High</span>
+                        <span class="value copyable" onclick="copyValue('{{ data.today_high }}')" title="Click to copy">
+                            {{ data.today_high }}
+                        </span>
+                    </div>
+                    <div class="grid-item">
+                        <span class="label">Low</span>
+                        <span class="value copyable" onclick="copyValue('{{ data.today_low }}')" title="Click to copy">
+                            {{ data.today_low }}
+                        </span>
+                    </div>
+                    <div class="grid-item">
+                        <span class="label">Date</span>
+                        <span class="value">{{ data.date }}</span>
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        {% else %}
             <div class="no-data">
-                <div class="no-data-icon">📊</div>
+                <div class="no-data-icon">📈</div>
                 <h3>No DOW Data Available</h3>
                 <p>No market close data found for DOW (US30).</p>
             </div>
-            {% endif %}
+        {% endif %}
+    </div>
+
+    <div class="section-divider"></div>
+
+            <!-- GOLD Section -->
+        <div class="market-section">
+            <div class="market-title">
+                <img src="{{ url_for('static', filename='gold.png') }}" alt="GOLD" class="symbol-icon">
+                <h3>XAUUSD (GOLD)</h3>
+            </div>
+        
+        {% if symbol_data.gold %}
+            {% for data in symbol_data.gold %}
+            <div class="market-card">
+                <div class="data-grid">
+                    <div class="grid-item">
+                        <span class="label">Current</span>
+                        <span class="value primary copyable" onclick="copyValue('{{ data.current_value }}')" title="Click to copy">
+                            {{ data.current_value }}
+                        </span>
+                    </div>
+                    <div class="grid-item change {% if data.raw_change > 0 %}positive{% elif data.raw_change < 0 %}negative{% endif %}">
+                        <span class="label">Change</span>
+                        <span class="value copyable" onclick="copyValue('{{ data.net_change }}')" title="Click to copy">
+                            {{ data.net_change }}
+                        </span>
+                    </div>
+                    <div class="grid-item">
+                        <span class="label">Previous</span>
+                        <span class="value copyable" onclick="copyValue('{{ data.previous_close }}')" title="Click to copy">
+                            {{ data.previous_close }}
+                        </span>
+                    </div>
+                    <div class="grid-item">
+                        <span class="label">High</span>
+                        <span class="value copyable" onclick="copyValue('{{ data.today_high }}')" title="Click to copy">
+                            {{ data.today_high }}
+                        </span>
+                    </div>
+                    <div class="grid-item">
+                        <span class="label">Low</span>
+                        <span class="value copyable" onclick="copyValue('{{ data.today_low }}')" title="Click to copy">
+                            {{ data.today_low }}
+                        </span>
+                    </div>
+                    <div class="grid-item">
+                        <span class="label">Date</span>
+                        <span class="value">{{ data.date }}</span>
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        {% else %}
+            <div class="no-data">
+                <div class="no-data-icon">🥇</div>
+                <h3>No GOLD Data Available</h3>
+                <p>No market close data found for XAUUSD (GOLD).</p>
+            </div>
+        {% endif %}
+    </div>
+
+    <!-- Data Tables Container -->
+    <div class="data-tables-container">
+        
+        <!-- NASDAQ Data Table -->
+        <div class="ticker-section" data-ticker="nasdaq">
+            <div class="table-header">
+                <div class="table-title">
+                    <h4><img src="{{ url_for('static', filename='nasdaq.svg') }}" alt="NASDAQ" class="table-icon"> NASDAQ Historical Data</h4>
+                    <span class="record-count" id="nasdaq-count">0 records</span>
+                </div>
+                
+                <div class="table-controls">
+                    <div class="filter-group">
+                        <input type="date" id="nasdaq-date-from" class="date-filter" placeholder="From">
+                        <input type="date" id="nasdaq-date-to" class="date-filter" placeholder="To">
+                        <button class="filter-btn" onclick="filterData('nasdaq')">Filter</button>
+                        <button class="clear-btn" onclick="clearFilters('nasdaq')">Clear</button>
+                    </div>
+                    
+                    <div class="action-group">
+                        <button class="export-btn" onclick="exportData('nasdaq')">Export CSV</button>
+                        <button class="refresh-btn" onclick="refreshData('nasdaq')">↻</button>
+                    </div>
+                </div>
+            </div>
+
+            <div class="table-wrapper">
+                <table class="minimal-table" id="nasdaq-table">
+                    <thead>
+                        <tr>
+                            <th class="sortable" data-column="date" onclick="sortTable('nasdaq', 'date')">
+                                Date <span class="sort-icon">↕</span>
+                            </th>
+                            <th class="sortable" data-column="current" onclick="sortTable('nasdaq', 'current')">
+                                Current <span class="sort-icon">↕</span>
+                            </th>
+                            <th class="sortable" data-column="change" onclick="sortTable('nasdaq', 'change')">
+                                Change <span class="sort-icon">↕</span>
+                            </th>
+                            <th class="sortable" data-column="previous" onclick="sortTable('nasdaq', 'previous')">
+                                Previous <span class="sort-icon">↕</span>
+                            </th>
+                            <th class="sortable" data-column="high" onclick="sortTable('nasdaq', 'high')">
+                                High <span class="sort-icon">↕</span>
+                            </th>
+                            <th class="sortable" data-column="low" onclick="sortTable('nasdaq', 'low')">
+                                Low <span class="sort-icon">↕</span>
+                            </th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="nasdaq-tbody">
+                        <!-- Data will be populated here -->
+                    </tbody>
+                </table>
+            </div>
         </div>
 
-        <!-- Summary Stats -->
-        <div class="data-card">
-            <div class="data-stats">
-                <div class="stat-item">
-                    <span class="stat-label">NASDAQ Records:</span>
-                    <span class="stat-value">{{ symbol_data.nasdaq|length }}</span>
+        <!-- DOW Data Table -->
+        <div class="ticker-section" data-ticker="dow">
+            <div class="table-header">
+                <div class="table-title">
+                    <h4><img src="{{ url_for('static', filename='dow.png') }}" alt="DOW" class="table-icon"> DOW Historical Data</h4>
+                    <span class="record-count" id="dow-count">0 records</span>
                 </div>
-                <div class="stat-item">
-                    <span class="stat-label">GOLD Records:</span>
-                    <span class="stat-value">{{ symbol_data.gold|length }}</span>
+                
+                <div class="table-controls">
+                    <div class="filter-group">
+                        <input type="date" id="dow-date-from" class="date-filter" placeholder="From">
+                        <input type="date" id="dow-date-to" class="date-filter" placeholder="To">
+                        <button class="filter-btn" onclick="filterData('dow')">Filter</button>
+                        <button class="clear-btn" onclick="clearFilters('dow')">Clear</button>
+                    </div>
+                    
+                    <div class="action-group">
+                        <button class="export-btn" onclick="exportData('dow')">Export CSV</button>
+                        <button class="refresh-btn" onclick="refreshData('dow')">↻</button>
+                    </div>
                 </div>
-                <div class="stat-item">
-                    <span class="stat-label">DOW Records:</span>
-                    <span class="stat-value">{{ symbol_data.dow|length }}</span>
+            </div>
+
+            <div class="table-wrapper">
+                <table class="minimal-table" id="dow-table">
+                    <thead>
+                        <tr>
+                            <th class="sortable" data-column="date" onclick="sortTable('dow', 'date')">
+                                Date <span class="sort-icon">↕</span>
+                            </th>
+                            <th class="sortable" data-column="current" onclick="sortTable('dow', 'current')">
+                                Current <span class="sort-icon">↕</span>
+                            </th>
+                            <th class="sortable" data-column="change" onclick="sortTable('dow', 'change')">
+                                Change <span class="sort-icon">↕</span>
+                            </th>
+                            <th class="sortable" data-column="previous" onclick="sortTable('dow', 'previous')">
+                                Previous <span class="sort-icon">↕</span>
+                            </th>
+                            <th class="sortable" data-column="high" onclick="sortTable('dow', 'high')">
+                                High <span class="sort-icon">↕</span>
+                            </th>
+                            <th class="sortable" data-column="low" onclick="sortTable('dow', 'low')">
+                                Low <span class="sort-icon">↕</span>
+                            </th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="dow-tbody">
+                        <!-- Data will be populated here -->
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- GOLD Data Table -->
+        <div class="ticker-section" data-ticker="gold">
+            <div class="table-header">
+                <div class="table-title">
+                    <h4><img src="{{ url_for('static', filename='gold.png') }}" alt="GOLD" class="table-icon"> GOLD Historical Data</h4>
+                    <span class="record-count" id="gold-count">0 records</span>
                 </div>
-                {% if date_filter %}
-                <div class="stat-item">
-                    <span class="stat-label">Filtered Date:</span>
-                    <span class="stat-value">{{ date_filter }}</span>
+                
+                <div class="table-controls">
+                    <div class="filter-group">
+                        <input type="date" id="gold-date-from" class="date-filter" placeholder="From">
+                        <input type="date" id="gold-date-to" class="date-filter" placeholder="To">
+                        <button class="filter-btn" onclick="filterData('gold')">Filter</button>
+                        <button class="clear-btn" onclick="clearFilters('gold')">Clear</button>
+                    </div>
+                    
+                    <div class="action-group">
+                        <button class="export-btn" onclick="exportData('gold')">Export CSV</button>
+                        <button class="refresh-btn" onclick="refreshData('gold')">↻</button>
+                    </div>
                 </div>
-                {% endif %}
+            </div>
+
+            <div class="table-wrapper">
+                <table class="minimal-table" id="gold-table">
+                    <thead>
+                        <tr>
+                            <th class="sortable" data-column="date" onclick="sortTable('gold', 'date')">
+                                Date <span class="sort-icon">↕</span>
+                            </th>
+                            <th class="sortable" data-column="current" onclick="sortTable('gold', 'current')">
+                                Current <span class="sort-icon">↕</span>
+                            </th>
+                            <th class="sortable" data-column="change" onclick="sortTable('gold', 'change')">
+                                Change <span class="sort-icon">↕</span>
+                            </th>
+                            <th class="sortable" data-column="previous" onclick="sortTable('gold', 'previous')">
+                                Previous <span class="sort-icon">↕</span>
+                            </th>
+                            <th class="sortable" data-column="high" onclick="sortTable('gold', 'high')">
+                                High <span class="sort-icon">↕</span>
+                            </th>
+                            <th class="sortable" data-column="low" onclick="sortTable('gold', 'low')">
+                                Low <span class="sort-icon">↕</span>
+                            </th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="gold-tbody">
+                        <!-- Data will be populated here -->
+                    </tbody>
+                </table>
             </div>
         </div>
     </div>
-</div>
 
-<style>
-    .container {
-        max-width: 1400px;
-        margin: 0 auto;
-        padding: 20px;
-    }
+    <script>
+        // Improved copy functionality with better UX
+        document.addEventListener('DOMContentLoaded', function() {
+            // Add click listeners to all value elements
+            document.querySelectorAll('.value').forEach(element => {
+                element.addEventListener('click', function() {
+                    const value = this.textContent.trim();
+                    copyToClipboard(value, this);
+                });
+            });
+        });
 
-    .header-section {
-        text-align: center;
-        margin-bottom: 30px;
-    }
-
-    .main-title {
-        font-size: 2.5rem;
-        font-weight: 800;
-        background: linear-gradient(135deg, #d4af37, #ffd700);
-        -webkit-background-clip: text;
-        -webkit-text-fill-color: transparent;
-        background-clip: text;
-        margin-bottom: 10px;
-        text-shadow: 0 0 20px rgba(212, 175, 55, 0.3);
-    }
-
-    .subtitle {
-        font-size: 1.1rem;
-        color: #cccccc;
-        font-weight: 500;
-    }
-
-    .filter-section {
-        margin-bottom: 30px;
-    }
-
-    .filter-card {
-        background: linear-gradient(135deg, rgba(26, 26, 26, 0.9) 0%, rgba(45, 45, 45, 0.9) 100%);
-        backdrop-filter: blur(15px);
-        border: 2px solid #d4af37;
-        border-radius: 15px;
-        padding: 25px;
-        box-shadow: 0 8px 25px rgba(212, 175, 55, 0.15);
-    }
-
-    .filter-card h3 {
-        color: #d4af37;
-        font-size: 1.3rem;
-        font-weight: 700;
-        margin-bottom: 20px;
-        text-align: center;
-    }
-
-    .filter-form {
-        display: flex;
-        align-items: center;
-        gap: 15px;
-        flex-wrap: wrap;
-    }
-
-    .filter-row {
-        display: flex;
-        align-items: center;
-        gap: 15px;
-        flex-wrap: wrap;
-        width: 100%;
-    }
-
-    .filter-row label {
-        color: #ffffff;
-        font-weight: 600;
-        font-size: 0.9rem;
-    }
-
-    .filter-input {
-        background: linear-gradient(135deg, #1a1a1a, #000000);
-        border: 2px solid #d4af37;
-        border-radius: 8px;
-        padding: 10px 15px;
-        color: #ffffff;
-        font-size: 0.9rem;
-        font-weight: 600;
-        transition: all 0.3s ease;
-    }
-
-    .filter-input:focus {
-        outline: none;
-        border-color: #ffd700;
-        box-shadow: 0 0 15px rgba(212, 175, 55, 0.4);
-    }
-
-    .filter-button, .clear-button {
-        background: linear-gradient(135deg, #d4af37, #ffd700);
-        color: #000000;
-        border: none;
-        border-radius: 8px;
-        padding: 10px 20px;
-        font-size: 0.9rem;
-        font-weight: 700;
-        cursor: pointer;
-        transition: all 0.3s ease;
-        text-decoration: none;
-        display: inline-block;
-    }
-
-    .filter-button:hover, .clear-button:hover {
-        background: linear-gradient(135deg, #ffd700, #d4af37);
-        transform: translateY(-2px);
-        box-shadow: 0 4px 15px rgba(212, 175, 55, 0.3);
-    }
-
-    .clear-button {
-        background: linear-gradient(135deg, #6b7280, #4b5563);
-    }
-
-    .clear-button:hover {
-        background: linear-gradient(135deg, #4b5563, #6b7280);
-    }
-
-    .data-section {
-        margin-bottom: 30px;
-    }
-
-    .data-card {
-        background: linear-gradient(135deg, rgba(26, 26, 26, 0.9) 0%, rgba(45, 45, 45, 0.9) 100%);
-        backdrop-filter: blur(15px);
-        border: 2px solid #d4af37;
-        border-radius: 15px;
-        padding: 25px;
-        box-shadow: 0 8px 25px rgba(212, 175, 55, 0.15);
-    }
-
-    .data-card h3 {
-        color: #d4af37;
-        font-size: 1.3rem;
-        font-weight: 700;
-        margin-bottom: 20px;
-        text-align: center;
-    }
-
-    .table-container {
-        overflow-x: auto;
-        border-radius: 10px;
-        margin-bottom: 20px;
-    }
-
-    .data-table {
-        width: 100%;
-        border-collapse: collapse;
-        background: linear-gradient(135deg, #000000, #111111);
-        border: 2px solid #d4af37;
-        border-radius: 10px;
-        overflow: hidden;
-    }
-
-    .data-table thead {
-        background: linear-gradient(135deg, #d4af37, #ffd700);
-        color: #000000;
-    }
-
-    .data-table th {
-        padding: 15px 12px;
-        font-weight: 700;
-        text-transform: uppercase;
-        font-size: 0.85rem;
-        letter-spacing: 0.5px;
-        text-align: left;
-        border-bottom: 2px solid #d4af37;
-    }
-
-    .data-table td {
-        padding: 12px;
-        border-bottom: 1px solid #333;
-        color: #ffffff;
-        vertical-align: middle;
-        font-size: 0.9rem;
-    }
-
-    .data-table tbody tr:hover {
-        background: rgba(212, 175, 55, 0.1);
-        transition: all 0.3s ease;
-    }
-
-    .data-row.positive {
-        background: rgba(74, 222, 128, 0.05);
-    }
-
-    .data-row.negative {
-        background: rgba(248, 113, 113, 0.05);
-    }
-
-    .date-cell {
-        font-weight: 700;
-        color: #d4af37;
-        text-align: center;
-    }
-
-    .value-cell {
-        font-weight: 600;
-        text-align: right;
-    }
-
-    .change-cell {
-        text-align: right;
-        font-weight: 700;
-    }
-
-    .net-change.positive {
-        color: #4ade80;
-    }
-
-    .net-change.negative {
-        color: #f87171;
-    }
-
-    .timestamp-cell {
-        font-size: 0.8rem;
-        color: #888888;
-        text-align: center;
-    }
-
-    .data-stats {
-        display: flex;
-        justify-content: space-around;
-        flex-wrap: wrap;
-        gap: 20px;
-        margin-top: 20px;
-        padding: 15px;
-        background: rgba(212, 175, 55, 0.1);
-        border-radius: 10px;
-        border: 1px solid rgba(212, 175, 55, 0.2);
-    }
-
-    .stat-item {
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-        gap: 5px;
-    }
-
-    .stat-label {
-        font-size: 0.8rem;
-        color: #888888;
-        font-weight: 500;
-        text-transform: uppercase;
-        letter-spacing: 0.5px;
-    }
-
-    .stat-value {
-        font-size: 1.1rem;
-        font-weight: 700;
-        color: #d4af37;
-    }
-
-    .no-data {
-        text-align: center;
-        padding: 60px 20px;
-        color: #888888;
-    }
-
-    .no-data-icon {
-        font-size: 4rem;
-        margin-bottom: 20px;
-    }
-
-    .no-data h3 {
-        color: #cccccc;
-        font-size: 1.5rem;
-        margin-bottom: 10px;
-    }
-
-    .no-data p {
-        font-size: 1rem;
-        line-height: 1.5;
-    }
-
-    @media (max-width: 768px) {
-        .filter-form {
-            flex-direction: column;
-            align-items: stretch;
+        function copyToClipboard(text, element) {
+            // Remove commas from the value before copying
+            const cleanValue = text.replace(/,/g, '');
+            console.log('Attempting to copy:', cleanValue);
+            
+            if (navigator.clipboard && navigator.clipboard.writeText) {
+                navigator.clipboard.writeText(cleanValue).then(function() {
+                    console.log('Successfully copied to clipboard');
+                    showCopyFeedback(element);
+                }).catch(function(err) {
+                    console.error('Clipboard API failed:', err);
+                    // Fallback for older browsers
+                    fallbackCopy(cleanValue, element);
+                });
+            } else {
+                console.log('Using fallback copy method');
+                fallbackCopy(cleanValue, element);
+            }
         }
 
-        .filter-row {
-            flex-direction: column;
-            align-items: stretch;
+        function fallbackCopy(text, element) {
+            const textArea = document.createElement('textarea');
+            textArea.value = text;
+            textArea.style.position = 'fixed';
+            textArea.style.left = '-9999px';
+            document.body.appendChild(textArea);
+            textArea.select();
+            try {
+                document.execCommand('copy');
+                showCopyFeedback(element);
+            } catch (err) {
+                console.error('Copy failed:', err);
+            }
+            document.body.removeChild(textArea);
         }
 
-        .data-table {
-            font-size: 0.8rem;
+        function showCopyFeedback(element) {
+            // Add visual feedback
+            element.classList.add('copied');
+            
+            // Show a temporary success message
+            const originalText = element.textContent;
+            element.textContent = 'Copied!';
+            element.style.color = '#22c55e';
+            
+            setTimeout(() => {
+                element.classList.remove('copied');
+                element.textContent = originalText;
+                element.style.color = '';
+            }, 1000);
         }
 
-        .data-table th,
-        .data-table td {
-            padding: 8px 6px;
+        // Copy function with proper event handling
+        window.copyValue = function(value) {
+            if (!value) return;
+            
+            const cleanValue = value.toString().replace(/,/g, '');
+            const element = event.target;
+            
+            console.log('Copying value:', cleanValue);
+            
+            // Use modern clipboard API with fallback
+            if (navigator.clipboard && window.isSecureContext) {
+                navigator.clipboard.writeText(cleanValue).then(() => {
+                    console.log('Copy successful via clipboard API');
+                    showCopyFeedback(element);
+                }).catch(err => {
+                    console.error('Clipboard API failed: ', err);
+                    fallbackCopy(cleanValue, element);
+                });
+            } else {
+                console.log('Using fallback copy method');
+                fallbackCopy(cleanValue, element);
+            }
+        };
+
+        function fallbackCopy(text, element) {
+            const textArea = document.createElement('textarea');
+            textArea.value = text;
+            textArea.style.position = 'fixed';
+            textArea.style.left = '-999999px';
+            textArea.style.top = '-999999px';
+            document.body.appendChild(textArea);
+            textArea.focus();
+            textArea.select();
+            
+            try {
+                document.execCommand('copy');
+                showCopyFeedback(element);
+            } catch (err) {
+                console.error('Fallback copy failed: ', err);
+            }
+            
+            document.body.removeChild(textArea);
         }
 
-        .main-title {
-            font-size: 2rem;
+        function showCopyFeedback(element) {
+            if (!element) return;
+            
+            const originalText = element.textContent;
+            const originalBackground = element.style.background;
+            const originalBorder = element.style.border;
+            
+            element.textContent = 'Copied!';
+            element.style.background = 'rgba(34, 197, 94, 0.2)';
+            element.style.border = '1px solid rgba(34, 197, 94, 0.4)';
+            element.style.color = '#22c55e';
+            
+            setTimeout(() => {
+                element.textContent = originalText;
+                element.style.background = originalBackground;
+                element.style.border = originalBorder;
+                element.style.color = '';
+            }, 800);
         }
-    }
-</style>
+
+        // Data storage and management
+        let tickerData = {
+            nasdaq: [],
+            dow: [],
+            gold: []
+        };
+
+        // Store current market data for comparison
+        let currentMarketData = {
+            nasdaq: null,
+            dow: null,
+            gold: null
+        };
+
+        let sortOrder = {
+            nasdaq: { column: 'date', direction: 'desc' },
+            dow: { column: 'date', direction: 'desc' },
+            gold: { column: 'date', direction: 'desc' }
+        };
+
+        // Local storage keys
+        const STORAGE_KEYS = {
+            TICKER_DATA: 'bfi_ticker_data',
+            CURRENT_DATA: 'bfi_current_data',
+            LAST_UPDATE: 'bfi_last_update'
+        };
+
+        // Initialize tables on page load
+        document.addEventListener('DOMContentLoaded', function() {
+            initializeTables();
+            loadStoredData();
+            loadInitialData();
+            initializeCurrentData();
+            updateMarketOverview();
+            
+            // Check data persistence after loading
+            setTimeout(() => {
+                checkDataPersistence();
+            }, 1000);
+        });
+
+        // Save data when page is unloaded (user navigates away)
+        window.addEventListener('beforeunload', function() {
+            saveDataToStorage();
+            console.log('Data saved before page unload');
+        });
+
+        // Save data when page becomes hidden (user switches tabs)
+        document.addEventListener('visibilitychange', function() {
+            if (document.hidden) {
+                saveDataToStorage();
+                console.log('Data saved when page hidden');
+            }
+        });
+
+        // Auto-save data every 30 seconds
+        setInterval(function() {
+            saveDataToStorage();
+            console.log('Auto-saved data');
+        }, 30000);
+
+        function initializeTables() {
+            // Set up initial table states
+            updateRecordCounts();
+        }
+
+        // Save data to localStorage
+        function saveDataToStorage() {
+            try {
+                localStorage.setItem(STORAGE_KEYS.TICKER_DATA, JSON.stringify(tickerData));
+                localStorage.setItem(STORAGE_KEYS.CURRENT_DATA, JSON.stringify(currentMarketData));
+                localStorage.setItem(STORAGE_KEYS.LAST_UPDATE, new Date().toISOString());
+                console.log('Data saved to localStorage');
+            } catch (error) {
+                console.error('Failed to save data:', error);
+            }
+        }
+
+        // Load data from localStorage
+        function loadStoredData() {
+            try {
+                const storedTickerData = localStorage.getItem(STORAGE_KEYS.TICKER_DATA);
+                const storedCurrentData = localStorage.getItem(STORAGE_KEYS.CURRENT_DATA);
+                const lastUpdate = localStorage.getItem(STORAGE_KEYS.LAST_UPDATE);
+                
+                if (storedTickerData) {
+                    tickerData = JSON.parse(storedTickerData);
+                    console.log('Loaded ticker data from storage:', Object.keys(tickerData).map(k => `${k}: ${tickerData[k].length} entries`));
+                }
+                
+                if (storedCurrentData) {
+                    currentMarketData = JSON.parse(storedCurrentData);
+                    console.log('Loaded current market data from storage:', Object.keys(currentMarketData).filter(k => currentMarketData[k]));
+                }
+                
+                if (lastUpdate) {
+                    console.log('Last data update:', new Date(lastUpdate).toLocaleString());
+                }
+            } catch (error) {
+                console.error('Failed to load stored data:', error);
+                // Clear corrupted data
+                localStorage.removeItem(STORAGE_KEYS.TICKER_DATA);
+                localStorage.removeItem(STORAGE_KEYS.CURRENT_DATA);
+                localStorage.removeItem(STORAGE_KEYS.LAST_UPDATE);
+            }
+        }
+
+        function loadInitialData() {
+            // Check if we have stored data, otherwise use sample data
+            const hasStoredData = Object.values(tickerData).some(data => data.length > 0);
+            
+            if (!hasStoredData) {
+                // Simulate loading historical data
+                const sampleData = {
+                    nasdaq: [
+                        { date: '2025-07-19', current: 23065.47, change: -15.58, previous: 23081.05, high: 23153.21, low: 23018.36 },
+                        { date: '2025-07-18', current: 23081.05, change: 42.30, previous: 23038.75, high: 23121.45, low: 22998.12 }
+                    ],
+                    dow: [
+                        { date: '2025-07-19', current: 44342.19, change: -142.30, previous: 44484.49, high: 44571.68, low: 44224.59 }
+                    ],
+                    gold: [
+                        { date: '2025-07-19', current: 3353.00, change: 12.90, previous: 3340.10, high: 3353.00, low: 3338.20 }
+                    ]
+                };
+                
+                Object.keys(sampleData).forEach(ticker => {
+                    tickerData[ticker] = sampleData[ticker];
+                });
+                
+                saveDataToStorage();
+            }
+            
+            // Render all tables
+            Object.keys(tickerData).forEach(ticker => {
+                renderTable(ticker);
+            });
+        }
+
+        function renderTable(ticker) {
+            const tbody = document.getElementById(`${ticker}-tbody`);
+            const data = tickerData[ticker];
+            
+            if (data.length === 0) {
+                tbody.innerHTML = `
+                    <tr>
+                        <td colspan="7" class="empty-state">
+                            <h5>No data available</h5>
+                            <p>Historical data will appear here once loaded</p>
+                        </td>
+                    </tr>
+                `;
+                return;
+            }
+            
+            tbody.innerHTML = data.map(row => `
+                <tr>
+                    <td>${row.date}</td>
+                    <td class="value-cell" onclick="copyValue('${row.current}')" title="Click to copy">${row.current}</td>
+                    <td class="${row.change >= 0 ? 'change-positive' : 'change-negative'}">
+                        ${row.change >= 0 ? '+' : ''}${row.change}
+                    </td>
+                    <td class="value-cell" onclick="copyValue('${row.previous}')" title="Click to copy">${row.previous}</td>
+                    <td class="value-cell" onclick="copyValue('${row.high}')" title="Click to copy">${row.high}</td>
+                    <td class="value-cell" onclick="copyValue('${row.low}')" title="Click to copy">${row.low}</td>
+                    <td>
+                        <div class="row-actions">
+                            <button class="action-btn" onclick="editRow('${ticker}', '${row.date}')">Edit</button>
+                            <button class="action-btn" onclick="deleteRow('${ticker}', '${row.date}')">Delete</button>
+                        </div>
+                    </td>
+                </tr>
+            `).join('');
+            
+            updateRecordCounts();
+        }
+
+        function sortTable(ticker, column) {
+            const currentSort = sortOrder[ticker];
+            let direction = 'asc';
+            
+            if (currentSort.column === column && currentSort.direction === 'asc') {
+                direction = 'desc';
+            }
+            
+            sortOrder[ticker] = { column, direction };
+            
+            tickerData[ticker].sort((a, b) => {
+                let aVal = a[column];
+                let bVal = b[column];
+                
+                // Handle numeric vs string sorting
+                if (column === 'date') {
+                    aVal = new Date(aVal);
+                    bVal = new Date(bVal);
+                } else if (typeof aVal === 'string' && !isNaN(aVal)) {
+                    aVal = parseFloat(aVal);
+                    bVal = parseFloat(bVal);
+                }
+                
+                if (direction === 'asc') {
+                    return aVal < bVal ? -1 : aVal > bVal ? 1 : 0;
+                } else {
+                    return aVal > bVal ? -1 : aVal < bVal ? 1 : 0;
+                }
+            });
+            
+            // Update sort indicators
+            document.querySelectorAll(`#${ticker}-table th`).forEach(th => {
+                th.classList.remove('sorted-asc', 'sorted-desc');
+            });
+            
+            const sortedHeader = document.querySelector(`#${ticker}-table th[data-column="${column}"]`);
+            if (sortedHeader) {
+                sortedHeader.classList.add(`sorted-${direction}`);
+            }
+            
+            renderTable(ticker);
+        }
+
+        function filterData(ticker) {
+            const fromDate = document.getElementById(`${ticker}-date-from`).value;
+            const toDate = document.getElementById(`${ticker}-date-to`).value;
+            
+            // This would typically filter the displayed data
+            // For now, just re-render the table
+            renderTable(ticker);
+        }
+
+        function clearFilters(ticker) {
+            document.getElementById(`${ticker}-date-from`).value = '';
+            document.getElementById(`${ticker}-date-to`).value = '';
+            renderTable(ticker);
+        }
+
+        function exportData(ticker) {
+            const data = tickerData[ticker];
+            const csv = [
+                ['Date', 'Current', 'Change', 'Previous', 'High', 'Low'],
+                ...data.map(row => [row.date, row.current, row.change, row.previous, row.high, row.low])
+            ].map(row => row.join(',')).join('\n');
+            
+            const blob = new Blob([csv], { type: 'text/csv' });
+            const url = window.URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `${ticker}_data.csv`;
+            a.click();
+            window.URL.revokeObjectURL(url);
+        }
+
+        function refreshData(ticker) {
+            // Simulate data refresh
+            const button = event.target;
+            button.style.transform = 'rotate(360deg)';
+            
+            // Store current data as historical before updating
+            if (currentMarketData[ticker]) {
+                const currentData = currentMarketData[ticker];
+                const historicalEntry = {
+                    date: new Date().toISOString().split('T')[0],
+                    current: currentData.current,
+                    change: currentData.change,
+                    previous: currentData.previous,
+                    high: currentData.high,
+                    low: currentData.low
+                };
+                
+                // Add to historical data (keep only last 30 entries)
+                tickerData[ticker].unshift(historicalEntry);
+                if (tickerData[ticker].length > 30) {
+                    tickerData[ticker] = tickerData[ticker].slice(0, 30);
+                }
+            }
+            
+            // Simulate new market data (in real app, this would come from API)
+            const newData = generateNewMarketData(ticker);
+            currentMarketData[ticker] = newData;
+            
+            // Save to localStorage
+            saveDataToStorage();
+            
+            // Update display
+            renderTable(ticker);
+            
+            // Show refresh feedback
+            setTimeout(() => {
+                button.style.transform = 'rotate(0deg)';
+                showRefreshFeedback(ticker);
+            }, 500);
+        }
+
+        function generateNewMarketData(ticker) {
+            // Simulate realistic market data changes
+            const baseValues = {
+                nasdaq: { current: 23065.47, previous: 23081.05 },
+                dow: { current: 44342.19, previous: 44484.49 },
+                gold: { current: 3353.00, previous: 3340.10 }
+            };
+            
+            const base = baseValues[ticker];
+            const variation = (Math.random() - 0.5) * 0.02; // ±1% variation
+            const newCurrent = base.current * (1 + variation);
+            const change = newCurrent - base.previous;
+            
+            return {
+                current: parseFloat(newCurrent.toFixed(2)),
+                change: parseFloat(change.toFixed(2)),
+                previous: base.previous,
+                high: parseFloat((newCurrent * 1.005).toFixed(2)),
+                low: parseFloat((newCurrent * 0.995).toFixed(2))
+            };
+        }
+
+        function showRefreshFeedback(ticker) {
+            const table = document.getElementById(`${ticker}-table`);
+            if (table) {
+                table.style.background = 'rgba(34, 197, 94, 0.1)';
+                setTimeout(() => {
+                    table.style.background = '';
+                }, 1000);
+            }
+        }
+
+        // Update market overview cards with current data
+        function updateMarketOverview() {
+            Object.keys(currentMarketData).forEach(ticker => {
+                const data = currentMarketData[ticker];
+                if (data) {
+                    updateMarketCard(ticker, data);
+                }
+            });
+        }
+
+        function updateMarketCard(ticker, data) {
+            // This would update the market overview cards at the top
+            // For now, we'll just log the update
+            console.log(`Updated ${ticker} market card:`, data);
+            
+            // In a real implementation, you would update the DOM elements
+            // that show the current market data in the overview cards
+        }
+
+        // Auto-refresh function (can be called periodically)
+        function autoRefreshData() {
+            Object.keys(tickerData).forEach(ticker => {
+                refreshData(ticker);
+            });
+        }
+
+        // Initialize current market data if empty
+        function initializeCurrentData() {
+            Object.keys(tickerData).forEach(ticker => {
+                if (!currentMarketData[ticker] && tickerData[ticker].length > 0) {
+                    const latestData = tickerData[ticker][0];
+                    currentMarketData[ticker] = {
+                        current: latestData.current,
+                        change: latestData.change,
+                        previous: latestData.previous,
+                        high: latestData.high,
+                        low: latestData.low
+                    };
+                }
+            });
+            saveDataToStorage();
+        }
+
+        // Check data persistence status
+        function checkDataPersistence() {
+            const storedTickerData = localStorage.getItem(STORAGE_KEYS.TICKER_DATA);
+            const storedCurrentData = localStorage.getItem(STORAGE_KEYS.CURRENT_DATA);
+            
+            console.log('=== Data Persistence Check ===');
+            console.log('Ticker data in localStorage:', storedTickerData ? 'Present' : 'Missing');
+            console.log('Current data in localStorage:', storedCurrentData ? 'Present' : 'Missing');
+            console.log('Ticker data in memory:', Object.keys(tickerData).map(k => `${k}: ${tickerData[k].length} entries`));
+            console.log('Current data in memory:', Object.keys(currentMarketData).filter(k => currentMarketData[k]));
+            console.log('================================');
+        }
+
+        // Call this function to debug data persistence
+        window.debugDataPersistence = checkDataPersistence;
+
+        function editRow(ticker, date) {
+            // Implement row editing functionality
+            console.log(`Edit ${ticker} row for date ${date}`);
+        }
+
+        function deleteRow(ticker, date) {
+            if (confirm('Are you sure you want to delete this record?')) {
+                tickerData[ticker] = tickerData[ticker].filter(row => row.date !== date);
+                saveDataToStorage();
+                renderTable(ticker);
+                console.log(`Deleted ${ticker} record for date ${date}`);
+            }
+        }
+
+        function updateRecordCounts() {
+            Object.keys(tickerData).forEach(ticker => {
+                const countElement = document.getElementById(`${ticker}-count`);
+                if (countElement) {
+                    countElement.textContent = `${tickerData[ticker].length} records`;
+                }
+            });
+        }
+
+        // Add new data (this would be called from your data feed)
+        function addNewData(ticker, newRow) {
+            // Check if date already exists
+            const existingIndex = tickerData[ticker].findIndex(row => row.date === newRow.date);
+            
+            if (existingIndex >= 0) {
+                // Update existing row
+                tickerData[ticker][existingIndex] = newRow;
+            } else {
+                // Add new row at the beginning (most recent first)
+                tickerData[ticker].unshift(newRow);
+            }
+            
+            // Keep only last 30 entries
+            if (tickerData[ticker].length > 30) {
+                tickerData[ticker] = tickerData[ticker].slice(0, 30);
+            }
+            
+            // Update current market data if this is the latest entry
+            if (tickerData[ticker][0].date === newRow.date) {
+                currentMarketData[ticker] = {
+                    current: newRow.current,
+                    change: newRow.change,
+                    previous: newRow.previous,
+                    high: newRow.high,
+                    low: newRow.low
+                };
+            }
+            
+            // Save to localStorage
+            saveDataToStorage();
+            
+            // Update display
+            renderTable(ticker);
+            
+            console.log(`Added/Updated data for ${ticker}:`, newRow);
+        }
+    </script>
+</body>
+</html>
 {% endblock %} 

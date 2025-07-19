@@ -51,19 +51,23 @@ class Config:
                 'description': 'NASDAQ-100 Index'
             },
             'gold': {
+                'yahoo_finance': 'GC=F',  # Gold Futures (COMEX values)
+                'yahoo_finance_backup': 'XAUUSD=X',  # Gold spot
+                'yahoo_finance_backup2': 'GLD',  # Gold ETF
                 'alpha_vantage': 'XAUUSD',
-                'yahoo_finance': 'GC=F',
                 'finnhub': 'XAUUSD',
                 'polygon': 'XAUUSD',
                 'display_name': 'Gold Futures',
                 'description': 'Gold vs US Dollar'
             },
             'dow': {
+                'yahoo_finance': '^DJI',  # US30 (as requested)
+                'yahoo_finance_backup': 'DJIA',  # DJIA alternative
+                'yahoo_finance_backup2': 'DIA',  # Dow ETF
                 'alpha_vantage': 'DJI',
-                'yahoo_finance': '^DJI',
                 'finnhub': 'DJI',
                 'polygon': 'DJI',
-                'display_name': 'Dow Jones',
+                'display_name': 'DOW (US30)',
                 'description': 'Dow Jones Industrial Average'
             }
         }

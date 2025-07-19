@@ -201,6 +201,56 @@
             border: 1px solid rgba(156, 163, 175, 0.3);
         }
 
+        /* Cached data indicator */
+        .ticker-item.cached {
+            opacity: 0.8;
+            position: relative;
+        }
+
+        .ticker-item.cached::after {
+            content: '📋';
+            position: absolute;
+            top: 5px;
+            right: 5px;
+            font-size: 0.7rem;
+            opacity: 0.6;
+        }
+
+        .ticker-item.loading {
+            opacity: 0.7;
+            position: relative;
+        }
+
+        .ticker-item.loading::after {
+            content: '⏳';
+            position: absolute;
+            top: 5px;
+            right: 5px;
+            font-size: 0.7rem;
+            opacity: 0.8;
+            animation: pulse 1.5s infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 0.8; }
+            50% { opacity: 0.4; }
+        }
+
+        /* Navigation indicator */
+        .ticker-item.navigating {
+            opacity: 0.9;
+            position: relative;
+        }
+
+        .ticker-item.navigating::after {
+            content: '🔄';
+            position: absolute;
+            top: 5px;
+            right: 5px;
+            font-size: 0.7rem;
+            opacity: 0.6;
+        }
+
         /* Key Data Styling */
         .ticker-key-data {
             margin-top: 10px;
@@ -254,12 +304,13 @@
             right: 0;
             top: 50%;
             transform: translateY(-50%);
-            width: 14px;
-            height: 14px;
+            width: 16px;
+            height: 16px;
             opacity: 0.6;
             transition: all 0.2s ease;
             cursor: pointer;
             color: #d4af37;
+            fill: currentColor;
         }
 
         .key-data-value:hover .copy-icon {
@@ -1715,27 +1766,27 @@
                     <div class="ticker-key-data">
                         <div class="key-data-row">
                             <span class="key-data-label">Current Value:</span>
-                            <span class="key-data-value" id="nasdaq-current" onclick="copyToClipboard(this)">--<span class="copy-icon">📋</span></span>
+                            <span class="key-data-value" id="nasdaq-current" onclick="copyToClipboard(this)">--<span class="copy-icon"><svg viewBox="0 0 24 24"><path d="M16 1H4c-1.1 0-2 .9-2 2v14h2V3h12V1zm3 4H8c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h11c1.1 0 2-.9 2-2V7c0-1.1-.9-2-2-2zm0 16H8V7h11v14z"/></svg></span></span>
                         </div>
                         <div class="key-data-row">
                             <span class="key-data-label">Net Change:</span>
-                            <span class="key-data-value" id="nasdaq-net-change" onclick="copyToClipboard(this)">--<span class="copy-icon">📋</span></span>
+                            <span class="key-data-value" id="nasdaq-net-change">--</span>
                         </div>
                         <div class="key-data-row">
                             <span class="key-data-label">Previous Close:</span>
-                            <span class="key-data-value" id="nasdaq-prev-close" onclick="copyToClipboard(this)">--<span class="copy-icon">📋</span></span>
+                            <span class="key-data-value" id="nasdaq-prev-close" onclick="copyToClipboard(this)">--<span class="copy-icon"><svg viewBox="0 0 24 24"><path d="M16 1H4c-1.1 0-2 .9-2 2v14h2V3h12V1zm3 4H8c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h11c1.1 0 2-.9 2-2V7c0-1.1-.9-2-2-2zm0 16H8V7h11v14z"/></svg></span></span>
                         </div>
                         <div class="key-data-row">
                             <span class="key-data-label">Today's High:</span>
-                            <span class="key-data-value" id="nasdaq-high" onclick="copyToClipboard(this)">--<span class="copy-icon">📋</span></span>
+                            <span class="key-data-value" id="nasdaq-high" onclick="copyToClipboard(this)">--<span class="copy-icon"><svg viewBox="0 0 24 24"><path d="M16 1H4c-1.1 0-2 .9-2 2v14h2V3h12V1zm3 4H8c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h11c1.1 0 2-.9 2-2V7c0-1.1-.9-2-2-2zm0 16H8V7h11v14z"/></svg></span></span>
                         </div>
                         <div class="key-data-row">
                             <span class="key-data-label">Today's Low:</span>
-                            <span class="key-data-value" id="nasdaq-low" onclick="copyToClipboard(this)">--<span class="copy-icon">📋</span></span>
+                            <span class="key-data-value" id="nasdaq-low" onclick="copyToClipboard(this)">--<span class="copy-icon"><svg viewBox="0 0 24 24"><path d="M16 1H4c-1.1 0-2 .9-2 2v14h2V3h12V1zm3 4H8c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h11c1.1 0 2-.9 2-2V7c0-1.1-.9-2-2-2zm0 16H8V7h11v14z"/></svg></span></span>
                         </div>
                         <div class="key-data-row">
                             <span class="key-data-label">Take Profit:</span>
-                            <span class="key-data-value" id="nasdaq-tp" onclick="copyToClipboard(this)">--<span class="copy-icon">📋</span></span>
+                            <span class="key-data-value" id="nasdaq-tp" onclick="copyToClipboard(this)">--<span class="copy-icon"><svg viewBox="0 0 24 24"><path d="M16 1H4c-1.1 0-2 .9-2 2v14h2V3h12V1zm3 4H8c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h11c1.1 0 2-.9 2-2V7c0-1.1-.9-2-2-2zm0 16H8V7h11v14z"/></svg></span></span>
                         </div>
                     </div>
                 </div>
@@ -1747,27 +1798,27 @@
                     <div class="ticker-key-data">
                         <div class="key-data-row">
                             <span class="key-data-label">Current Value:</span>
-                            <span class="key-data-value" id="gold-current" onclick="copyToClipboard(this)">--<span class="copy-icon">📋</span></span>
+                            <span class="key-data-value" id="gold-current" onclick="copyToClipboard(this)">--<span class="copy-icon"><svg viewBox="0 0 24 24"><path d="M16 1H4c-1.1 0-2 .9-2 2v14h2V3h12V1zm3 4H8c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h11c1.1 0 2-.9 2-2V7c0-1.1-.9-2-2-2zm0 16H8V7h11v14z"/></svg></span></span>
                         </div>
                         <div class="key-data-row">
                             <span class="key-data-label">Net Change:</span>
-                            <span class="key-data-value" id="gold-net-change" onclick="copyToClipboard(this)">--<span class="copy-icon">📋</span></span>
+                            <span class="key-data-value" id="gold-net-change">--</span>
                         </div>
                         <div class="key-data-row">
                             <span class="key-data-label">Previous Close:</span>
-                            <span class="key-data-value" id="gold-prev-close" onclick="copyToClipboard(this)">--<span class="copy-icon">📋</span></span>
+                            <span class="key-data-value" id="gold-prev-close" onclick="copyToClipboard(this)">--<span class="copy-icon"><svg viewBox="0 0 24 24"><path d="M16 1H4c-1.1 0-2 .9-2 2v14h2V3h12V1zm3 4H8c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h11c1.1 0 2-.9 2-2V7c0-1.1-.9-2-2-2zm0 16H8V7h11v14z"/></svg></span></span>
                         </div>
                         <div class="key-data-row">
                             <span class="key-data-label">Today's High:</span>
-                            <span class="key-data-value" id="gold-high" onclick="copyToClipboard(this)">--<span class="copy-icon">📋</span></span>
+                            <span class="key-data-value" id="gold-high" onclick="copyToClipboard(this)">--<span class="copy-icon"><svg viewBox="0 0 24 24"><path d="M16 1H4c-1.1 0-2 .9-2 2v14h2V3h12V1zm3 4H8c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h11c1.1 0 2-.9 2-2V7c0-1.1-.9-2-2-2zm0 16H8V7h11v14z"/></svg></span></span>
                         </div>
                         <div class="key-data-row">
                             <span class="key-data-label">Today's Low:</span>
-                            <span class="key-data-value" id="gold-low" onclick="copyToClipboard(this)">--<span class="copy-icon">📋</span></span>
+                            <span class="key-data-value" id="gold-low" onclick="copyToClipboard(this)">--<span class="copy-icon"><svg viewBox="0 0 24 24"><path d="M16 1H4c-1.1 0-2 .9-2 2v14h2V3h12V1zm3 4H8c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h11c1.1 0 2-.9 2-2V7c0-1.1-.9-2-2-2zm0 16H8V7h11v14z"/></svg></span></span>
                         </div>
                         <div class="key-data-row">
                             <span class="key-data-label">Take Profit:</span>
-                            <span class="key-data-value" id="gold-tp" onclick="copyToClipboard(this)">--<span class="copy-icon">📋</span></span>
+                            <span class="key-data-value" id="gold-tp" onclick="copyToClipboard(this)">--<span class="copy-icon"><svg viewBox="0 0 24 24"><path d="M16 1H4c-1.1 0-2 .9-2 2v14h2V3h12V1zm3 4H8c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h11c1.1 0 2-.9 2-2V7c0-1.1-.9-2-2-2zm0 16H8V7h11v14z"/></svg></span></span>
                         </div>
                     </div>
                 </div>
@@ -1779,27 +1830,27 @@
                     <div class="ticker-key-data">
                         <div class="key-data-row">
                             <span class="key-data-label">Current Value:</span>
-                            <span class="key-data-value" id="dow-current" onclick="copyToClipboard(this)">--<span class="copy-icon">📋</span></span>
+                            <span class="key-data-value" id="dow-current" onclick="copyToClipboard(this)">--<span class="copy-icon"><svg viewBox="0 0 24 24"><path d="M16 1H4c-1.1 0-2 .9-2 2v14h2V3h12V1zm3 4H8c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h11c1.1 0 2-.9 2-2V7c0-1.1-.9-2-2-2zm0 16H8V7h11v14z"/></svg></span></span>
                         </div>
                         <div class="key-data-row">
                             <span class="key-data-label">Net Change:</span>
-                            <span class="key-data-value" id="dow-net-change" onclick="copyToClipboard(this)">--<span class="copy-icon">📋</span></span>
+                            <span class="key-data-value" id="dow-net-change">--</span>
                         </div>
                         <div class="key-data-row">
                             <span class="key-data-label">Previous Close:</span>
-                            <span class="key-data-value" id="dow-prev-close" onclick="copyToClipboard(this)">--<span class="copy-icon">📋</span></span>
+                            <span class="key-data-value" id="dow-prev-close" onclick="copyToClipboard(this)">--<span class="copy-icon"><svg viewBox="0 0 24 24"><path d="M16 1H4c-1.1 0-2 .9-2 2v14h2V3h12V1zm3 4H8c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h11c1.1 0 2-.9 2-2V7c0-1.1-.9-2-2-2zm0 16H8V7h11v14z"/></svg></span></span>
                         </div>
                         <div class="key-data-row">
                             <span class="key-data-label">Today's High:</span>
-                            <span class="key-data-value" id="dow-high" onclick="copyToClipboard(this)">--<span class="copy-icon">📋</span></span>
+                            <span class="key-data-value" id="dow-high" onclick="copyToClipboard(this)">--<span class="copy-icon"><svg viewBox="0 0 24 24"><path d="M16 1H4c-1.1 0-2 .9-2 2v14h2V3h12V1zm3 4H8c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h11c1.1 0 2-.9 2-2V7c0-1.1-.9-2-2-2zm0 16H8V7h11v14z"/></svg></span></span>
                         </div>
                         <div class="key-data-row">
                             <span class="key-data-label">Today's Low:</span>
-                            <span class="key-data-value" id="dow-low" onclick="copyToClipboard(this)">--<span class="copy-icon">📋</span></span>
+                            <span class="key-data-value" id="dow-low" onclick="copyToClipboard(this)">--<span class="copy-icon"><svg viewBox="0 0 24 24"><path d="M16 1H4c-1.1 0-2 .9-2 2v14h2V3h12V1zm3 4H8c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h11c1.1 0 2-.9 2-2V7c0-1.1-.9-2-2-2zm0 16H8V7h11v14z"/></svg></span></span>
                         </div>
                         <div class="key-data-row">
                             <span class="key-data-label">Take Profit:</span>
-                            <span class="key-data-value" id="dow-tp" onclick="copyToClipboard(this)">--<span class="copy-icon">📋</span></span>
+                            <span class="key-data-value" id="dow-tp" onclick="copyToClipboard(this)">--<span class="copy-icon"><svg viewBox="0 0 24 24"><path d="M16 1H4c-1.1 0-2 .9-2 2v14h2V3h12V1zm3 4H8c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h11c1.1 0 2-.9 2-2V7c0-1.1-.9-2-2-2zm0 16H8V7h11v14z"/></svg></span></span>
                         </div>
                     </div>
                 </div>
@@ -1972,10 +2023,13 @@
                 subtree: true
             });
             
-                    // Initialize live ticker
-        updateLiveTicker();
-        // Update ticker every 15 seconds
-        setInterval(updateLiveTicker, 15000);
+                    // Initialize ticker with optimized manager
+                    tickerManager.loadCachedData();
+                    tickerManager.displayCachedData();
+                    
+                    // Update ticker only when needed
+                    tickerManager.updateIfNeeded();
+                    setInterval(() => tickerManager.updateIfNeeded(), tickerManager.updateInterval);
         
         // Initialize market timer
         updateMarketTimerTop();
@@ -1983,21 +2037,274 @@
         setInterval(updateMarketTimerTop, 1000);
         });
 
-        // Live ticker functionality
-        function updateLiveTicker() {
-            fetch('/api/live_prices')
-                .then(response => response.json())
-                .then(data => {
-                    if (data.success) {
-                        updateTickerElement('nasdaq-price', 'nasdaq-change', data.nasdaq);
-                        updateTickerElement('gold-price', 'gold-change', data.gold);
-                        updateTickerElement('dow-price', 'dow-change', data.dow);
-                    }
-                })
-                .catch(error => {
-                    console.error('Error fetching live prices:', error);
+        // Global Ticker State Management
+        class TickerManager {
+            constructor() {
+                this.data = null;
+                this.lastUpdate = 0;
+                this.updateInterval = 15000; // 15 seconds
+                this.isUpdating = false;
+                this.isInitialLoad = true;
+                this.navigationInProgress = false;
+                this.cacheKey = 'bfi_ticker_cache';
+                this.visibilityHidden = false;
+                
+                // Initialize navigation detection
+                this.initNavigationDetection();
+                this.initVisibilityDetection();
+            }
+            
+            initNavigationDetection() {
+                // Detect navigation vs. refresh
+                window.addEventListener('beforeunload', () => {
+                    sessionStorage.setItem('wasNavigating', 'true');
                 });
+                
+                window.addEventListener('load', () => {
+                    const wasNavigating = sessionStorage.getItem('wasNavigating');
+                    this.isInitialLoad = !wasNavigating;
+                    sessionStorage.removeItem('wasNavigating');
+                    
+                    console.log('Page load type:', this.isInitialLoad ? 'Initial Load' : 'Navigation');
+                });
+                
+                // Detect programmatic navigation
+                window.addEventListener('popstate', () => {
+                    this.navigationInProgress = true;
+                    setTimeout(() => {
+                        this.navigationInProgress = false;
+                    }, 100);
+                });
+            }
+            
+            initVisibilityDetection() {
+                // Pause updates when tab is not visible
+                document.addEventListener('visibilitychange', () => {
+                    this.visibilityHidden = document.hidden;
+                    if (this.visibilityHidden) {
+                        console.log('Tab hidden, pausing ticker updates');
+                    } else {
+                        console.log('Tab visible, resuming ticker updates');
+                    }
+                });
+            }
+            
+            shouldFetchNewData() {
+                const now = Date.now();
+                const timeSinceUpdate = now - this.lastUpdate;
+                const isPageNavigation = !this.isInitialLoad && this.navigationInProgress;
+                const isTabHidden = this.visibilityHidden;
+                
+                // Don't fetch if:
+                // - Tab is hidden
+                // - Navigation in progress
+                // - Not enough time has passed
+                // - Already updating
+                
+                if (isTabHidden || isPageNavigation || this.isUpdating) {
+                    return false;
+                }
+                
+                return timeSinceUpdate >= this.updateInterval;
+            }
+            
+            loadCachedData() {
+                try {
+                    const cached = localStorage.getItem(this.cacheKey);
+                    if (cached) {
+                        const parsed = JSON.parse(cached);
+                        this.data = parsed.data;
+                        this.lastUpdate = parsed.timestamp;
+                        console.log('Loaded cached ticker data from', new Date(this.lastUpdate).toLocaleString());
+                        return true;
+                    }
+                } catch (error) {
+                    console.error('Error loading cached ticker data:', error);
+                }
+                return false;
+            }
+            
+            saveCachedData(data) {
+                try {
+                    const cacheData = {
+                        data: data,
+                        timestamp: Date.now()
+                    };
+                    localStorage.setItem(this.cacheKey, JSON.stringify(cacheData));
+                    this.data = data;
+                    this.lastUpdate = cacheData.timestamp;
+                    console.log('Saved ticker data to cache');
+                } catch (error) {
+                    console.error('Error saving ticker data to cache:', error);
+                }
+            }
+            
+            hasNewData(currentData) {
+                if (!this.data) return true;
+                
+                // Compare current data with cached data
+                const symbols = ['nasdaq', 'gold', 'dow'];
+                for (const symbol of symbols) {
+                    if (currentData[symbol] && this.data[symbol]) {
+                        if (currentData[symbol].price !== this.data[symbol].price) {
+                            return true;
+                        }
+                    }
+                }
+                return false;
+            }
+            
+            displayCachedData() {
+                if (this.data) {
+                    console.log('Displaying cached ticker data');
+                    updateTickerElement('nasdaq-price', 'nasdaq-change', this.data.nasdaq);
+                    updateTickerElement('gold-price', 'gold-change', this.data.gold);
+                    updateTickerElement('dow-price', 'dow-change', this.data.dow);
+                }
+            }
+            
+            updateIfNeeded() {
+                if (!this.shouldFetchNewData()) {
+                    console.log('Using cached ticker data, skipping API call');
+                    return;
+                }
+                
+                this.isUpdating = true;
+                console.log('Fetching new ticker data...');
+                
+                fetch('/api/live_prices')
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.success) {
+                            if (this.hasNewData(data)) {
+                                console.log('New ticker data detected, updating display');
+                                updateTickerElement('nasdaq-price', 'nasdaq-change', data.nasdaq);
+                                updateTickerElement('gold-price', 'gold-change', data.gold);
+                                updateTickerElement('dow-price', 'dow-change', data.dow);
+                                
+                                this.saveCachedData(data);
+                            } else {
+                                console.log('No new ticker data, keeping current display');
+                            }
+                        }
+                    })
+                    .catch(error => {
+                        console.error('Error fetching live prices:', error);
+                        if (this.data) {
+                            console.log('Using cached data due to fetch error');
+                            this.displayCachedData();
+                        }
+                    })
+                    .finally(() => {
+                        this.isUpdating = false;
+                    });
+            }
+            
+            forceRefresh() {
+                console.log('Force refreshing ticker data');
+                this.lastUpdate = 0;
+                this.updateIfNeeded();
+            }
+            
+            clearCache() {
+                localStorage.removeItem(this.cacheKey);
+                this.data = null;
+                this.lastUpdate = 0;
+                console.log('Ticker cache cleared');
+            }
+            
+            getCacheInfo() {
+                return {
+                    hasCachedData: !!this.data,
+                    lastUpdate: this.lastUpdate ? new Date(this.lastUpdate).toLocaleString() : 'Never',
+                    timeSinceUpdate: this.lastUpdate ? Date.now() - this.lastUpdate : 0,
+                    isInitialLoad: this.isInitialLoad,
+                    navigationInProgress: this.navigationInProgress,
+                    isTabHidden: this.visibilityHidden,
+                    isUpdating: this.isUpdating
+                };
+            }
         }
+
+        // Global ticker manager instance
+        const tickerManager = new TickerManager();
+
+        // Global debug functions for ticker management
+        window.forceRefreshTicker = () => tickerManager.forceRefresh();
+        window.clearTickerCache = () => tickerManager.clearCache();
+        window.getTickerCacheInfo = () => tickerManager.getCacheInfo();
+        window.tickerManager = tickerManager; // Expose for advanced debugging
+
+        // Update visual states based on ticker manager
+        function updateTickerVisualStates() {
+            const tickerItems = document.querySelectorAll('.ticker-item');
+            tickerItems.forEach(item => {
+                item.classList.remove('loading', 'cached', 'navigating');
+                
+                if (tickerManager.isUpdating) {
+                    item.classList.add('loading');
+                } else if (tickerManager.navigationInProgress) {
+                    item.classList.add('navigating');
+                } else if (Date.now() - tickerManager.lastUpdate < 5000) {
+                    item.classList.add('cached');
+                }
+            });
+        }
+
+        // Update visual states periodically
+        setInterval(updateTickerVisualStates, 1000);
+
+        // Enhanced debug function with detailed status
+        window.getTickerStatus = () => {
+            const info = tickerManager.getCacheInfo();
+            const status = {
+                ...info,
+                shouldUpdate: tickerManager.shouldFetchNewData(),
+                timeUntilUpdate: Math.max(0, tickerManager.updateInterval - info.timeSinceUpdate),
+                cacheAge: info.timeSinceUpdate,
+                isEfficient: !tickerManager.isUpdating && !tickerManager.navigationInProgress
+            };
+            
+            console.log('🔍 Ticker Status:', status);
+            return status;
+        };
+
+        // Performance monitoring
+        let performanceMetrics = {
+            apiCalls: 0,
+            cacheHits: 0,
+            navigationSkips: 0,
+            lastReset: Date.now()
+        };
+
+        // Override console.log to track performance
+        const originalLog = console.log;
+        console.log = function(...args) {
+            if (args[0] && typeof args[0] === 'string') {
+                if (args[0].includes('Fetching new ticker data')) {
+                    performanceMetrics.apiCalls++;
+                } else if (args[0].includes('Using cached ticker data')) {
+                    performanceMetrics.cacheHits++;
+                } else if (args[0].includes('Navigation')) {
+                    performanceMetrics.navigationSkips++;
+                }
+            }
+            originalLog.apply(console, args);
+        };
+
+        window.getTickerPerformance = () => {
+            const now = Date.now();
+            const sessionDuration = now - performanceMetrics.lastReset;
+            const hours = sessionDuration / (1000 * 60 * 60);
+            
+            return {
+                ...performanceMetrics,
+                sessionDuration: `${hours.toFixed(2)} hours`,
+                apiCallsPerHour: hours > 0 ? (performanceMetrics.apiCalls / hours).toFixed(2) : 0,
+                cacheHitRate: performanceMetrics.apiCalls > 0 ? 
+                    ((performanceMetrics.cacheHits / (performanceMetrics.apiCalls + performanceMetrics.cacheHits)) * 100).toFixed(1) + '%' : '0%'
+            };
+        };
 
         function updateTickerElement(priceId, changeId, data) {
             const priceElement = document.getElementById(priceId);
@@ -2024,6 +2331,15 @@
                 
                 // Update key data fields
                 updateKeyData(priceId, data);
+                
+                // Add subtle indicator for cached data
+                const tickerItem = priceElement.closest('.ticker-item');
+                if (tickerItem) {
+                    tickerItem.classList.remove('loading', 'cached');
+                    if (Date.now() - tickerManager.lastUpdate < 5000) {
+                        tickerItem.classList.add('cached');
+                    }
+                }
             }
         }
 
@@ -2033,7 +2349,7 @@
             // Update current value
             const currentElement = document.getElementById(`${prefix}-current`);
             if (currentElement) {
-                currentElement.innerHTML = `${data.price || '--'}<span class="copy-icon">📋</span>`;
+                currentElement.innerHTML = `${data.price || '--'}<span class="copy-icon"><svg viewBox="0 0 24 24"><path d="M16 1H4c-1.1 0-2 .9-2 2v14h2V3h12V1zm3 4H8c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h11c1.1 0 2-.9 2-2V7c0-1.1-.9-2-2-2zm0 16H8V7h11v14z"/></svg></span>`;
             }
             
             // Update net change
@@ -2041,7 +2357,7 @@
             if (netChangeElement && data.change) {
                 const changeValue = data.change;
                 const changePercent = data.changePercent;
-                netChangeElement.innerHTML = `${changeValue} (${changePercent})<span class="copy-icon">📋</span>`;
+                netChangeElement.textContent = `${changeValue} (${changePercent})`;
                 netChangeElement.className = 'key-data-value';
                 if (changeValue > 0) {
                     netChangeElement.classList.add('positive');
@@ -2053,19 +2369,19 @@
             // Update previous close
             const prevCloseElement = document.getElementById(`${prefix}-prev-close`);
             if (prevCloseElement && data.previousClose) {
-                prevCloseElement.innerHTML = `${data.previousClose}<span class="copy-icon">📋</span>`;
+                prevCloseElement.innerHTML = `${data.previousClose}<span class="copy-icon"><svg viewBox="0 0 24 24"><path d="M16 1H4c-1.1 0-2 .9-2 2v14h2V3h12V1zm3 4H8c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h11c1.1 0 2-.9 2-2V7c0-1.1-.9-2-2-2zm0 16H8V7h11v14z"/></svg></span>`;
             }
             
             // Update today's high
             const highElement = document.getElementById(`${prefix}-high`);
             if (highElement && data.high) {
-                highElement.innerHTML = `${data.high}<span class="copy-icon">📋</span>`;
+                highElement.innerHTML = `${data.high}<span class="copy-icon"><svg viewBox="0 0 24 24"><path d="M16 1H4c-1.1 0-2 .9-2 2v14h2V3h12V1zm3 4H8c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h11c1.1 0 2-.9 2-2V7c0-1.1-.9-2-2-2zm0 16H8V7h11v14z"/></svg></span>`;
             }
             
             // Update today's low
             const lowElement = document.getElementById(`${prefix}-low`);
             if (lowElement && data.low) {
-                lowElement.innerHTML = `${data.low}<span class="copy-icon">📋</span>`;
+                lowElement.innerHTML = `${data.low}<span class="copy-icon"><svg viewBox="0 0 24 24"><path d="M16 1H4c-1.1 0-2 .9-2 2v14h2V3h12V1zm3 4H8c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h11c1.1 0 2-.9 2-2V7c0-1.1-.9-2-2-2zm0 16H8V7h11v14z"/></svg></span>`;
             }
             
             // Calculate and update Take Profit (Current Value +/- Net Change)
@@ -2083,7 +2399,7 @@
                     formattedTP = takeProfit.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
                 }
                 
-                tpElement.innerHTML = `${formattedTP}<span class="copy-icon">📋</span>`;
+                tpElement.innerHTML = `${formattedTP}<span class="copy-icon"><svg viewBox="0 0 24 24"><path d="M16 1H4c-1.1 0-2 .9-2 2v14h2V3h12V1zm3 4H8c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h11c1.1 0 2-.9 2-2V7c0-1.1-.9-2-2-2zm0 16H8V7h11v14z"/></svg></span>`;
                 
                 // Color code based on whether it's above or below current price
                 tpElement.className = 'key-data-value';
@@ -2215,27 +2531,21 @@
                 timerStatus.textContent = `US Markets Open - ${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')} remaining`;
                 timerStatus.className = 'timer-status-top market-open-top';
             } else {
-                if (marketTimerData.time_until_open.days > 0) {
-                    const days = marketTimerData.time_until_open.days;
-                    timerStatus.textContent = `US Markets Closed - Opens ${marketTimerData.next_open}`;
-                } else {
-                    timerStatus.textContent = `US Markets Closed - Opens in ${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
-                }
+                // Use the message from the API which contains UTC+2 time
+                timerStatus.textContent = marketTimerData.message;
                 timerStatus.className = 'timer-status-top market-closed-top';
             }
             
-            // Update next open information
-            if (marketTimerData.next_open) {
-                nextOpen.textContent = `Next Open: ${marketTimerData.next_open}`;
-            } else {
-                nextOpen.textContent = '';
-            }
+            // Clear next open information (removed as requested)
+            nextOpen.textContent = '';
         }
 
         // Copy to Clipboard Function
         function copyToClipboard(element) {
             // Get the text content (excluding the copy icon)
-            const textToCopy = element.textContent.replace('📋', '').trim();
+            let textToCopy = element.textContent.replace(/📋|Copy|copy/g, '').trim();
+            // Remove commas from the copied text
+            textToCopy = textToCopy.replace(/,/g, '');
             
             // Create a temporary textarea to copy the text
             const textarea = document.createElement('textarea');
