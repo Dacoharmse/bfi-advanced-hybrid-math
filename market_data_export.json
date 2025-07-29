@@ -1,0 +1,41 @@
+{
+  "^NDX": {
+    "symbol": "^NDX",
+    "name": "NASDAQ",
+    "current_price": 23219.87,
+    "previous_close": 23162.41,
+    "net_change": 57.45999999999913,
+    "net_change_percent": 0.24807435841088699,
+    "day_high": 23268.49,
+    "day_low": 23150.27,
+    "timestamp": "2025-07-25T08:18:25.033033",
+    "source": "yahoo_finance_scraper",
+    "url": "https://finance.yahoo.com/quote/%5ENDX/"
+  },
+  "^DJI": {
+    "symbol": "^DJI",
+    "name": "DOW JONES",
+    "current_price": 44693.91,
+    "previous_close": 45010.29,
+    "net_change": -316.3799999999974,
+    "net_change_percent": -0.7029059355094077,
+    "day_high": 44912.27,
+    "day_low": 44674.57,
+    "timestamp": "2025-07-25T08:18:51.147586",
+    "source": "yahoo_finance_scraper",
+    "url": "https://finance.yahoo.com/quote/%5EDJI/"
+  },
+  "GC=F": {
+    "symbol": "GC=F",
+    "name": "GOLD",
+    "current_price": 3358.7,
+    "previous_close": null,
+    "net_change": null,
+    "net_change_percent": null,
+    "day_high": 3376.6,
+    "day_low": 3357.2,
+    "timestamp": "2025-07-25T08:18:54.953197",
+    "source": "yahoo_finance_scraper",
+    "url": "https://finance.yahoo.com/quote/GC%3DF/"
+  }
+}

@@ -50,9 +50,15 @@ def get_python_executable():
             # Unix/Linux/Mac
             python_exe = venv_dir / "bin" / "python"
             if python_exe.exists():
+                print(f"✅ Found virtual environment Python: {python_exe}")
                 return str(python_exe)
+            else:
+                print(f"❌ Virtual environment Python not found at: {python_exe}")
+    else:
+        print(f"❌ Virtual environment directory not found: {venv_dir}")
     
     # Fallback to system Python
+    print(f"⚠️  Using system Python: {sys.executable}")
     return sys.executable
 
 def start_dashboard():
@@ -60,12 +66,17 @@ def start_dashboard():
     print("\n🚀 Starting BFI Signals AI Dashboard...")
     print("=" * 50)
     
+    # Store original directory
+    original_dir = Path.cwd()
+    
+    # Get Python executable before changing directory
+    python_exe = get_python_executable()
+    # Make python executable path absolute relative to original directory (don't resolve symlinks)
+    python_exe_abs = (original_dir / python_exe).absolute()
+    print(f"📍 Using Python: {python_exe_abs}")
+    
     # Change to core directory
     core_dir = Path("core")
-    
-    # Get Python executable
-    python_exe = get_python_executable()
-    print(f"📍 Using Python: {python_exe}")
     print(f"📂 Working directory: {core_dir.absolute()}")
     
     try:
@@ -78,7 +89,7 @@ def start_dashboard():
         print("=" * 50)
         
         # Run the dashboard
-        subprocess.run([python_exe, "dashboard.py"], check=True)
+        subprocess.run([str(python_exe_abs), "dashboard.py"], check=True)
         
     except KeyboardInterrupt:
         print("\n\n🛑 Dashboard stopped by user")

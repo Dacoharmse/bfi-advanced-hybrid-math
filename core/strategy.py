@@ -346,8 +346,17 @@ def format_signal_for_discord(signal: Dict[str, Any], include_risky_play: bool =
     # Use display name instead of technical symbol
     display_name = signal.get("display_name", signal["symbol"])
     
+    # Format timestamp to show readable date format
+    from datetime import datetime
+    try:
+        # Parse ISO timestamp and format as "28 July 2025"
+        timestamp_obj = datetime.fromisoformat(signal['timestamp'].replace('Z', '+00:00'))
+        date_header = timestamp_obj.strftime('%d %B %Y')
+    except (ValueError, KeyError):
+        # Fallback to original timestamp if parsing fails
+        date_header = signal.get('timestamp', 'Unknown Date')
+    
     # Add weekend signal indicator
-    date_header = signal['timestamp']
     if signal.get('is_weekend_signal', False):
         date_header += " (Weekend Signal for Monday Trading)"
     

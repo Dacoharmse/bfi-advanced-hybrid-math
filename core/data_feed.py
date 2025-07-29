@@ -47,9 +47,10 @@ class EnhancedDataFeed:
                     'alpha_vantage': 'NDX'
                 },
                 'gold': {
-                    'yahoo_finance': 'GC=F',  # Gold Futures (COMEX values)
-                    'yahoo_finance_backup': 'XAUUSD=X',  # Gold spot
-                    'yahoo_finance_backup2': 'GLD',  # Gold ETF
+                    'yahoo_finance': 'GC=F',  # Gold Futures (COMEX) - Most accurate for trading
+                    'yahoo_finance_backup': 'XAUUSD=X',  # Gold spot USD
+                    'yahoo_finance_backup2': 'GLD',  # Gold ETF fallback
+                    'yahoo_finance_backup3': '^GOLD',  # Gold index
                     'alpha_vantage': 'XAUUSD'
                 },
                 'dow': {
@@ -176,7 +177,8 @@ class EnhancedDataFeed:
                 while retry_count < max_retries:
                     try:
                         self.logger.info(f"📊 Fetching data for {symbol} (attempt {retry_count + 1}/{max_retries})")
-                        current_data = ticker.history(period='2d', timeout=15)
+                        # Get recent data with smaller period for faster response
+                        current_data = ticker.history(period='5d', interval='1d', timeout=15)
                         break
                     except Exception as retry_error:
                         retry_count += 1
@@ -190,17 +192,53 @@ class EnhancedDataFeed:
                 
                 self.logger.info(f"📊 Data length for {symbol}: {len(current_data)} rows")
                 
-                if len(current_data) >= 2:
+                if len(current_data) >= 1:
+                    # Get current/last available price - try to get most recent quote first
                     current_price = current_data['Close'].iloc[-1]
-                    previous_price = current_data['Close'].iloc[-2]
                     today_data = current_data.iloc[-1]
+                    
+                    # For Gold specifically, try to get live quote for more accuracy
+                    if symbol_key == 'gold':
+                        try:
+                            # Try to get current market price (last traded price)
+                            live_data = ticker.history(period='1d', interval='1m')
+                            if len(live_data) > 0:
+                                live_price = live_data['Close'].iloc[-1]
+                                if live_price > 0 and abs(live_price - current_price) < (current_price * 0.1):  # Sanity check
+                                    current_price = live_price
+                                    self.logger.info(f"🔴 Updated {symbol} with live price: {current_price}")
+                        except Exception as live_error:
+                            self.logger.warning(f"⚠️ Could not get live price for {symbol}: {live_error}")
+                    
+                    # For previous close, use real-time info from ticker.info if available
+                    previous_price = None
+                    try:
+                        # Get ticker info for more accurate previous close
+                        info = ticker.info
+                        if 'previousClose' in info and info['previousClose'] > 0:
+                            previous_price = info['previousClose']
+                            self.logger.info(f"📊 Using ticker.info previousClose: {previous_price}")
+                        elif 'regularMarketPreviousClose' in info and info['regularMarketPreviousClose'] > 0:
+                            previous_price = info['regularMarketPreviousClose']
+                            self.logger.info(f"📊 Using regularMarketPreviousClose: {previous_price}")
+                    except Exception as info_error:
+                        self.logger.warning(f"⚠️ Could not get ticker.info: {info_error}")
+                    
+                    # Fallback to historical data if info not available
+                    if previous_price is None and len(current_data) >= 2:
+                        previous_price = current_data['Close'].iloc[-2]
+                        self.logger.info(f"📊 Using historical data previousClose: {previous_price}")
+                    elif previous_price is None:
+                        # Use current price as fallback
+                        previous_price = current_price
+                        self.logger.warning(f"⚠️ Using current price as previous close fallback")
                     
                     self.logger.info(f"💰 {symbol} - Current: {current_price}, Previous: {previous_price}")
                     
                     # Enhanced data validation
                     if self.validate_market_data(current_price, previous_price, symbol):
                         change = current_price - previous_price
-                        change_percent = (change / previous_price) * 100
+                        change_percent = (change / previous_price) * 100 if previous_price != 0 else 0
                         
                         self._update_request_time('yahoo_finance')
                         self.last_successful_fetch[symbol_key] = datetime.now()

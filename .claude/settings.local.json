@@ -1,0 +1,30 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(python:*)",
+      "Bash(mkdir:*)",
+      "Bash(tail:*)",
+      "Bash(ls:*)",
+      "Bash(copy:*)",
+      "Bash(cp:*)",
+      "Bash(venvScriptspython.exe:*)",
+      "Bash(.venvScriptspython.exe coredashboard.py)",
+      "Bash(cmd:*)",
+      "Bash(start test_generate_signals.html)",
+      "Bash(explorer.exe:*)",
+      "Bash(grep:*)",
+      "Bash(findstr:*)",
+      "Bash(pip install:*)",
+      "Bash(find:*)",
+      "Bash(set PYTHONIOENCODING=utf-8)",
+      "Bash(timeout:*)",
+      "Bash(rm:*)",
+      "Bash(taskkill:*)",
+      "Bash(wmic process where:*)",
+      "Bash(source:*)",
+      "Bash(curl:*)",
+      "Bash(kill:*)"
+    ],
+    "deny": []
+  }
+}

@@ -1,0 +1,1251 @@
+{% extends "base_modern.html" %}
+
+{% block title %}Market Data History - BFI Signals AI{% endblock %}
+
+{% block page_title %}Market Data History{% endblock %}
+
+{% block extra_css %}
+<style>
+    /* Market Data History Specific Styles */
+    .market-overview-section {
+        margin-bottom: 40px;
+    }
+
+    .section-title {
+        font-size: 24px;
+        font-weight: 600;
+        color: var(--text-primary);
+        margin-bottom: 20px;
+        display: flex;
+        align-items: center;
+        gap: 12px;
+    }
+
+    .section-header {
+        text-align: center;
+        margin-bottom: 32px;
+    }
+
+    .trading-day-badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        background: rgba(255, 215, 0, 0.1);
+        border: 1px solid rgba(255, 215, 0, 0.3);
+        border-radius: 20px;
+        padding: 8px 16px;
+        margin-top: 12px;
+        font-size: 14px;
+        color: var(--text-secondary);
+    }
+
+    .calendar-icon {
+        font-size: 16px;
+    }
+
+    .section-title::before {
+        content: '';
+        width: 24px;
+        height: 24px;
+        background-image: url('{{ url_for("static", filename="chart-icon.svg") }}');
+        background-size: contain;
+        background-repeat: no-repeat;
+        margin-right: 8px;
+    }
+
+    /* Modern Market Cards Grid */
+    .market-cards {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+        gap: 24px;
+        margin-bottom: 32px;
+    }
+
+    /* Individual market card */
+    .market-card {
+        background: rgba(26, 26, 26, 0.9);
+        backdrop-filter: blur(10px);
+        border: 1px solid rgba(255, 215, 0, 0.2);
+        border-radius: 16px;
+        padding: 24px;
+        box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+        transition: all 0.3s ease;
+        position: relative;
+        overflow: hidden;
+    }
+
+    .market-card:hover {
+        border-color: rgba(255, 215, 0, 0.4);
+        box-shadow: 0 12px 40px rgba(255, 215, 0, 0.1);
+        transform: translateY(-2px);
+    }
+
+    /* Instrument-specific accent colors */
+    .nasdaq-card {
+        border-left: 4px solid #00d4ff;
+    }
+
+    .dow-card {
+        border-left: 4px solid #1e90ff;
+    }
+
+    .gold-card {
+        border-left: 4px solid #ffd700;
+    }
+
+    /* Card header */
+    .card-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-start;
+        margin-bottom: 20px;
+    }
+
+    .instrument-info {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+    }
+
+    .instrument-logo {
+        width: 40px;
+        height: 40px;
+        border-radius: 8px;
+        object-fit: cover;
+        border: 2px solid rgba(255, 215, 0, 0.3);
+        background: rgba(255, 255, 255, 0.05);
+        transition: all 0.3s ease;
+    }
+
+    .instrument-logo:hover {
+        transform: scale(1.05);
+        box-shadow: 0 4px 12px rgba(255, 215, 0, 0.2);
+    }
+
+    .nasdaq-card .instrument-logo {
+        border-color: rgba(0, 212, 255, 0.5);
+    }
+
+    .dow-card .instrument-logo {
+        border-color: rgba(30, 144, 255, 0.5);
+    }
+
+    .gold-card .instrument-logo {
+        border-color: rgba(255, 215, 0, 0.5);
+    }
+
+    .instrument-details {
+        display: flex;
+        flex-direction: column;
+    }
+
+    .instrument-name {
+        font-size: 18px;
+        font-weight: 700;
+        color: var(--text-primary);
+        margin: 0;
+        line-height: 1.2;
+    }
+
+    .instrument-symbol {
+        font-size: 12px;
+        color: var(--text-secondary);
+        font-weight: 500;
+        margin-top: 2px;
+    }
+
+    /* Change badge */
+    .change-badge {
+        padding: 6px 12px;
+        border-radius: 20px;
+        font-size: 14px;
+        font-weight: 600;
+        border: 1px solid;
+        min-width: 70px;
+        text-align: center;
+    }
+
+    .change-badge.positive {
+        background: rgba(0, 255, 136, 0.1);
+        border-color: rgba(0, 255, 136, 0.3);
+        color: #00ff88;
+    }
+
+    .change-badge.negative {
+        background: rgba(255, 71, 87, 0.1);
+        border-color: rgba(255, 71, 87, 0.3);
+        color: #ff4757;
+    }
+
+    /* Price section */
+    .price-section {
+        margin-bottom: 24px;
+    }
+
+    .main-price {
+        display: flex;
+        align-items: baseline;
+        gap: 16px;
+        flex-wrap: wrap;
+    }
+
+    .current-value {
+        font-size: 32px;
+        font-weight: 700;
+        color: var(--text-primary);
+        line-height: 1;
+        letter-spacing: -0.5px;
+        font-variant-numeric: tabular-nums;
+        font-family: 'Courier New', monospace;
+    }
+
+    .price-change {
+        display: flex;
+        align-items: center;
+        gap: 4px;
+        font-size: 16px;
+        font-weight: 600;
+        padding: 6px 10px;
+        border-radius: 8px;
+        border: 1px solid;
+        font-variant-numeric: tabular-nums;
+        font-family: 'Courier New', monospace;
+    }
+
+    .price-change.positive {
+        background: rgba(0, 255, 136, 0.1);
+        border-color: rgba(0, 255, 136, 0.2);
+        color: #00ff88;
+    }
+
+    .price-change.negative {
+        background: rgba(255, 71, 87, 0.1);
+        border-color: rgba(255, 71, 87, 0.2);
+        color: #ff4757;
+    }
+
+    /* Market details grid */
+    .market-details {
+        padding-top: 20px;
+        border-top: 1px solid rgba(255, 215, 0, 0.1);
+    }
+
+    .detail-grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 16px;
+    }
+
+    .detail-item {
+        display: flex;
+        flex-direction: column;
+        gap: 4px;
+    }
+
+    .detail-label {
+        font-size: 11px;
+        font-weight: 600;
+        color: var(--text-muted);
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+    }
+
+    .detail-value {
+        font-size: 14px;
+        font-weight: 600;
+        color: var(--text-secondary);
+        font-variant-numeric: tabular-nums;
+        font-family: 'Courier New', monospace;
+    }
+
+    /* Trend arrows */
+    .trend-arrow {
+        margin-right: 4px;
+        font-size: 14px;
+        font-weight: bold;
+    }
+
+    .trend-arrow.up {
+        color: #00ff88;
+    }
+
+    .trend-arrow.down {
+        color: #ff4757;
+    }
+
+    .trend-arrow.neutral {
+        color: var(--text-muted);
+    }
+
+    /* Data Grid */
+    .data-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+        gap: 16px;
+    }
+
+    .grid-item {
+        display: flex;
+        flex-direction: column;
+        gap: 4px;
+    }
+
+    .grid-label {
+        font-size: 12px;
+        color: var(--text-secondary);
+        font-weight: 500;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+    }
+
+    .grid-value {
+        font-size: 16px;
+        font-weight: 600;
+        color: var(--text-primary);
+        font-variant-numeric: tabular-nums;
+        cursor: pointer;
+        padding: 4px 8px;
+        border-radius: 6px;
+        transition: all 0.2s ease;
+        user-select: all;
+    }
+
+    .grid-value:hover {
+        background: rgba(255, 255, 255, 0.05);
+    }
+
+    .grid-value.primary {
+        font-size: 20px;
+        font-weight: 700;
+        color: var(--golden-primary);
+    }
+
+    .grid-value.positive {
+        color: var(--success-color);
+    }
+
+    .grid-value.negative {
+        color: var(--danger-color);
+    }
+
+    /* Copy feedback animation */
+    .grid-value.copied {
+        background: rgba(0, 255, 136, 0.2);
+        color: var(--success-color);
+    }
+
+    /* Historical Data Tables */
+    .historical-section {
+        margin-top: 40px;
+    }
+
+    .historical-title {
+        text-align: center;
+        margin-bottom: 40px;
+    }
+
+    .historical-title h2 {
+        font-size: 24px;
+        font-weight: 600;
+        color: var(--text-primary);
+        margin-bottom: 8px;
+    }
+
+    .historical-title p {
+        color: var(--text-secondary);
+        font-size: 14px;
+    }
+
+    /* Data Table Card */
+    .data-table-card {
+        background: var(--card-bg);
+        backdrop-filter: blur(10px);
+        border: 1px solid var(--golden-accent);
+        border-radius: var(--border-radius-lg);
+        overflow: hidden;
+        box-shadow: var(--box-shadow);
+        margin-bottom: 40px;
+    }
+
+    .table-header {
+        padding: 20px 24px;
+        background: rgba(212, 175, 55, 0.03);
+        border-bottom: 1px solid var(--golden-accent);
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        flex-wrap: wrap;
+        gap: 16px;
+    }
+
+    .table-title {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+    }
+
+    .table-icon {
+        width: 20px;
+        height: 20px;
+        object-fit: contain;
+    }
+
+    .table-title h4 {
+        font-size: 16px;
+        font-weight: 600;
+        color: var(--text-primary);
+        margin: 0;
+    }
+
+    .record-count {
+        font-size: 12px;
+        color: var(--text-muted);
+        margin-left: 8px;
+    }
+
+    .table-controls {
+        display: flex;
+        gap: 12px;
+        align-items: center;
+    }
+
+    .export-btn, .refresh-btn {
+        background: var(--secondary-bg);
+        border: 1px solid var(--golden-accent);
+        border-radius: 6px;
+        padding: 8px 16px;
+        color: var(--text-primary);
+        font-size: 12px;
+        font-weight: 500;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        text-decoration: none;
+    }
+
+    .export-btn:hover, .refresh-btn:hover {
+        background: var(--golden-accent);
+        border-color: var(--golden-secondary);
+    }
+
+    .refresh-btn {
+        width: 32px;
+        padding: 8px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+    /* Modern Table */
+    .modern-table {
+        width: 100%;
+        border-collapse: collapse;
+        font-size: 14px;
+    }
+
+    .modern-table th {
+        background: rgba(212, 175, 55, 0.05);
+        padding: 16px 20px;
+        text-align: left;
+        font-weight: 600;
+        font-size: 12px;
+        color: var(--text-secondary);
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        border-bottom: 1px solid var(--golden-accent);
+    }
+
+    .modern-table td {
+        padding: 16px 20px;
+        color: var(--text-primary);
+        font-weight: 500;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+        font-variant-numeric: tabular-nums;
+    }
+
+    .modern-table tbody tr {
+        transition: background-color 0.2s ease;
+    }
+
+    .modern-table tbody tr:hover {
+        background: rgba(212, 175, 55, 0.03);
+    }
+
+    .value-cell {
+        cursor: pointer;
+        padding: 4px 8px;
+        border-radius: 4px;
+        transition: background-color 0.2s ease;
+    }
+
+    .value-cell:hover {
+        background: rgba(255, 255, 255, 0.1);
+    }
+
+    .change-positive {
+        color: var(--success-color);
+    }
+
+    .change-negative {
+        color: var(--danger-color);
+    }
+
+    /* Action Button */
+    .action-btn {
+        background: transparent;
+        border: 1px solid var(--golden-accent);
+        border-radius: 4px;
+        padding: 4px 8px;
+        color: var(--text-secondary);
+        font-size: 11px;
+        cursor: pointer;
+        transition: all 0.2s ease;
+    }
+
+    .action-btn:hover {
+        background: var(--golden-accent);
+        color: var(--text-primary);
+    }
+
+    /* Pagination */
+    .pagination-container {
+        padding: 20px 24px;
+        background: rgba(212, 175, 55, 0.02);
+        border-top: 1px solid var(--golden-accent);
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        flex-wrap: wrap;
+        gap: 16px;
+    }
+
+    .pagination-info {
+        font-size: 13px;
+        color: var(--text-secondary);
+    }
+
+    .pagination-controls {
+        display: flex;
+        gap: 8px;
+        align-items: center;
+    }
+
+    .pagination-btn {
+        background: var(--secondary-bg);
+        border: 1px solid var(--golden-accent);
+        border-radius: 6px;
+        padding: 8px 12px;
+        color: var(--text-primary);
+        font-size: 13px;
+        cursor: pointer;
+        transition: all 0.2s ease;
+        text-decoration: none;
+        display: inline-flex;
+        align-items: center;
+        min-width: 36px;
+        justify-content: center;
+    }
+
+    .pagination-btn:hover:not(.disabled) {
+        background: var(--golden-accent);
+        border-color: var(--golden-secondary);
+    }
+
+    .pagination-btn.active {
+        background: var(--golden-primary);
+        border-color: var(--golden-primary);
+        color: var(--primary-bg);
+    }
+
+    .pagination-btn.disabled {
+        opacity: 0.4;
+        cursor: not-allowed;
+    }
+
+    /* Empty State */
+    .empty-state {
+        text-align: center;
+        padding: 60px 20px;
+        color: var(--text-muted);
+    }
+
+    .empty-state h5 {
+        font-size: 16px;
+        margin: 0 0 8px 0;
+        color: var(--text-secondary);
+    }
+
+    .empty-state p {
+        font-size: 13px;
+        margin: 0;
+    }
+
+    /* No Data State */
+    .no-data {
+        text-align: center;
+        padding: 40px 20px;
+        color: var(--text-muted);
+    }
+
+    .no-data-icon {
+        font-size: 48px;
+        margin-bottom: 16px;
+    }
+
+    .no-data h3 {
+        margin: 0 0 8px 0;
+        font-size: 18px;
+        font-weight: 600;
+        color: var(--text-secondary);
+    }
+
+    .no-data p {
+        margin: 0;
+        font-size: 14px;
+    }
+
+    /* Responsive design */
+    @media (max-width: 768px) {
+        .market-cards {
+            grid-template-columns: 1fr;
+            gap: 16px;
+        }
+        
+        .market-card {
+            padding: 20px;
+        }
+        
+        .current-value {
+            font-size: 28px;
+        }
+        
+        .detail-grid {
+            grid-template-columns: 1fr;
+            gap: 12px;
+        }
+    }
+
+    /* Loading animation for cards */
+    .market-card.loading {
+        opacity: 0.7;
+    }
+
+    .market-card.loading::after {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: -100%;
+        width: 100%;
+        height: 100%;
+        background: linear-gradient(
+            90deg,
+            transparent,
+            rgba(255, 215, 0, 0.1),
+            transparent
+        );
+        animation: shimmer 1.5s infinite;
+    }
+
+    @keyframes shimmer {
+        0% { left: -100%; }
+        100% { left: 100%; }
+    }
+        
+        .table-header {
+            flex-direction: column;
+            align-items: stretch;
+        }
+        
+        .modern-table {
+            font-size: 12px;
+        }
+        
+        .modern-table th,
+        .modern-table td {
+            padding: 12px 16px;
+        }
+        
+        .pagination-container {
+            flex-direction: column;
+            text-align: center;
+        }
+    }
+
+    @media (max-width: 480px) {
+        .data-grid {
+            grid-template-columns: 1fr;
+        }
+        
+        .grid-value.primary {
+            font-size: 18px;
+        }
+        
+        .modern-table th,
+        .modern-table td {
+            padding: 10px 12px;
+            font-size: 11px;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="market-overview-section">
+    <div class="section-header">
+        <h2 class="section-title">📊 Last Trading Day Market Data</h2>
+        <div class="trading-day-badge">
+            <span class="calendar-icon">📅</span>
+            <span>Last Trading Day: <strong>
+                {% if market_close_data.nasdaq.date %}
+                    {{ market_close_data.nasdaq.date }}
+                {% elif market_close_data.dow.date %}
+                    {{ market_close_data.dow.date }}
+                {% elif market_close_data.gold.date %}
+                    {{ market_close_data.gold.date }}
+                {% else %}
+                    --
+                {% endif %}
+            </strong></span>
+        </div>
+    </div>
+    <div class="market-cards">
+        <!-- NASDAQ Widget -->
+        <div class="market-card nasdaq-card">
+            <div class="card-header">
+                <div class="instrument-info">
+                    <img src="{{ url_for('static', filename='nasdaq.svg') }}" alt="NASDAQ" class="instrument-logo" onerror="this.src='data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNDAiIGhlaWdodD0iNDAiIHZpZXdCb3g9IjAgMCA0MCA0MCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPHJlY3Qgd2lkdGg9IjQwIiBoZWlnaHQ9IjQwIiByeD0iOCIgZmlsbD0iIzAwZDRmZiIvPgo8dGV4dCB4PSIyMCIgeT0iMjYiIGZvbnQtZmFtaWx5PSJBcmlhbCIgZm9udC1zaXplPSIxNCIgZm9udC13ZWlnaHQ9ImJvbGQiIGZpbGw9IndoaXRlIiB0ZXh0LWFuY2hvcj0ibWlkZGxlIj5OPC90ZXh0Pgo8L3N2Zz4K';">
+                    <div class="instrument-details">
+                        <h3 class="instrument-name">NASDAQ</h3>
+                        <span class="instrument-symbol">(NAS100)</span>
+                    </div>
+                </div>
+                {% if market_close_data.nasdaq.changePercent %}
+                    {% set change_num = market_close_data.nasdaq.rawChange or 0 %}
+                    <div class="change-badge {{ 'positive' if change_num >= 0 else 'negative' }}">{{ market_close_data.nasdaq.changePercent }}</div>
+                {% else %}
+                    <div class="change-badge">--</div>
+                {% endif %}
+            </div>
+            
+            <div class="price-section">
+                <div class="main-price">
+                    <span class="current-value">{{ market_close_data.nasdaq.price or '--' }}</span>
+                    {% if market_close_data.nasdaq.change %}
+                        {% set change_num = market_close_data.nasdaq.rawChange or 0 %}
+                        <span class="price-change {{ 'positive' if change_num >= 0 else 'negative' }}">
+                            <i class="trend-arrow {{ 'up' if change_num >= 0 else 'down' }}">{{ '↗' if change_num >= 0 else '↘' }}</i>
+                            {{ market_close_data.nasdaq.change }}
+                        </span>
+                    {% else %}
+                        <span class="price-change">
+                            <i class="trend-arrow">--</i>
+                            --
+                        </span>
+                    {% endif %}
+                </div>
+            </div>
+            
+            <div class="market-details">
+                <div class="detail-grid">
+                    <div class="detail-item">
+                        <span class="detail-label">Previous</span>
+                        <span class="detail-value">{{ market_close_data.nasdaq.previousClose or '--' }}</span>
+                    </div>
+                    <div class="detail-item">
+                        <span class="detail-label">High</span>
+                        <span class="detail-value">{{ market_close_data.nasdaq.high or '--' }}</span>
+                    </div>
+                    <div class="detail-item">
+                        <span class="detail-label">Low</span>
+                        <span class="detail-value">{{ market_close_data.nasdaq.low or '--' }}</span>
+                    </div>
+                    <div class="detail-item">
+                        <span class="detail-label">Date</span>
+                        <span class="detail-value">{{ market_close_data.nasdaq.date or '--' }}</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- DOW Widget -->
+        <div class="market-card dow-card">
+            <div class="card-header">
+                <div class="instrument-info">
+                    <img src="{{ url_for('static', filename='dow.png') }}" alt="DOW" class="instrument-logo" onerror="this.src='data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNDAiIGhlaWdodD0iNDAiIHZpZXdCb3g9IjAgMCA0MCA0MCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPHJlY3Qgd2lkdGg9IjQwIiBoZWlnaHQ9IjQwIiByeD0iOCIgZmlsbD0iIzFlOTBmZiIvPgo8dGV4dCB4PSIyMCIgeT0iMjYiIGZvbnQtZmFtaWx5PSJBcmlhbCIgZm9udC1zaXplPSIxNCIgZm9udC13ZWlnaHQ9ImJvbGQiIGZpbGw9IndoaXRlIiB0ZXh0LWFuY2hvcj0ibWlkZGxlIj5EPC90ZXh0Pgo8L3N2Zz4K';">
+                    <div class="instrument-details">
+                        <h3 class="instrument-name">DOW</h3>
+                        <span class="instrument-symbol">(US30)</span>
+                    </div>
+                </div>
+                {% if market_close_data.dow.changePercent %}
+                    {% set change_num = market_close_data.dow.rawChange or 0 %}
+                    <div class="change-badge {{ 'positive' if change_num >= 0 else 'negative' }}">{{ market_close_data.dow.changePercent }}</div>
+                {% else %}
+                    <div class="change-badge">--</div>
+                {% endif %}
+            </div>
+            
+            <div class="price-section">
+                <div class="main-price">
+                    <span class="current-value">{{ market_close_data.dow.price or '--' }}</span>
+                    {% if market_close_data.dow.change %}
+                        {% set change_num = market_close_data.dow.rawChange or 0 %}
+                        <span class="price-change {{ 'positive' if change_num >= 0 else 'negative' }}">
+                            <i class="trend-arrow {{ 'up' if change_num >= 0 else 'down' }}">{{ '↗' if change_num >= 0 else '↘' }}</i>
+                            {{ market_close_data.dow.change }}
+                        </span>
+                    {% else %}
+                        <span class="price-change">
+                            <i class="trend-arrow">--</i>
+                            --
+                        </span>
+                    {% endif %}
+                </div>
+            </div>
+            
+            <div class="market-details">
+                <div class="detail-grid">
+                    <div class="detail-item">
+                        <span class="detail-label">Previous</span>
+                        <span class="detail-value">{{ market_close_data.dow.previousClose or '--' }}</span>
+                    </div>
+                    <div class="detail-item">
+                        <span class="detail-label">High</span>
+                        <span class="detail-value">{{ market_close_data.dow.high or '--' }}</span>
+                    </div>
+                    <div class="detail-item">
+                        <span class="detail-label">Low</span>
+                        <span class="detail-value">{{ market_close_data.dow.low or '--' }}</span>
+                    </div>
+                    <div class="detail-item">
+                        <span class="detail-label">Date</span>
+                        <span class="detail-value">{{ market_close_data.dow.date or '--' }}</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- GOLD Widget -->
+        <div class="market-card gold-card">
+            <div class="card-header">
+                <div class="instrument-info">
+                    <img src="{{ url_for('static', filename='gold.png') }}" alt="GOLD" class="instrument-logo" onerror="this.src='data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNDAiIGhlaWdodD0iNDAiIHZpZXdCb3g9IjAgMCA0MCA0MCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPHJlY3Qgd2lkdGg9IjQwIiBoZWlnaHQ9IjQwIiByeD0iOCIgZmlsbD0iI2ZmZDcwMCIvPgo8dGV4dCB4PSIyMCIgeT0iMjYiIGZvbnQtZmFtaWx5PSJBcmlhbCIgZm9udC1zaXplPSIxNCIgZm9udC13ZWlnaHQ9ImJvbGQiIGZpbGw9ImJsYWNrIiB0ZXh0LWFuY2hvcj0ibWlkZGxlIj5HPC90ZXh0Pgo8L3N2Zz4K';">
+                    <div class="instrument-details">
+                        <h3 class="instrument-name">GOLD</h3>
+                        <span class="instrument-symbol">(XAUUSD)</span>
+                    </div>
+                </div>
+                {% if market_close_data.gold.changePercent %}
+                    {% set change_num = market_close_data.gold.rawChange or 0 %}
+                    <div class="change-badge {{ 'positive' if change_num >= 0 else 'negative' }}">{{ market_close_data.gold.changePercent }}</div>
+                {% else %}
+                    <div class="change-badge">--</div>
+                {% endif %}
+            </div>
+            
+            <div class="price-section">
+                <div class="main-price">
+                    <span class="current-value">{{ market_close_data.gold.price or '--' }}</span>
+                    {% if market_close_data.gold.change %}
+                        {% set change_num = market_close_data.gold.rawChange or 0 %}
+                        <span class="price-change {{ 'positive' if change_num >= 0 else 'negative' }}">
+                            <i class="trend-arrow {{ 'up' if change_num >= 0 else 'down' }}">{{ '↗' if change_num >= 0 else '↘' }}</i>
+                            {{ market_close_data.gold.change }}
+                        </span>
+                    {% else %}
+                        <span class="price-change">
+                            <i class="trend-arrow">--</i>
+                            --
+                        </span>
+                    {% endif %}
+                </div>
+            </div>
+            
+            <div class="market-details">
+                <div class="detail-grid">
+                    <div class="detail-item">
+                        <span class="detail-label">Previous</span>
+                        <span class="detail-value">{{ market_close_data.gold.previousClose or '--' }}</span>
+                    </div>
+                    <div class="detail-item">
+                        <span class="detail-label">High</span>
+                        <span class="detail-value">{{ market_close_data.gold.high or '--' }}</span>
+                    </div>
+                    <div class="detail-item">
+                        <span class="detail-label">Low</span>
+                        <span class="detail-value">{{ market_close_data.gold.low or '--' }}</span>
+                    </div>
+                    <div class="detail-item">
+                        <span class="detail-label">Date</span>
+                        <span class="detail-value">{{ market_close_data.gold.date or '--' }}</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Historical Data Section -->
+<section class="historical-section">
+    <div class="historical-title">
+        <h2>Trading Days Historical Data</h2>
+        <p>Historical market data for trading days only (excludes weekends and holidays)</p>
+    </div>
+
+    <!-- NASDAQ Historical Data -->
+    <div class="data-table-card">
+        <div class="table-header">
+            <div>
+                <div class="table-title">
+                    <img src="{{ url_for('static', filename='nasdaq.svg') }}" alt="NASDAQ" class="table-icon">
+                    <h4>NASDAQ Historical Data</h4>
+                    <span class="record-count">{{ pagination_info.nasdaq.total_items }} records</span>
+                </div>
+            </div>
+            <div class="table-controls">
+                <button class="export-btn" onclick="exportData('nasdaq')">Export CSV</button>
+                <button class="refresh-btn" onclick="refreshData('nasdaq')">↻</button>
+            </div>
+        </div>
+
+        <table class="modern-table">
+            <thead>
+                <tr>
+                    <th>Date</th>
+                    <th>Current</th>
+                    <th>Change</th>
+                    <th>Previous</th>
+                    <th>High</th>
+                    <th>Low</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% if symbol_data.nasdaq %}
+                    {% for row in symbol_data.nasdaq %}
+                    <tr>
+                        <td>{{ row.date }}</td>
+                        <td class="value-cell" onclick="copyValue('{{ row.current_value }}')" title="Click to copy">{{ row.current_value }}</td>
+                        <td class="{% if row.raw_change >= 0 %}change-positive{% else %}change-negative{% endif %}">
+                            {% if row.raw_change >= 0 %}+{% endif %}{{ row.net_change }}
+                        </td>
+                        <td class="value-cell" onclick="copyValue('{{ row.previous_close }}')" title="Click to copy">{{ row.previous_close }}</td>
+                        <td class="value-cell" onclick="copyValue('{{ row.today_high }}')" title="Click to copy">{{ row.today_high }}</td>
+                        <td class="value-cell" onclick="copyValue('{{ row.today_low }}')" title="Click to copy">{{ row.today_low }}</td>
+                        <td>
+                            <button class="action-btn" onclick="viewDetails('nasdaq', '{{ row.date }}')">View</button>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                {% else %}
+                    <tr>
+                        <td colspan="7" class="empty-state">
+                            <h5>No data available</h5>
+                            <p>Historical data will appear here once loaded</p>
+                        </td>
+                    </tr>
+                {% endif %}
+            </tbody>
+        </table>
+
+        <!-- NASDAQ Pagination -->
+        {% if pagination_info.nasdaq.total_pages > 1 %}
+        <div class="pagination-container">
+            <div class="pagination-info">
+                Showing {{ pagination_info.nasdaq.start_item }}-{{ pagination_info.nasdaq.end_item }} of {{ pagination_info.nasdaq.total_items }} records
+            </div>
+            <div class="pagination-controls">
+                <!-- Previous Button -->
+                {% if pagination_info.nasdaq.has_prev %}
+                    <a href="{{ url_for('data_feed_history', page=pagination_info.nasdaq.prev_page, symbol=symbol_filter, date=date_filter) }}" class="pagination-btn">
+                        ← Previous
+                    </a>
+                {% else %}
+                    <span class="pagination-btn disabled">← Previous</span>
+                {% endif %}
+                
+                <!-- Page Numbers -->
+                {% for page_num in range(1, pagination_info.nasdaq.total_pages + 1) %}
+                    {% if page_num == pagination_info.nasdaq.current_page %}
+                        <span class="pagination-btn active">{{ page_num }}</span>
+                    {% else %}
+                        <a href="{{ url_for('data_feed_history', page=page_num, symbol=symbol_filter, date=date_filter) }}" class="pagination-btn">{{ page_num }}</a>
+                    {% endif %}
+                {% endfor %}
+                
+                <!-- Next Button -->
+                {% if pagination_info.nasdaq.has_next %}
+                    <a href="{{ url_for('data_feed_history', page=pagination_info.nasdaq.next_page, symbol=symbol_filter, date=date_filter) }}" class="pagination-btn">
+                        Next →
+                    </a>
+                {% else %}
+                    <span class="pagination-btn disabled">Next →</span>
+                {% endif %}
+            </div>
+        </div>
+        {% endif %}
+    </div>
+
+    <!-- DOW Historical Data -->
+    <div class="data-table-card">
+        <div class="table-header">
+            <div>
+                <div class="table-title">
+                    <img src="{{ url_for('static', filename='dow.png') }}" alt="DOW" class="table-icon">
+                    <h4>DOW Historical Data</h4>
+                    <span class="record-count">{{ pagination_info.dow.total_items }} records</span>
+                </div>
+            </div>
+            <div class="table-controls">
+                <button class="export-btn" onclick="exportData('dow')">Export CSV</button>
+                <button class="refresh-btn" onclick="refreshData('dow')">↻</button>
+            </div>
+        </div>
+
+        <table class="modern-table">
+            <thead>
+                <tr>
+                    <th>Date</th>
+                    <th>Current</th>
+                    <th>Change</th>
+                    <th>Previous</th>
+                    <th>High</th>
+                    <th>Low</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% if symbol_data.dow %}
+                    {% for row in symbol_data.dow %}
+                    <tr>
+                        <td>{{ row.date }}</td>
+                        <td class="value-cell" onclick="copyValue('{{ row.current_value }}')" title="Click to copy">{{ row.current_value }}</td>
+                        <td class="{% if row.raw_change >= 0 %}change-positive{% else %}change-negative{% endif %}">
+                            {% if row.raw_change >= 0 %}+{% endif %}{{ row.net_change }}
+                        </td>
+                        <td class="value-cell" onclick="copyValue('{{ row.previous_close }}')" title="Click to copy">{{ row.previous_close }}</td>
+                        <td class="value-cell" onclick="copyValue('{{ row.today_high }}')" title="Click to copy">{{ row.today_high }}</td>
+                        <td class="value-cell" onclick="copyValue('{{ row.today_low }}')" title="Click to copy">{{ row.today_low }}</td>
+                        <td>
+                            <button class="action-btn" onclick="viewDetails('dow', '{{ row.date }}')">View</button>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                {% else %}
+                    <tr>
+                        <td colspan="7" class="empty-state">
+                            <h5>No data available</h5>
+                            <p>Historical data will appear here once loaded</p>
+                        </td>
+                    </tr>
+                {% endif %}
+            </tbody>
+        </table>
+    </div>
+
+    <!-- GOLD Historical Data -->
+    <div class="data-table-card">
+        <div class="table-header">
+            <div>
+                <div class="table-title">
+                    <img src="{{ url_for('static', filename='gold.png') }}" alt="GOLD" class="table-icon">
+                    <h4>GOLD Historical Data</h4>
+                    <span class="record-count">{{ pagination_info.gold.total_items }} records</span>
+                </div>
+            </div>
+            <div class="table-controls">
+                <button class="export-btn" onclick="exportData('gold')">Export CSV</button>
+                <button class="refresh-btn" onclick="refreshData('gold')">↻</button>
+            </div>
+        </div>
+
+        <table class="modern-table">
+            <thead>
+                <tr>
+                    <th>Date</th>
+                    <th>Current</th>
+                    <th>Change</th>
+                    <th>Previous</th>
+                    <th>High</th>
+                    <th>Low</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% if symbol_data.gold %}
+                    {% for row in symbol_data.gold %}
+                    <tr>
+                        <td>{{ row.date }}</td>
+                        <td class="value-cell" onclick="copyValue('{{ row.current_value }}')" title="Click to copy">{{ row.current_value }}</td>
+                        <td class="{% if row.raw_change >= 0 %}change-positive{% else %}change-negative{% endif %}">
+                            {% if row.raw_change >= 0 %}+{% endif %}{{ row.net_change }}
+                        </td>
+                        <td class="value-cell" onclick="copyValue('{{ row.previous_close }}')" title="Click to copy">{{ row.previous_close }}</td>
+                        <td class="value-cell" onclick="copyValue('{{ row.today_high }}')" title="Click to copy">{{ row.today_high }}</td>
+                        <td class="value-cell" onclick="copyValue('{{ row.today_low }}')" title="Click to copy">{{ row.today_low }}</td>
+                        <td>
+                            <button class="action-btn" onclick="viewDetails('gold', '{{ row.date }}')">View</button>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                {% else %}
+                    <tr>
+                        <td colspan="7" class="empty-state">
+                            <h5>No data available</h5>
+                            <p>Historical data will appear here once loaded</p>
+                        </td>
+                    </tr>
+                {% endif %}
+            </tbody>
+        </table>
+    </div>
+</section>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+// Copy functionality with feedback
+function copyValue(value) {
+    if (!value) return;
+    
+    const cleanValue = value.toString().replace(/,/g, '');
+    const element = event.target;
+    
+    if (navigator.clipboard && window.isSecureContext) {
+        navigator.clipboard.writeText(cleanValue).then(() => {
+            showCopyFeedback(element);
+            showNotification('Value copied to clipboard', 'success');
+        }).catch(err => {
+            console.error('Clipboard API failed:', err);
+            fallbackCopy(cleanValue, element);
+        });
+    } else {
+        fallbackCopy(cleanValue, element);
+    }
+}
+
+function fallbackCopy(text, element) {
+    const textArea = document.createElement('textarea');
+    textArea.value = text;
+    textArea.style.position = 'fixed';
+    textArea.style.opacity = '0';
+    textArea.style.pointerEvents = 'none';
+    textArea.style.userSelect = 'none';
+    textArea.style.left = '-9999px';
+    document.body.appendChild(textArea);
+    
+    // Prevent text selection highlighting
+    const selection = window.getSelection();
+    const originalRange = selection.rangeCount > 0 ? selection.getRangeAt(0) : null;
+    
+    // Select and copy the text
+    textArea.select();
+    textArea.setSelectionRange(0, 99999);
+    
+    try {
+        document.execCommand('copy');
+        
+        // Restore original selection to prevent highlighting
+        if (originalRange) {
+            selection.removeAllRanges();
+            selection.addRange(originalRange);
+        } else {
+            selection.removeAllRanges();
+        }
+        
+        showCopyFeedback(element);
+        showNotification('Value copied to clipboard', 'success');
+    } catch (err) {
+        console.error('Copy failed:', err);
+        showNotification('Failed to copy value', 'danger');
+        
+        // Restore original selection even on error
+        if (originalRange) {
+            selection.removeAllRanges();
+            selection.addRange(originalRange);
+        } else {
+            selection.removeAllRanges();
+        }
+    }
+    
+    document.body.removeChild(textArea);
+}
+
+function showCopyFeedback(element) {
+    if (!element) return;
+    
+    const originalText = element.textContent;
+    
+    element.classList.add('copied');
+    element.textContent = 'Copied!';
+    
+    setTimeout(() => {
+        element.classList.remove('copied');
+        element.textContent = originalText;
+    }, 1000);
+}
+
+// Export data functionality
+function exportData(ticker) {
+    const table = document.querySelector(`table`);
+    const rows = table.querySelectorAll('tbody tr');
+    
+    if (rows.length === 0 || rows[0].querySelector('.empty-state')) {
+        showNotification('No data available to export', 'warning');
+        return;
+    }
+    
+    const csv = ['Date,Current,Change,Previous,High,Low'];
+    
+    rows.forEach(row => {
+        const cells = row.querySelectorAll('td');
+        if (cells.length >= 6) {
+            const rowData = [
+                cells[0].textContent.trim(),
+                cells[1].textContent.trim().replace(/,/g, ''),
+                cells[2].textContent.trim().replace(/,/g, ''),
+                cells[3].textContent.trim().replace(/,/g, ''),
+                cells[4].textContent.trim().replace(/,/g, ''),
+                cells[5].textContent.trim().replace(/,/g, '')
+            ];
+            csv.push(rowData.join(','));
+        }
+    });
+    
+    const blob = new Blob([csv.join('\n')], { type: 'text/csv' });
+    const url = window.URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `${ticker}_historical_data.csv`;
+    a.click();
+    window.URL.revokeObjectURL(url);
+    
+    showNotification(`${ticker.toUpperCase()} data exported successfully`, 'success');
+}
+
+// Refresh data functionality
+function refreshData(ticker) {
+    showNotification('Refreshing market data...', 'info');
+    window.location.reload();
+}
+
+// View details functionality
+function viewDetails(ticker, date) {
+    showNotification(`Viewing details for ${ticker.toUpperCase()} on ${date}`, 'info');
+    // Could open a modal or navigate to a details page
+}
+
+// Initialize page
+document.addEventListener('DOMContentLoaded', function() {
+    console.log('Market data history page loaded');
+    
+    // Add click listeners to all value elements
+    document.querySelectorAll('.grid-value, .value-cell').forEach(element => {
+        element.addEventListener('click', function() {
+            if (this.onclick) return; // Skip if already has onclick
+            const value = this.textContent.trim();
+            copyValue(value);
+        });
+    });
+});
+</script>
+{% endblock %}

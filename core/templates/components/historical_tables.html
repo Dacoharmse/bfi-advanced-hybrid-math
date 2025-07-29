@@ -1,0 +1,934 @@
+{#
+    Historical Tables Component
+    
+    A reusable component for displaying historical market data in professional table format
+    with golden theme styling and responsive design.
+    
+    Parameters:
+    - table_data: List of dictionaries containing row data
+    - table_headers: List of column headers
+    - table_title: String title for the table
+    - table_id: Unique identifier for the table (optional)
+    - table_style: 'golden' or 'minimal' (default: 'golden')
+    - show_pagination: Boolean to show pagination controls (default: False)
+    - pagination_info: Pagination data object (optional)
+    - show_export: Boolean to show export button (default: True)
+    - show_actions: Boolean to show action column (default: True)
+    - icon_src: Path to icon for table title (optional)
+    - empty_message: Custom message when no data (optional)
+    - sortable_columns: List of column indices that are sortable (optional)
+    - value_columns: List of column indices that are copyable values (optional)
+    - change_columns: List of column indices that show positive/negative changes (optional)
+    
+    Usage Examples:
+    
+    1. Basic Golden Theme Table:
+    {% include 'components/historical_tables.html' with context %}
+    
+    2. Minimal Theme Table:
+    {% set table_style = 'minimal' %}
+    {% include 'components/historical_tables.html' with context %}
+    
+    3. Custom Configuration:
+    {% set table_data = market_data %}
+    {% set table_headers = ['Date', 'Value', 'Change', 'Volume'] %}
+    {% set table_title = 'Market History' %}
+    {% set table_style = 'golden' %}
+    {% include 'components/historical_tables.html' with context %}
+#}
+
+{# Set default values if not provided #}
+{% set table_style = table_style or 'golden' %}
+{% set table_id = table_id or 'historical-table' %}
+{% set show_export = show_export if show_export is defined else true %}
+{% set show_actions = show_actions if show_actions is defined else true %}
+{% set show_pagination = show_pagination if show_pagination is defined else false %}
+{% set empty_message = empty_message or 'No historical data available' %}
+{% set sortable_columns = sortable_columns or [] %}
+{% set value_columns = value_columns or [] %}
+{% set change_columns = change_columns or [] %}
+
+{# Table Container #}
+<div class="historical-table-container {{ table_style }}-theme" data-table-id="{{ table_id }}">
+    
+    {# Table Header with Controls #}
+    {% if table_title or show_export %}
+    <div class="historical-table-header">
+        <div class="table-title-section">
+            {% if table_title %}
+            <h4 class="table-title">
+                {% if icon_src %}
+                <img src="{{ icon_src }}" alt="{{ table_title }}" class="table-icon">
+                {% endif %}
+                {{ table_title }}
+            </h4>
+            {% endif %}
+            {% if table_data %}
+            <span class="record-count">{{ table_data|length }} records</span>
+            {% endif %}
+        </div>
+        
+        {% if show_export %}
+        <div class="table-controls">
+            <div class="action-group">
+                <button class="export-btn" onclick="exportTableData('{{ table_id }}')">Export CSV</button>
+                <button class="refresh-btn" onclick="refreshTableData('{{ table_id }}')">↻</button>
+            </div>
+        </div>
+        {% endif %}
+    </div>
+    {% endif %}
+
+    {# Table Wrapper for Responsive Scrolling #}
+    <div class="historical-table-wrapper">
+        <table class="historical-table {{ table_style }}-table" id="{{ table_id }}">
+            
+            {# Table Head #}
+            {% if table_headers %}
+            <thead>
+                <tr>
+                    {% for header in table_headers %}
+                    <th {% if loop.index0 in sortable_columns %}class="sortable" onclick="sortTable('{{ table_id }}', {{ loop.index0 }})"{% endif %}>
+                        {{ header }}
+                        {% if loop.index0 in sortable_columns %}
+                        <span class="sort-icon"></span>
+                        {% endif %}
+                    </th>
+                    {% endfor %}
+                    {% if show_actions %}
+                    <th>Actions</th>
+                    {% endif %}
+                </tr>
+            </thead>
+            {% endif %}
+            
+            {# Table Body #}
+            <tbody id="{{ table_id }}-tbody">
+                {% if table_data and table_data|length > 0 %}
+                    {% for row in table_data %}
+                    <tr class="data-row">
+                        {% if row is mapping %}
+                            {# Handle dictionary data #}
+                            {% for header in table_headers %}
+                            {% set column_key = header.lower().replace(' ', '_') %}
+                            {% set value = row.get(column_key, '') %}
+                            <td class="{% if loop.index0 in value_columns %}value-cell copyable{% endif %}{% if loop.index0 in change_columns %} change-cell{% if value and value|string|replace(',', '')|float > 0 %} change-positive{% elif value and value|string|replace(',', '')|float < 0 %} change-negative{% endif %}{% endif %}"
+                                {% if loop.index0 in value_columns %}onclick="copyValue('{{ value }}')" title="Click to copy"{% endif %}>
+                                {% if loop.index0 in change_columns and value and value|string|replace(',', '')|float > 0 %}+{% endif %}{{ value }}
+                            </td>
+                            {% endfor %}
+                        {% else %}
+                            {# Handle list/array data #}
+                            {% for value in row %}
+                            <td class="{% if loop.index0 in value_columns %}value-cell copyable{% endif %}{% if loop.index0 in change_columns %} change-cell{% if value and value|string|replace(',', '')|float > 0 %} change-positive{% elif value and value|string|replace(',', '')|float < 0 %} change-negative{% endif %}{% endif %}"
+                                {% if loop.index0 in value_columns %}onclick="copyValue('{{ value }}')" title="Click to copy"{% endif %}>
+                                {% if loop.index0 in change_columns and value and value|string|replace(',', '')|float > 0 %}+{% endif %}{{ value }}
+                            </td>
+                            {% endfor %}
+                        {% endif %}
+                        
+                        {# Actions Column #}
+                        {% if show_actions %}
+                        <td class="actions-column">
+                            <div class="row-actions">
+                                <button class="action-btn view-btn" onclick="viewRowDetails('{{ table_id }}', {{ loop.index0 }})">View</button>
+                                <button class="action-btn edit-btn" onclick="editRowData('{{ table_id }}', {{ loop.index0 }})">Edit</button>
+                            </div>
+                        </td>
+                        {% endif %}
+                    </tr>
+                    {% endfor %}
+                {% else %}
+                    {# Empty State #}
+                    <tr class="empty-row">
+                        <td colspan="{% if table_headers %}{{ table_headers|length + (1 if show_actions else 0) }}{% else %}3{% endif %}" class="empty-state">
+                            <div class="empty-content">
+                                <div class="empty-icon">📊</div>
+                                <h5>{{ empty_message }}</h5>
+                                <p>Historical data will appear here once loaded</p>
+                            </div>
+                        </td>
+                    </tr>
+                {% endif %}
+            </tbody>
+        </table>
+    </div>
+    
+    {# Pagination Controls #}
+    {% if show_pagination and pagination_info and pagination_info.total_pages > 1 %}
+    <div class="pagination-container">
+        <div class="pagination-info">
+            Showing {{ pagination_info.start_item or 1 }}-{{ pagination_info.end_item or (table_data|length if table_data else 0) }} 
+            of {{ pagination_info.total_items or (table_data|length if table_data else 0) }} records
+        </div>
+        <div class="pagination-controls">
+            {# Previous Button #}
+            {% if pagination_info.has_prev %}
+                <a href="{{ url_for(request.endpoint, page=pagination_info.prev_page, **request.args) }}" class="pagination-btn">
+                    ← Previous
+                </a>
+            {% else %}
+                <span class="pagination-btn disabled">← Previous</span>
+            {% endif %}
+            
+            {# Page Numbers #}
+            <div class="page-numbers">
+                {% for page_num in range(1, pagination_info.total_pages + 1) %}
+                    {% if page_num == pagination_info.current_page %}
+                        <span class="pagination-btn active">{{ page_num }}</span>
+                    {% else %}
+                        <a href="{{ url_for(request.endpoint, page=page_num, **request.args) }}" class="pagination-btn">{{ page_num }}</a>
+                    {% endif %}
+                {% endfor %}
+            </div>
+            
+            {# Next Button #}
+            {% if pagination_info.has_next %}
+                <a href="{{ url_for(request.endpoint, page=pagination_info.next_page, **request.args) }}" class="pagination-btn">
+                    Next →
+                </a>
+            {% else %}
+                <span class="pagination-btn disabled">Next →</span>
+            {% endif %}
+        </div>
+    </div>
+    {% endif %}
+</div>
+
+{# Component Styles - Embedded for easy portability #}
+<style>
+/* Historical Tables Component Styles */
+
+/* Container Styles */
+.historical-table-container {
+    margin-bottom: 40px;
+    border-radius: 12px;
+    overflow: hidden;
+    position: relative;
+}
+
+.historical-table-container.golden-theme {
+    background: rgba(45, 45, 45, 0.95);
+    border: 2px solid #d4af37;
+    box-shadow: 
+        0 8px 25px rgba(0, 0, 0, 0.3),
+        0 4px 15px rgba(212, 175, 55, 0.1);
+}
+
+.historical-table-container.minimal-theme {
+    background: rgba(255, 255, 255, 0.02);
+    border: 1px solid rgba(255, 255, 255, 0.05);
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+}
+
+/* Header Styles */
+.historical-table-header {
+    padding: 24px 32px;
+    background: rgba(255, 255, 255, 0.03);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 20px;
+}
+
+.golden-theme .historical-table-header {
+    background: linear-gradient(135deg, rgba(212, 175, 55, 0.1), rgba(244, 233, 113, 0.05));
+    border-bottom: 1px solid rgba(212, 175, 55, 0.3);
+}
+
+.table-title-section {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.table-title {
+    font-size: 18px;
+    font-weight: 600;
+    color: #ffffff;
+    margin: 0;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.golden-theme .table-title {
+    background: linear-gradient(135deg, #d4af37 0%, #f4e971 30%, #fff 50%, #f4e971 70%, #d4af37 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+}
+
+.table-icon {
+    width: 28px;
+    height: 28px;
+    object-fit: contain;
+    margin-right: 8px;
+    border-radius: 6px;
+    padding: 2px;
+    border: 1px solid rgba(212, 175, 55, 0.3);
+    background: rgba(212, 175, 55, 0.1);
+    transition: all 0.3s ease;
+}
+
+.table-icon:hover {
+    border-color: #d4af37;
+    transform: scale(1.1);
+}
+
+/* Specific logo styling for tables */
+.table-icon[alt*="NASDAQ"] {
+    background: rgba(0, 212, 255, 0.1);
+    border-color: rgba(0, 212, 255, 0.3);
+}
+
+.table-icon[alt*="GOLD"] {
+    background: rgba(255, 215, 0, 0.1);
+    border-color: rgba(255, 215, 0, 0.3);
+}
+
+.table-icon[alt*="DOW"] {
+    background: rgba(30, 144, 255, 0.1);
+    border-color: rgba(30, 144, 255, 0.3);
+}
+
+/* SVG specific handling */
+.table-icon[src$=".svg"] {
+    image-rendering: crisp-edges;
+}
+
+/* PNG specific handling */
+.table-icon[src$=".png"] {
+    image-rendering: -webkit-optimize-contrast;
+}
+
+.record-count {
+    font-size: 13px;
+    color: rgba(255, 255, 255, 0.5);
+    font-weight: 500;
+}
+
+.golden-theme .record-count {
+    color: rgba(212, 175, 55, 0.7);
+}
+
+/* Table Controls */
+.table-controls {
+    display: flex;
+    gap: 24px;
+    align-items: center;
+    flex-wrap: wrap;
+}
+
+.action-group {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+}
+
+/* Button Styles */
+.export-btn, .refresh-btn {
+    background: rgba(255, 255, 255, 0.08);
+    border: 1px solid rgba(255, 255, 255, 0.15);
+    border-radius: 6px;
+    padding: 8px 16px;
+    color: #ffffff;
+    font-size: 13px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.golden-theme .export-btn,
+.golden-theme .refresh-btn {
+    background: linear-gradient(135deg, #2d2d2d, #1a1a1a);
+    border-color: #d4af37;
+    color: #d4af37;
+}
+
+.export-btn:hover {
+    background: rgba(244, 196, 66, 0.2);
+    border-color: rgba(244, 196, 66, 0.4);
+}
+
+.golden-theme .export-btn:hover {
+    background: linear-gradient(135deg, #d4af37, #f4e971);
+    color: #000000;
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(212, 175, 55, 0.4);
+}
+
+.refresh-btn {
+    width: 36px;
+    height: 36px;
+    padding: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 16px;
+}
+
+.refresh-btn:hover {
+    background: rgba(34, 197, 94, 0.2);
+    border-color: rgba(34, 197, 94, 0.4);
+}
+
+.golden-theme .refresh-btn:hover {
+    background: linear-gradient(135deg, #22c55e, #16a34a);
+    color: #ffffff;
+}
+
+/* Table Wrapper */
+.historical-table-wrapper {
+    overflow-x: auto;
+    background: rgba(0, 0, 0, 0.2);
+}
+
+.golden-theme .historical-table-wrapper {
+    background: rgba(0, 0, 0, 0.4);
+}
+
+/* Table Styles */
+.historical-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 14px;
+}
+
+/* Golden Theme Table */
+.golden-table {
+    border-collapse: separate;
+    border-spacing: 0;
+}
+
+.golden-table th {
+    background: linear-gradient(135deg, #d4af37, #f4e971, #d4af37);
+    color: #000000;
+    font-weight: 700;
+    font-size: 0.95rem;
+    letter-spacing: 0.5px;
+    text-transform: uppercase;
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.2);
+    padding: 12px 16px;
+    text-align: left;
+    border-bottom: 1px solid #d4af37;
+    border-right: 1px solid #d4af37;
+}
+
+.golden-table th:last-child {
+    border-right: none;
+}
+
+.golden-table td {
+    color: #ffffff;
+    font-weight: 500;
+    padding: 12px 16px;
+    text-align: left;
+    border-bottom: 1px solid #d4af37;
+    border-right: 1px solid #d4af37;
+}
+
+.golden-table td:last-child {
+    border-right: none;
+}
+
+.golden-table tr:last-child td {
+    border-bottom: none;
+}
+
+.golden-table tbody tr:hover {
+    background: linear-gradient(135deg, rgba(45, 45, 45, 0.8), rgba(212, 175, 55, 0.05));
+    transform: scale(1.005);
+    transition: all 0.3s ease;
+}
+
+/* Minimal Theme Table */
+.minimal-table th {
+    background: rgba(255, 255, 255, 0.03);
+    padding: 16px 20px;
+    text-align: left;
+    font-weight: 600;
+    font-size: 12px;
+    color: rgba(255, 255, 255, 0.7);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+    white-space: nowrap;
+}
+
+.minimal-table td {
+    padding: 16px 20px;
+    color: #ffffff;
+    font-weight: 500;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.03);
+    font-variant-numeric: tabular-nums;
+}
+
+.minimal-table tbody tr {
+    transition: background-color 0.2s ease;
+}
+
+.minimal-table tbody tr:hover {
+    background: rgba(255, 255, 255, 0.03);
+}
+
+/* Sortable Columns */
+.sortable {
+    cursor: pointer;
+    user-select: none;
+    position: relative;
+    transition: background-color 0.2s ease;
+}
+
+.sortable:hover {
+    background: rgba(255, 255, 255, 0.08);
+    color: rgba(255, 255, 255, 0.9);
+}
+
+.golden-table .sortable:hover {
+    background: linear-gradient(135deg, #f4e971, #d4af37, #f4e971);
+}
+
+.sort-icon {
+    margin-left: 8px;
+    opacity: 0.5;
+    font-size: 10px;
+}
+
+.sortable.sorted-asc .sort-icon::before {
+    content: '↑';
+}
+
+.sortable.sorted-desc .sort-icon::before {
+    content: '↓';
+}
+
+/* Value and Change Cells */
+.value-cell {
+    cursor: pointer;
+    padding: 4px 8px;
+    border-radius: 4px;
+    transition: all 0.2s ease;
+    user-select: all;
+}
+
+.value-cell:hover {
+    background: rgba(255, 255, 255, 0.1);
+}
+
+.golden-theme .value-cell:hover {
+    background: rgba(212, 175, 55, 0.15);
+    box-shadow: 0 0 10px rgba(212, 175, 55, 0.3);
+}
+
+.change-cell.change-positive {
+    color: #22c55e;
+}
+
+.change-cell.change-negative {
+    color: #ef4444;
+}
+
+/* Action Buttons */
+.actions-column {
+    text-align: center;
+}
+
+.row-actions {
+    display: flex;
+    gap: 6px;
+    justify-content: center;
+}
+
+.action-btn {
+    background: transparent;
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    border-radius: 4px;
+    padding: 4px 8px;
+    color: rgba(255, 255, 255, 0.7);
+    font-size: 11px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.action-btn:hover {
+    background: rgba(255, 255, 255, 0.1);
+    color: #ffffff;
+}
+
+.golden-theme .action-btn {
+    border-color: rgba(212, 175, 55, 0.3);
+    color: rgba(212, 175, 55, 0.8);
+}
+
+.golden-theme .action-btn:hover {
+    background: rgba(212, 175, 55, 0.2);
+    border-color: #d4af37;
+    color: #d4af37;
+}
+
+/* Empty State */
+.empty-state {
+    text-align: center;
+    padding: 60px 20px;
+    color: rgba(255, 255, 255, 0.5);
+}
+
+.golden-theme .empty-state {
+    color: rgba(212, 175, 55, 0.6);
+}
+
+.empty-content {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 12px;
+}
+
+.empty-icon {
+    font-size: 48px;
+    opacity: 0.6;
+}
+
+.empty-state h5 {
+    font-size: 16px;
+    margin: 0;
+    font-weight: 600;
+}
+
+.empty-state p {
+    font-size: 13px;
+    margin: 0;
+    opacity: 0.8;
+}
+
+/* Pagination Styles */
+.pagination-container {
+    padding: 20px 32px;
+    background: rgba(255, 255, 255, 0.02);
+    border-top: 1px solid rgba(255, 255, 255, 0.05);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 16px;
+}
+
+.golden-theme .pagination-container {
+    background: linear-gradient(135deg, rgba(212, 175, 55, 0.05), rgba(244, 233, 113, 0.02));
+    border-top: 1px solid rgba(212, 175, 55, 0.2);
+}
+
+.pagination-info {
+    font-size: 13px;
+    color: rgba(255, 255, 255, 0.6);
+}
+
+.golden-theme .pagination-info {
+    color: rgba(212, 175, 55, 0.7);
+}
+
+.pagination-controls {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+}
+
+.page-numbers {
+    display: flex;
+    gap: 4px;
+}
+
+.pagination-btn {
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 6px;
+    padding: 8px 12px;
+    color: #ffffff;
+    font-size: 13px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    text-decoration: none;
+    display: inline-flex;
+    align-items: center;
+    min-width: 36px;
+    justify-content: center;
+}
+
+.golden-theme .pagination-btn {
+    background: linear-gradient(135deg, #2d2d2d, #1a1a1a);
+    border-color: rgba(212, 175, 55, 0.3);
+    color: rgba(212, 175, 55, 0.8);
+}
+
+.pagination-btn:hover:not(.disabled) {
+    background: rgba(244, 196, 66, 0.2);
+    border-color: rgba(244, 196, 66, 0.4);
+}
+
+.golden-theme .pagination-btn:hover:not(.disabled) {
+    background: linear-gradient(135deg, #d4af37, #f4e971);
+    color: #000000;
+    transform: translateY(-1px);
+}
+
+.pagination-btn.active {
+    background: rgba(244, 196, 66, 0.3);
+    border-color: rgba(244, 196, 66, 0.5);
+    color: #f4c842;
+}
+
+.golden-theme .pagination-btn.active {
+    background: linear-gradient(135deg, #d4af37, #f4e971);
+    color: #000000;
+    font-weight: 700;
+}
+
+.pagination-btn.disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+}
+
+/* Copy Animation */
+@keyframes copyFlash {
+    0% { 
+        background: rgba(74, 222, 128, 0.2);
+        transform: scale(1.05);
+    }
+    100% { 
+        background: transparent;
+        transform: scale(1);
+    }
+}
+
+.value-cell.copied {
+    animation: copyFlash 0.6s ease;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+    .historical-table-header {
+        flex-direction: column;
+        align-items: stretch;
+        padding: 16px 20px;
+    }
+    
+    .table-controls {
+        flex-direction: column;
+        gap: 16px;
+    }
+    
+    .action-group {
+        justify-content: center;
+    }
+    
+    .historical-table {
+        font-size: 12px;
+    }
+    
+    .golden-table th,
+    .golden-table td,
+    .minimal-table th,
+    .minimal-table td {
+        padding: 12px 16px;
+    }
+    
+    .pagination-container {
+        flex-direction: column;
+        text-align: center;
+        padding: 16px 20px;
+    }
+    
+    .pagination-controls {
+        flex-wrap: wrap;
+        justify-content: center;
+    }
+}
+
+@media (max-width: 480px) {
+    .historical-table-header {
+        padding: 12px 16px;
+    }
+    
+    .table-title {
+        font-size: 16px;
+    }
+    
+    .historical-table {
+        font-size: 11px;
+    }
+    
+    .golden-table th,
+    .golden-table td,
+    .minimal-table th,
+    .minimal-table td {
+        padding: 8px 12px;
+    }
+    
+    .action-btn {
+        padding: 3px 6px;
+        font-size: 10px;
+    }
+}
+</style>
+
+{# Component JavaScript - Embedded for easy portability #}
+<script>
+// Historical Tables Component JavaScript
+(function() {
+    'use strict';
+    
+    // Copy functionality
+    window.copyValue = function(value) {
+        if (!value) return;
+        
+        const cleanValue = value.toString().replace(/,/g, '');
+        const element = event.target;
+        
+        // Use modern clipboard API with fallback
+        if (navigator.clipboard && window.isSecureContext) {
+            navigator.clipboard.writeText(cleanValue).then(() => {
+                showCopyFeedback(element);
+            }).catch(err => {
+                console.error('Clipboard API failed: ', err);
+                fallbackCopy(cleanValue, element);
+            });
+        } else {
+            fallbackCopy(cleanValue, element);
+        }
+    };
+    
+    function fallbackCopy(text, element) {
+        const textArea = document.createElement('textarea');
+        textArea.value = text;
+        textArea.style.position = 'fixed';
+        textArea.style.left = '-999999px';
+        textArea.style.top = '-999999px';
+        document.body.appendChild(textArea);
+        textArea.focus();
+        textArea.select();
+        
+        try {
+            document.execCommand('copy');
+            showCopyFeedback(element);
+        } catch (err) {
+            console.error('Fallback copy failed: ', err);
+        }
+        
+        document.body.removeChild(textArea);
+    }
+    
+    function showCopyFeedback(element) {
+        if (!element) return;
+        
+        const originalText = element.textContent;
+        const originalBackground = element.style.background;
+        const originalColor = element.style.color;
+        
+        element.textContent = 'Copied!';
+        element.style.background = 'rgba(34, 197, 94, 0.2)';
+        element.style.color = '#22c55e';
+        element.classList.add('copied');
+        
+        setTimeout(() => {
+            element.textContent = originalText;
+            element.style.background = originalBackground;
+            element.style.color = originalColor;
+            element.classList.remove('copied');
+        }, 800);
+    }
+    
+    // Table sorting
+    window.sortTable = function(tableId, columnIndex) {
+        const table = document.getElementById(tableId);
+        const tbody = table.querySelector('tbody');
+        const rows = Array.from(tbody.querySelectorAll('tr:not(.empty-row)'));
+        const header = table.querySelectorAll('th')[columnIndex];
+        
+        // Determine sort direction
+        const isAscending = !header.classList.contains('sorted-asc');
+        
+        // Remove existing sort classes
+        table.querySelectorAll('th').forEach(th => {
+            th.classList.remove('sorted-asc', 'sorted-desc');
+        });
+        
+        // Add new sort class
+        header.classList.add(isAscending ? 'sorted-asc' : 'sorted-desc');
+        
+        // Sort rows
+        rows.sort((a, b) => {
+            const aVal = a.cells[columnIndex].textContent.trim().replace(/,/g, '');
+            const bVal = b.cells[columnIndex].textContent.trim().replace(/,/g, '');
+            
+            // Try to parse as numbers
+            const aNum = parseFloat(aVal);
+            const bNum = parseFloat(bVal);
+            
+            if (!isNaN(aNum) && !isNaN(bNum)) {
+                return isAscending ? aNum - bNum : bNum - aNum;
+            } else {
+                return isAscending ? aVal.localeCompare(bVal) : bVal.localeCompare(aVal);
+            }
+        });
+        
+        // Re-append sorted rows
+        rows.forEach(row => tbody.appendChild(row));
+    };
+    
+    // Export table data
+    window.exportTableData = function(tableId) {
+        const table = document.getElementById(tableId);
+        const rows = table.querySelectorAll('tbody tr:not(.empty-row)');
+        
+        if (rows.length === 0) {
+            alert('No data available to export');
+            return;
+        }
+        
+        // Get headers
+        const headers = Array.from(table.querySelectorAll('thead th'))
+            .slice(0, -1) // Remove actions column
+            .map(th => th.textContent.trim());
+        
+        const csv = [headers.join(',')];
+        
+        rows.forEach(row => {
+            const cells = Array.from(row.querySelectorAll('td'))
+                .slice(0, -1) // Remove actions column
+                .map(cell => cell.textContent.trim().replace(/,/g, ''));
+            csv.push(cells.join(','));
+        });
+        
+        const blob = new Blob([csv.join('\n')], { type: 'text/csv' });
+        const url = window.URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `${tableId}_data.csv`;
+        a.click();
+        window.URL.revokeObjectURL(url);
+    };
+    
+    // Refresh table data
+    window.refreshTableData = function(tableId) {
+        // Simple page refresh for now - could be enhanced to fetch fresh data
+        window.location.reload();
+    };
+    
+    // Row actions
+    window.viewRowDetails = function(tableId, rowIndex) {
+        console.log(`View details for ${tableId} row ${rowIndex}`);
+        // Could open a modal or navigate to a details page
+        alert(`Viewing details for row ${rowIndex + 1}`);
+    };
+    
+    window.editRowData = function(tableId, rowIndex) {
+        console.log(`Edit data for ${tableId} row ${rowIndex}`);
+        // Could open an edit modal or form
+        alert(`Editing row ${rowIndex + 1}`);
+    };
+    
+})();
+</script>

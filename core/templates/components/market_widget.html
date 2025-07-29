@@ -1,0 +1,333 @@
+<!-- Market Widget Component - Reusable with Logo Support -->
+<!-- Usage: {% include 'components/market_widget.html' with {'symbol': 'NASDAQ', 'logo_path': '/static/nasdaq.svg', 'price': '19876.54', 'change': '+123.45', 'change_percent': '+0.62%'} %} -->
+
+{% set widget_symbol = symbol | default('SYMBOL') %}
+{% set widget_logo = logo_path | default('/static/images/forex-logo.png') %}
+{% set widget_logo_class = 'market-logo ' + (widget_symbol.lower().replace('^', '').replace(' ', '_')) + '-logo' %}
+{% set widget_price = price | default('0.00') %}
+{% set widget_change = change | default('0.00') %}
+{% set widget_change_percent = change_percent | default('0.00%') %}
+{% set widget_currency = currency | default('USD') %}
+{% set widget_id = widget_symbol.lower().replace('^', '').replace(' ', '_') %}
+
+<div class="market-widget" id="{{ widget_id }}_widget">
+    <div class="widget-header">
+        <div class="widget-logo">
+            <img src="{{ widget_logo }}" alt="{{ widget_symbol }} Logo" class="{{ widget_logo_class }}">
+        </div>
+        <div class="widget-title">
+            <h3>{{ widget_symbol }}</h3>
+            <span class="widget-subtitle">{{ widget_currency }}</span>
+        </div>
+    </div>
+    
+    <div class="widget-content">
+        <div class="price-section">
+            <div class="current-price" id="{{ widget_id }}_price">
+                {{ widget_price }}
+            </div>
+            <div class="price-change" id="{{ widget_id }}_change">
+                <span class="change-value">{{ widget_change }}</span>
+                <span class="change-percent">({{ widget_change_percent }})</span>
+            </div>
+        </div>
+        
+        <div class="widget-stats">
+            <div class="stat-item">
+                <span class="stat-label">Open</span>
+                <span class="stat-value" id="{{ widget_id }}_open">--</span>
+            </div>
+            <div class="stat-item">
+                <span class="stat-label">High</span>
+                <span class="stat-value" id="{{ widget_id }}_high">--</span>
+            </div>
+            <div class="stat-item">
+                <span class="stat-label">Low</span>
+                <span class="stat-value" id="{{ widget_id }}_low">--</span>
+            </div>
+            <div class="stat-item">
+                <span class="stat-label">Close</span>
+                <span class="stat-value" id="{{ widget_id }}_close">--</span>
+            </div>
+        </div>
+        
+        <div class="widget-indicators">
+            <div class="indicator loading" id="{{ widget_id }}_loading" style="display: none;">
+                <span class="indicator-dot"></span>
+                <span class="indicator-text">Loading...</span>
+            </div>
+            <div class="indicator cached" id="{{ widget_id }}_cached" style="display: none;">
+                <span class="indicator-dot"></span>
+                <span class="indicator-text">Cached</span>
+            </div>
+            <div class="indicator live" id="{{ widget_id }}_live" style="display: none;">
+                <span class="indicator-dot"></span>
+                <span class="indicator-text">Live</span>
+            </div>
+        </div>
+    </div>
+    
+    <div class="widget-actions">
+        <button class="copy-btn" onclick="copyToClipboard('{{ widget_price }}', 'Price copied!')" title="Copy Price">
+            <i class="copy-icon">📋</i>
+        </button>
+        <button class="refresh-btn" onclick="refreshWidget('{{ widget_id }}')" title="Refresh Data">
+            <i class="refresh-icon">🔄</i>
+        </button>
+    </div>
+</div>
+
+<style>
+/* Market Widget Specific Styles */
+.market-widget {
+    background: linear-gradient(135deg, rgba(26, 26, 26, 0.95) 0%, rgba(45, 45, 45, 0.95) 100%);
+    border: 2px solid #d4af37;
+    border-radius: 15px;
+    padding: 20px;
+    margin: 10px;
+    min-width: 280px;
+    box-shadow: 
+        0 8px 32px rgba(212, 175, 55, 0.2),
+        0 16px 64px rgba(0, 0, 0, 0.3),
+        inset 0 1px 0 rgba(255, 255, 255, 0.1);
+    backdrop-filter: blur(20px);
+    transition: all 0.3s ease;
+}
+
+.market-widget:hover {
+    border-color: #f4e971;
+    box-shadow: 
+        0 12px 40px rgba(212, 175, 55, 0.3),
+        0 20px 80px rgba(0, 0, 0, 0.4),
+        inset 0 1px 0 rgba(255, 255, 255, 0.15);
+    transform: translateY(-2px);
+}
+
+.widget-header {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+    margin-bottom: 15px;
+    padding-bottom: 10px;
+    border-bottom: 1px solid rgba(212, 175, 55, 0.3);
+}
+
+.widget-logo {
+    width: 40px;
+    height: 40px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.market-logo {
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+    filter: drop-shadow(0 0 10px rgba(212, 175, 55, 0.4));
+    border-radius: 6px;
+    padding: 2px;
+    transition: all 0.3s ease;
+}
+
+/* Specific logo styling */
+.nasdaq-logo {
+    background: rgba(0, 212, 255, 0.1);
+    border: 1px solid rgba(0, 212, 255, 0.3);
+}
+
+.xauusd-logo {
+    background: rgba(255, 215, 0, 0.1);
+    border: 1px solid rgba(255, 215, 0, 0.3);
+}
+
+.dow_jones-logo {
+    background: rgba(30, 144, 255, 0.1);
+    border: 1px solid rgba(30, 144, 255, 0.3);
+}
+
+/* SVG specific handling */
+.market-logo[src$=".svg"] {
+    image-rendering: crisp-edges;
+}
+
+/* PNG specific handling */
+.market-logo[src$=".png"] {
+    image-rendering: -webkit-optimize-contrast;
+}
+
+.widget-title h3 {
+    color: #d4af37;
+    font-size: 1.1em;
+    font-weight: 600;
+    margin: 0;
+}
+
+.widget-subtitle {
+    color: #999;
+    font-size: 0.8em;
+}
+
+.price-section {
+    text-align: center;
+    margin-bottom: 15px;
+}
+
+.current-price {
+    font-size: 1.8em;
+    font-weight: 700;
+    color: #ffffff;
+    margin-bottom: 5px;
+}
+
+.price-change {
+    font-size: 1em;
+    font-weight: 500;
+}
+
+.change-value {
+    color: #4caf50;
+}
+
+.change-percent {
+    color: #81c784;
+    margin-left: 5px;
+}
+
+.widget-stats {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+    margin-bottom: 15px;
+}
+
+.stat-item {
+    display: flex;
+    justify-content: space-between;
+    padding: 5px 10px;
+    background: rgba(255, 255, 255, 0.05);
+    border-radius: 8px;
+    border: 1px solid rgba(212, 175, 55, 0.2);
+}
+
+.stat-label {
+    color: #999;
+    font-size: 0.8em;
+}
+
+.stat-value {
+    color: #ffffff;
+    font-weight: 500;
+    font-size: 0.9em;
+}
+
+.widget-indicators {
+    margin-bottom: 15px;
+    min-height: 20px;
+}
+
+.indicator {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 0.8em;
+}
+
+.indicator-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    animation: pulse 1.5s ease-in-out infinite;
+}
+
+.indicator.loading .indicator-dot {
+    background-color: #ff9800;
+}
+
+.indicator.cached .indicator-dot {
+    background-color: #2196f3;
+}
+
+.indicator.live .indicator-dot {
+    background-color: #4caf50;
+}
+
+.indicator-text {
+    color: #999;
+}
+
+.widget-actions {
+    display: flex;
+    justify-content: center;
+    gap: 10px;
+}
+
+.copy-btn, .refresh-btn {
+    background: linear-gradient(135deg, rgba(212, 175, 55, 0.2) 0%, rgba(212, 175, 55, 0.1) 100%);
+    border: 1px solid rgba(212, 175, 55, 0.3);
+    border-radius: 8px;
+    padding: 8px 12px;
+    color: #d4af37;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    font-size: 0.9em;
+}
+
+.copy-btn:hover, .refresh-btn:hover {
+    background: linear-gradient(135deg, rgba(212, 175, 55, 0.3) 0%, rgba(212, 175, 55, 0.2) 100%);
+    border-color: #d4af37;
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(212, 175, 55, 0.2);
+}
+
+@keyframes pulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.5; }
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+    .market-widget {
+        min-width: 100%;
+        margin: 5px 0;
+    }
+    
+    .widget-stats {
+        grid-template-columns: 1fr;
+    }
+    
+    .current-price {
+        font-size: 1.5em;
+    }
+}
+</style>
+
+<script>
+// Widget-specific JavaScript functions
+function refreshWidget(widgetId) {
+    const loadingIndicator = document.getElementById(widgetId + '_loading');
+    const cachedIndicator = document.getElementById(widgetId + '_cached');
+    const liveIndicator = document.getElementById(widgetId + '_live');
+    
+    // Hide all indicators
+    [loadingIndicator, cachedIndicator, liveIndicator].forEach(el => {
+        if (el) el.style.display = 'none';
+    });
+    
+    // Show loading
+    if (loadingIndicator) {
+        loadingIndicator.style.display = 'flex';
+    }
+    
+    // Simulate refresh (you would replace this with actual API call)
+    setTimeout(() => {
+        if (loadingIndicator) loadingIndicator.style.display = 'none';
+        if (liveIndicator) liveIndicator.style.display = 'flex';
+        
+        // Hide live indicator after 3 seconds
+        setTimeout(() => {
+            if (liveIndicator) liveIndicator.style.display = 'none';
+        }, 3000);
+    }, 1000);
+}
+</script>

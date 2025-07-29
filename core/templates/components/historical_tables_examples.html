@@ -1,0 +1,171 @@
+{#
+    Historical Tables Component Usage Examples
+    
+    This file demonstrates various ways to use the historical_tables.html component
+    with different configurations and data types.
+#}
+
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container">
+    <h1>Historical Tables Component Examples</h1>
+    <p>Demonstrating different configurations of the reusable historical tables component.</p>
+
+    {# Example 1: Golden Theme Market Data Table #}
+    <h2>Example 1: Golden Theme Market Data</h2>
+    {% set table_data = [
+        {
+            'date': '2025-01-20',
+            'current': '21,450.25',
+            'change': '+125.50',
+            'previous': '21,324.75',
+            'high': '21,465.00',
+            'low': '21,310.50'
+        },
+        {
+            'date': '2025-01-19',
+            'current': '21,324.75',
+            'change': '-45.25',
+            'previous': '21,370.00',
+            'high': '21,380.00',
+            'low': '21,298.25'
+        },
+        {
+            'date': '2025-01-18',
+            'current': '21,370.00',
+            'change': '+78.50',
+            'previous': '21,291.50',
+            'high': '21,385.75',
+            'low': '21,285.00'
+        }
+    ] %}
+    {% set table_headers = ['Date', 'Current', 'Change', 'Previous', 'High', 'Low'] %}
+    {% set table_title = 'NASDAQ Historical Data' %}
+    {% set table_id = 'nasdaq-golden-example' %}
+    {% set table_style = 'golden' %}
+    {% set icon_src = url_for('static', filename='nasdaq.svg') %}
+    {% set sortable_columns = [0, 1, 2, 3, 4, 5] %}
+    {% set value_columns = [1, 3, 4, 5] %}
+    {% set change_columns = [2] %}
+    {% include 'components/historical_tables.html' %}
+
+    <div style="margin: 40px 0;"><hr style="border: 1px solid rgba(212, 175, 55, 0.3);"></div>
+
+    {# Example 2: Minimal Theme Signals Data #}
+    <h2>Example 2: Minimal Theme Trading Signals</h2>
+    {% set table_data = [
+        ['2025-01-20 14:30', 'BUY', 'EURUSD', '1.0458', '1.0468', '1.0448', 'ACTIVE'],
+        ['2025-01-20 12:15', 'SELL', 'GBPUSD', '1.2245', '1.2235', '1.2255', 'COMPLETED'],
+        ['2025-01-19 16:45', 'BUY', 'USDJPY', '156.25', '156.45', '156.05', 'STOPPED'],
+        ['2025-01-19 09:30', 'SELL', 'AUDUSD', '0.6285', '0.6275', '0.6295', 'COMPLETED']
+    ] %}
+    {% set table_headers = ['Timestamp', 'Signal', 'Pair', 'Entry', 'Target', 'Stop', 'Status'] %}
+    {% set table_title = 'Trading Signals History' %}
+    {% set table_id = 'signals-minimal-example' %}
+    {% set table_style = 'minimal' %}
+    {% set sortable_columns = [0, 1, 2] %}
+    {% set value_columns = [3, 4, 5] %}
+    {% include 'components/historical_tables.html' %}
+
+    <div style="margin: 40px 0;"><hr style="border: 1px solid rgba(212, 175, 55, 0.3);"></div>
+
+    {# Example 3: Golden Theme with Pagination #}
+    <h2>Example 3: Golden Theme with Pagination</h2>
+    {% set table_data = [
+        {
+            'date': '2025-01-20',
+            'symbol': 'XAUUSD',
+            'price': '2,685.50',
+            'change': '+12.75',
+            'volume': '125,420',
+            'high': '2,692.00',
+            'low': '2,678.25'
+        },
+        {
+            'date': '2025-01-19',
+            'symbol': 'XAUUSD',
+            'price': '2,672.75',
+            'change': '-8.50',
+            'volume': '98,760',
+            'high': '2,685.00',
+            'low': '2,668.50'
+        }
+    ] %}
+    {% set table_headers = ['Date', 'Symbol', 'Price', 'Change', 'Volume', 'High', 'Low'] %}
+    {% set table_title = 'Gold Price History' %}
+    {% set table_id = 'gold-pagination-example' %}
+    {% set table_style = 'golden' %}
+    {% set icon_src = url_for('static', filename='gold.png') %}
+    {% set show_pagination = true %}
+    {% set pagination_info = {
+        'current_page': 1,
+        'total_pages': 5,
+        'start_item': 1,
+        'end_item': 10,
+        'total_items': 45,
+        'has_prev': false,
+        'has_next': true,
+        'prev_page': null,
+        'next_page': 2
+    } %}
+    {% set sortable_columns = [0, 2, 3, 4, 5, 6] %}
+    {% set value_columns = [2, 4, 5, 6] %}
+    {% set change_columns = [3] %}
+    {% include 'components/historical_tables.html' %}
+
+    <div style="margin: 40px 0;"><hr style="border: 1px solid rgba(212, 175, 55, 0.3);"></div>
+
+    {# Example 4: Empty State Demo #}
+    <h2>Example 4: Empty State</h2>
+    {% set table_data = [] %}
+    {% set table_headers = ['Date', 'Symbol', 'Price', 'Change', 'Volume'] %}
+    {% set table_title = 'No Data Example' %}
+    {% set table_id = 'empty-example' %}
+    {% set table_style = 'golden' %}
+    {% set empty_message = 'No trading data available for this period' %}
+    {% include 'components/historical_tables.html' %}
+
+    <div style="margin: 40px 0;"><hr style="border: 1px solid rgba(212, 175, 55, 0.3);"></div>
+
+    {# Example 5: Minimal Configuration #}
+    <h2>Example 5: Minimal Configuration</h2>
+    {% set table_data = [
+        ['Item 1', 'Value 1', 'Status 1'],
+        ['Item 2', 'Value 2', 'Status 2'],
+        ['Item 3', 'Value 3', 'Status 3']
+    ] %}
+    {% set table_headers = ['Item', 'Value', 'Status'] %}
+    {% set table_title = 'Simple Data Table' %}
+    {% set table_id = 'simple-example' %}
+    {% set show_export = false %}
+    {% set show_actions = false %}
+    {% include 'components/historical_tables.html' %}
+
+    <div style="margin: 60px 0;">
+        <h2>Component Features</h2>
+        <div style="background: rgba(45, 45, 45, 0.8); padding: 20px; border-radius: 10px; border: 1px solid #d4af37;">
+            <h3>Key Features</h3>
+            <ul style="color: #ffffff; line-height: 1.8;">
+                <li><strong>Two Theme Options:</strong> Golden (luxury) and Minimal (clean) styling</li>
+                <li><strong>Responsive Design:</strong> Adapts to mobile, tablet, and desktop screens</li>
+                <li><strong>Interactive Elements:</strong> Click to copy values, sortable columns, hover effects</li>
+                <li><strong>Flexible Data Support:</strong> Works with arrays or dictionary objects</li>
+                <li><strong>Export Functionality:</strong> Built-in CSV export with clean data</li>
+                <li><strong>Pagination Support:</strong> Server-side pagination with navigation controls</li>
+                <li><strong>Customizable Actions:</strong> Configurable action buttons and callbacks</li>
+                <li><strong>Empty State Handling:</strong> Professional no-data display</li>
+                <li><strong>Color-coded Values:</strong> Positive/negative changes with appropriate colors</li>
+                <li><strong>Accessibility:</strong> Proper ARIA labels and keyboard navigation</li>
+            </ul>
+            
+            <h3>Usage Pattern</h3>
+            <pre style="background: rgba(0,0,0,0.5); padding: 15px; border-radius: 5px; color: #f4e971; overflow-x: auto;"><code>{% raw %}{% set table_data = your_data %}
+{% set table_headers = ['Col1', 'Col2', 'Col3'] %}
+{% set table_title = 'Your Title' %}
+{% set table_style = 'golden' %} {# or 'minimal' #}
+{% include 'components/historical_tables.html' %}{% endraw %}</code></pre>
+        </div>
+    </div>
+</div>
+{% endblock %}

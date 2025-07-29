@@ -1,0 +1,211 @@
+<!-- BFI Signals Sidebar Component -->
+<div class="header">
+    <div class="header-content">
+        <img src="/static/images/forex-logo.png" alt="BFI Logo" class="logo">
+        <h1>BFI Advanced Hybrid Math</h1>
+    </div>
+    <p style="text-align: center;">Powered Trading Signal Intelligence</p>
+    <div class="branding-section">
+        <p style="text-align: center; color: #d4af37; font-size: 0.9rem; font-weight: 600; margin: 10px 0 5px 0;">Hybrid Math Strategy</p>
+        <p style="text-align: center; color: #888888; font-size: 0.8rem; margin: 0;">Prophet Bonang</p>
+    </div>
+    
+    <!-- Live Market Ticker -->
+    <div class="live-ticker">
+        <div class="ticker-item">
+            <div class="ticker-header">
+                <img src="/static/nasdaq.svg" alt="NASDAQ" class="ticker-logo nasdaq-logo">
+                <div class="ticker-symbol-group">
+                    <span class="ticker-symbol">NASDAQ</span>
+                    <span class="ticker-subtitle">NAS100</span>
+                </div>
+            </div>
+            <span class="ticker-price" id="nasdaq-price">--</span>
+            <span class="ticker-change" id="nasdaq-change">--</span>
+            <div class="ticker-key-data">
+                <div class="key-data-row">
+                    <span class="key-data-label">Current Value:</span>
+                    <span class="key-data-value" id="nasdaq-current" onclick="copyToClipboard(this)">--<span class="copy-icon"><svg viewBox="0 0 24 24"><path d="M16 1H4c-1.1 0-2 .9-2 2v14h2V3h12V1zm3 4H8c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h11c1.1 0 2-.9 2-2V7c0-1.1-.9-2-2-2zm0 16H8V7h11v14z"/></svg></span></span>
+                </div>
+                <div class="key-data-row">
+                    <span class="key-data-label">Net Change:</span>
+                    <span class="key-data-value" id="nasdaq-net-change">--</span>
+                </div>
+                <div class="key-data-row">
+                    <span class="key-data-label">Previous Close:</span>
+                    <span class="key-data-value" id="nasdaq-prev-close" onclick="copyToClipboard(this)">--<span class="copy-icon"><svg viewBox="0 0 24 24"><path d="M16 1H4c-1.1 0-2 .9-2 2v14h2V3h12V1zm3 4H8c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h11c1.1 0 2-.9 2-2V7c0-1.1-.9-2-2-2zm0 16H8V7h11v14z"/></svg></span></span>
+                </div>
+                <div class="key-data-row">
+                    <span class="key-data-label">Today's High:</span>
+                    <span class="key-data-value" id="nasdaq-high" onclick="copyToClipboard(this)">--<span class="copy-icon"><svg viewBox="0 0 24 24"><path d="M16 1H4c-1.1 0-2 .9-2 2v14h2V3h12V1zm3 4H8c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h11c1.1 0 2-.9 2-2V7c0-1.1-.9-2-2-2zm0 16H8V7h11v14z"/></svg></span></span>
+                </div>
+                <div class="key-data-row">
+                    <span class="key-data-label">Today's Low:</span>
+                    <span class="key-data-value" id="nasdaq-low" onclick="copyToClipboard(this)">--<span class="copy-icon"><svg viewBox="0 0 24 24"><path d="M16 1H4c-1.1 0-2 .9-2 2v14h2V3h12V1zm3 4H8c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h11c1.1 0 2-.9 2-2V7c0-1.1-.9-2-2-2zm0 16H8V7h11v14z"/></svg></span></span>
+                </div>
+                <div class="key-data-row">
+                    <span class="key-data-label">Take Profit:</span>
+                    <span class="key-data-value" id="nasdaq-tp" onclick="copyToClipboard(this)">--<span class="copy-icon"><svg viewBox="0 0 24 24"><path d="M16 1H4c-1.1 0-2 .9-2 2v14h2V3h12V1zm3 4H8c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h11c1.1 0 2-.9 2-2V7c0-1.1-.9-2-2-2zm0 16H8V7h11v14z"/></svg></span></span>
+                </div>
+            </div>
+        </div>
+        <div class="ticker-item">
+            <div class="ticker-header">
+                <img src="/static/gold.png" alt="GOLD" class="ticker-logo gold-logo">
+                <div class="ticker-symbol-group">
+                    <span class="ticker-symbol">XAUUSD</span>
+                    <span class="ticker-subtitle">GOLD</span>
+                </div>
+            </div>
+            <span class="ticker-price" id="gold-price">--</span>
+            <span class="ticker-change" id="gold-change">--</span>
+            <div class="ticker-key-data">
+                <div class="key-data-row">
+                    <span class="key-data-label">Current Value:</span>
+                    <span class="key-data-value" id="gold-current" onclick="copyToClipboard(this)">--<span class="copy-icon"><svg viewBox="0 0 24 24"><path d="M16 1H4c-1.1 0-2 .9-2 2v14h2V3h12V1zm3 4H8c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h11c1.1 0 2-.9 2-2V7c0-1.1-.9-2-2-2zm0 16H8V7h11v14z"/></svg></span></span>
+                </div>
+                <div class="key-data-row">
+                    <span class="key-data-label">Net Change:</span>
+                    <span class="key-data-value" id="gold-net-change">--</span>
+                </div>
+                <div class="key-data-row">
+                    <span class="key-data-label">Previous Close:</span>
+                    <span class="key-data-value" id="gold-prev-close" onclick="copyToClipboard(this)">--<span class="copy-icon"><svg viewBox="0 0 24 24"><path d="M16 1H4c-1.1 0-2 .9-2 2v14h2V3h12V1zm3 4H8c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h11c1.1 0 2-.9 2-2V7c0-1.1-.9-2-2-2zm0 16H8V7h11v14z"/></svg></span></span>
+                </div>
+                <div class="key-data-row">
+                    <span class="key-data-label">Today's High:</span>
+                    <span class="key-data-value" id="gold-high" onclick="copyToClipboard(this)">--<span class="copy-icon"><svg viewBox="0 0 24 24"><path d="M16 1H4c-1.1 0-2 .9-2 2v14h2V3h12V1zm3 4H8c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h11c1.1 0 2-.9 2-2V7c0-1.1-.9-2-2-2zm0 16H8V7h11v14z"/></svg></span></span>
+                </div>
+                <div class="key-data-row">
+                    <span class="key-data-label">Today's Low:</span>
+                    <span class="key-data-value" id="gold-low" onclick="copyToClipboard(this)">--<span class="copy-icon"><svg viewBox="0 0 24 24"><path d="M16 1H4c-1.1 0-2 .9-2 2v14h2V3h12V1zm3 4H8c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h11c1.1 0 2-.9 2-2V7c0-1.1-.9-2-2-2zm0 16H8V7h11v14z"/></svg></span></span>
+                </div>
+                <div class="key-data-row">
+                    <span class="key-data-label">Take Profit:</span>
+                    <span class="key-data-value" id="gold-tp" onclick="copyToClipboard(this)">--<span class="copy-icon"><svg viewBox="0 0 24 24"><path d="M16 1H4c-1.1 0-2 .9-2 2v14h2V3h12V1zm3 4H8c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h11c1.1 0 2-.9 2-2V7c0-1.1-.9-2-2-2zm0 16H8V7h11v14z"/></svg></span></span>
+                </div>
+            </div>
+        </div>
+        <div class="ticker-item">
+            <div class="ticker-header">
+                <img src="/static/dow.png" alt="DOW" class="ticker-logo dow-logo">
+                <div class="ticker-symbol-group">
+                    <span class="ticker-symbol">DOW</span>
+                    <span class="ticker-subtitle">US30</span>
+                </div>
+            </div>
+            <span class="ticker-price" id="dow-price">--</span>
+            <span class="ticker-change" id="dow-change">--</span>
+            <div class="ticker-key-data">
+                <div class="key-data-row">
+                    <span class="key-data-label">Current Value:</span>
+                    <span class="key-data-value" id="dow-current" onclick="copyToClipboard(this)">--<span class="copy-icon"><svg viewBox="0 0 24 24"><path d="M16 1H4c-1.1 0-2 .9-2 2v14h2V3h12V1zm3 4H8c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h11c1.1 0 2-.9 2-2V7c0-1.1-.9-2-2-2zm0 16H8V7h11v14z"/></svg></span></span>
+                </div>
+                <div class="key-data-row">
+                    <span class="key-data-label">Net Change:</span>
+                    <span class="key-data-value" id="dow-net-change">--</span>
+                </div>
+                <div class="key-data-row">
+                    <span class="key-data-label">Previous Close:</span>
+                    <span class="key-data-value" id="dow-prev-close" onclick="copyToClipboard(this)">--<span class="copy-icon"><svg viewBox="0 0 24 24"><path d="M16 1H4c-1.1 0-2 .9-2 2v14h2V3h12V1zm3 4H8c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h11c1.1 0 2-.9 2-2V7c0-1.1-.9-2-2-2zm0 16H8V7h11v14z"/></svg></span></span>
+                </div>
+                <div class="key-data-row">
+                    <span class="key-data-label">Today's High:</span>
+                    <span class="key-data-value" id="dow-high" onclick="copyToClipboard(this)">--<span class="copy-icon"><svg viewBox="0 0 24 24"><path d="M16 1H4c-1.1 0-2 .9-2 2v14h2V3h12V1zm3 4H8c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h11c1.1 0 2-.9 2-2V7c0-1.1-.9-2-2-2zm0 16H8V7h11v14z"/></svg></span></span>
+                </div>
+                <div class="key-data-row">
+                    <span class="key-data-label">Today's Low:</span>
+                    <span class="key-data-value" id="dow-low" onclick="copyToClipboard(this)">--<span class="copy-icon"><svg viewBox="0 0 24 24"><path d="M16 1H4c-1.1 0-2 .9-2 2v14h2V3h12V1zm3 4H8c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h11c1.1 0 2-.9 2-2V7c0-1.1-.9-2-2-2zm0 16H8V7h11v14z"/></svg></span></span>
+                </div>
+                <div class="key-data-row">
+                    <span class="key-data-label">Take Profit:</span>
+                    <span class="key-data-value" id="dow-tp" onclick="copyToClipboard(this)">--<span class="copy-icon"><svg viewBox="0 0 24 24"><path d="M16 1H4c-1.1 0-2 .9-2 2v14h2V3h12V1zm3 4H8c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h11c1.1 0 2-.9 2-2V7c0-1.1-.9-2-2-2zm0 16H8V7h11v14z"/></svg></span></span>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Navigation Menu -->
+    <nav class="nav">
+        <a href="/" {% if request.endpoint == 'dashboard' %}class="active"{% endif %}>Dashboard</a>
+        <a href="/generate_signals" {% if request.endpoint == 'generate_signals' %}class="active"{% endif %}>Generate Signals</a>
+        <a href="/journal" {% if request.endpoint == 'journal' %}class="active"{% endif %}>Journal</a>
+        <a href="/track_signals" {% if request.endpoint == 'track_signals' %}class="active"{% endif %}>Track Signals</a>
+        <a href="/data_feed_history" {% if request.endpoint == 'data_feed_history' %}class="active"{% endif %}>Data Feed History</a>
+    </nav>
+</div>
+
+<style>
+/* Enhanced ticker header with logos */
+.ticker-header {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 8px;
+}
+
+.ticker-logo {
+    width: 24px;
+    height: 24px;
+    object-fit: contain;
+    border-radius: 4px;
+    padding: 2px;
+    transition: all 0.3s ease;
+}
+
+.ticker-symbol-group {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+
+/* Logo specific styling */
+.nasdaq-logo {
+    background: rgba(0, 212, 255, 0.1);
+    border: 1px solid rgba(0, 212, 255, 0.3);
+}
+
+.gold-logo {
+    background: rgba(255, 215, 0, 0.1);
+    border: 1px solid rgba(255, 215, 0, 0.3);
+}
+
+.dow-logo {
+    background: rgba(30, 144, 255, 0.1);
+    border: 1px solid rgba(30, 144, 255, 0.3);
+}
+
+.ticker-logo:hover {
+    transform: scale(1.1);
+    border-color: #d4af37;
+}
+
+/* SVG specific handling */
+.ticker-logo[src$=".svg"] {
+    image-rendering: crisp-edges;
+}
+
+/* PNG specific handling */
+.ticker-logo[src$=".png"] {
+    image-rendering: -webkit-optimize-contrast;
+}
+
+/* Enhanced main logo styling */
+.logo {
+    width: 60px;
+    height: 60px;
+    object-fit: contain;
+    border: 2px solid #d4af37;
+    border-radius: 8px;
+    padding: 6px;
+    background: rgba(212, 175, 55, 0.1);
+    box-shadow: 0 4px 12px rgba(212, 175, 55, 0.3);
+    transition: all 0.3s ease;
+}
+
+.logo:hover {
+    transform: scale(1.05);
+    box-shadow: 0 6px 20px rgba(212, 175, 55, 0.4);
+    border-color: #f4e971;
+}
+</style>

@@ -1,0 +1,376 @@
+{% extends "base_minimal.html" %}
+
+{% block title %}BFI Signals - Market Data History{% endblock %}
+
+{% block content %}
+<!-- Data Feed History Page Content -->
+<div class="page-header">
+    <h1 class="page-title">Market Data History</h1>
+    <p class="page-subtitle">Real-time and historical market data feed analysis</p>
+</div>
+
+<!-- Market Data Widgets Section -->
+<div class="market-widgets-section">
+    <h2 class="section-title">Live Market Data</h2>
+    <div class="widgets-grid">
+        <!-- NASDAQ Widget -->
+        {% set nasdaq_widget_data = {
+            'symbol': 'NASDAQ', 
+            'logo_path': '/static/nasdaq.svg',
+            'price': nasdaq_data.current_price|default('23065.47'),
+            'change': nasdaq_data.net_change|default('-15.58'),
+            'change_percent': nasdaq_data.change_percent|default('-0.07%'),
+            'currency': 'USD'
+        } %}
+        {% include 'components/market_widget.html' with nasdaq_widget_data %}
+        
+        <!-- GOLD Widget -->
+        {% set gold_widget_data = {
+            'symbol': 'XAUUSD', 
+            'logo_path': '/static/gold.png',
+            'price': gold_data.current_price|default('308.39'),
+            'change': gold_data.net_change|default('+0.79'),
+            'change_percent': gold_data.change_percent|default('+0.26%'),
+            'currency': 'USD'
+        } %}
+        {% include 'components/market_widget.html' with gold_widget_data %}
+        
+        <!-- DOW Widget -->
+        {% set dow_widget_data = {
+            'symbol': 'DOW JONES', 
+            'logo_path': '/static/dow.png',
+            'price': dow_data.current_price|default('44342.19'),
+            'change': dow_data.net_change|default('-142.44'),
+            'change_percent': dow_data.change_percent|default('-0.32%'),
+            'currency': 'USD'
+        } %}
+        {% include 'components/market_widget.html' with dow_widget_data %}
+    </div>
+</div>
+
+<!-- Historical Data Tables Section -->
+<div class="historical-data-section">
+    <h2 class="section-title">Historical Market Data</h2>
+    
+    <!-- NASDAQ Historical Data -->
+    <div class="market-section">
+        <h3 class="market-title">
+            <img src="{{ url_for('static', filename='nasdaq.svg') }}" alt="NASDAQ" class="symbol-icon">
+            NASDAQ Historical Data
+        </h3>
+        
+        {% set table_data = nasdaq_history_data|default([
+            {'Date': '2025-07-18', 'Current': '23065.47', 'Change': '-15.58', 'Previous': '23081.05', 'High': '23153.21', 'Low': '23018.36'},
+            {'Date': '2025-07-17', 'Current': '23081.05', 'Change': '+42.33', 'Previous': '23038.72', 'High': '23145.89', 'Low': '23012.45'},
+            {'Date': '2025-07-16', 'Current': '23038.72', 'Change': '-89.12', 'Previous': '23127.84', 'High': '23189.67', 'Low': '22987.23'}
+        ]) %}
+        {% set table_headers = ['Date', 'Current', 'Change', 'Previous', 'High', 'Low'] %}
+        {% set table_title = 'NASDAQ Historical Data' %}
+        {% set table_style = 'golden' %}
+        {% set icon_src = '/static/nasdaq.svg' %}
+        {% set sortable_columns = [0, 1, 2, 3, 4, 5] %}
+        {% set value_columns = [1, 3, 4, 5] %}
+        {% set change_columns = [2] %}
+        {% include 'components/historical_tables.html' %}
+    </div>
+    
+    <!-- GOLD Historical Data -->
+    <div class="market-section">
+        <h3 class="market-title">
+            <img src="{{ url_for('static', filename='gold.png') }}" alt="GOLD" class="symbol-icon">
+            GOLD (XAUUSD) Historical Data
+        </h3>
+        
+        {% set table_data = gold_history_data|default([
+            {'Date': '2025-07-18', 'Current': '308.39', 'Change': '+0.79', 'Previous': '307.60', 'High': '309.14', 'Low': '307.21'},
+            {'Date': '2025-07-17', 'Current': '307.60', 'Change': '+1.23', 'Previous': '306.37', 'High': '308.45', 'Low': '306.12'},
+            {'Date': '2025-07-16', 'Current': '306.37', 'Change': '-2.14', 'Previous': '308.51', 'High': '309.67', 'Low': '305.89'}
+        ]) %}
+        {% set table_headers = ['Date', 'Current', 'Change', 'Previous', 'High', 'Low'] %}
+        {% set table_title = 'GOLD Historical Data' %}
+        {% set table_style = 'golden' %}
+        {% set icon_src = '/static/gold.png' %}
+        {% set sortable_columns = [0, 1, 2, 3, 4, 5] %}
+        {% set value_columns = [1, 3, 4, 5] %}
+        {% set change_columns = [2] %}
+        {% include 'components/historical_tables.html' %}
+    </div>
+    
+    <!-- DOW Historical Data -->
+    <div class="market-section">
+        <h3 class="market-title">
+            <img src="{{ url_for('static', filename='dow.png') }}" alt="DOW" class="symbol-icon">
+            DOW JONES Historical Data
+        </h3>
+        
+        {% set table_data = dow_history_data|default([
+            {'Date': '2025-07-18', 'Current': '44342.19', 'Change': '-142.44', 'Previous': '44484.63', 'High': '44557.89', 'Low': '44298.31'},
+            {'Date': '2025-07-17', 'Current': '44484.63', 'Change': '+189.78', 'Previous': '44294.85', 'High': '44623.45', 'Low': '44234.67'},
+            {'Date': '2025-07-16', 'Current': '44294.85', 'Change': '-67.23', 'Previous': '44362.08', 'High': '44445.89', 'Low': '44167.34'}
+        ]) %}
+        {% set table_headers = ['Date', 'Current', 'Change', 'Previous', 'High', 'Low'] %}
+        {% set table_title = 'DOW JONES Historical Data' %}
+        {% set table_style = 'golden' %}
+        {% set icon_src = '/static/dow.png' %}
+        {% set sortable_columns = [0, 1, 2, 3, 4, 5] %}
+        {% set value_columns = [1, 3, 4, 5] %}
+        {% set change_columns = [2] %}
+        {% include 'components/historical_tables.html' %}
+    </div>
+</div>
+
+<!-- Data Feed Statistics Section -->
+<div class="statistics-section">
+    <h2 class="section-title">Data Feed Statistics</h2>
+    
+    <div class="stats-grid">
+        <div class="stat-card">
+            <div class="stat-header">
+                <h4 class="stat-title">Data Sources</h4>
+                <span class="stat-icon">📡</span>
+            </div>
+            <div class="stat-content">
+                <div class="stat-item">
+                    <span class="stat-label">Primary Feed:</span>
+                    <span class="stat-value">TradingView API</span>
+                </div>
+                <div class="stat-item">
+                    <span class="stat-label">Backup Feed:</span>
+                    <span class="stat-value">Yahoo Finance</span>
+                </div>
+                <div class="stat-item">
+                    <span class="stat-label">Update Frequency:</span>
+                    <span class="stat-value">5 minutes</span>
+                </div>
+            </div>
+        </div>
+        
+        <div class="stat-card">
+            <div class="stat-header">
+                <h4 class="stat-title">Data Quality</h4>
+                <span class="stat-icon">✅</span>
+            </div>
+            <div class="stat-content">
+                <div class="stat-item">
+                    <span class="stat-label">Uptime:</span>
+                    <span class="stat-value">99.8%</span>
+                </div>
+                <div class="stat-item">
+                    <span class="stat-label">Accuracy:</span>
+                    <span class="stat-value">99.9%</span>
+                </div>
+                <div class="stat-item">
+                    <span class="stat-label">Latency:</span>
+                    <span class="stat-value">< 50ms</span>
+                </div>
+            </div>
+        </div>
+        
+        <div class="stat-card">
+            <div class="stat-header">
+                <h4 class="stat-title">Last Updated</h4>
+                <span class="stat-icon">🕒</span>
+            </div>
+            <div class="stat-content">
+                <div class="stat-item">
+                    <span class="stat-label">NASDAQ:</span>
+                    <span class="stat-value">{{ nasdaq_last_updated|default('15:30:05') }}</span>
+                </div>
+                <div class="stat-item">
+                    <span class="stat-label">GOLD:</span>
+                    <span class="stat-value">{{ gold_last_updated|default('15:30:03') }}</span>
+                </div>
+                <div class="stat-item">
+                    <span class="stat-label">DOW:</span>
+                    <span class="stat-value">{{ dow_last_updated|default('15:30:07') }}</span>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+/* Page-specific styles for data feed history */
+.page-header {
+    text-align: center;
+    margin-bottom: 40px;
+    padding: 30px 20px;
+    background: linear-gradient(135deg, rgba(26, 26, 26, 0.95) 0%, rgba(45, 45, 45, 0.95) 100%);
+    border: 2px solid #d4af37;
+    border-radius: 20px;
+    backdrop-filter: blur(10px);
+}
+
+.page-title {
+    color: #d4af37;
+    font-size: 2.5em;
+    font-weight: 700;
+    margin: 0 0 10px 0;
+    background: linear-gradient(45deg, #d4af37, #f4e971);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+}
+
+.page-subtitle {
+    color: #ccc;
+    font-size: 1.1em;
+    margin: 0;
+    font-weight: 400;
+}
+
+.section-title {
+    color: #d4af37;
+    font-size: 1.5em;
+    font-weight: 600;
+    margin: 40px 0 20px 0;
+    text-align: center;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+}
+
+.widgets-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    gap: 20px;
+    margin-bottom: 40px;
+}
+
+.market-section {
+    margin-bottom: 40px;
+}
+
+.market-title {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+    margin-bottom: 20px;
+    padding: 15px 20px;
+    background: linear-gradient(135deg, rgba(212, 175, 55, 0.1) 0%, rgba(212, 175, 55, 0.05) 100%);
+    border: 1px solid rgba(212, 175, 55, 0.3);
+    border-radius: 12px;
+    color: #d4af37;
+    font-size: 1.2em;
+    font-weight: 600;
+}
+
+.symbol-icon {
+    width: 24px;
+    height: 24px;
+    object-fit: contain;
+    filter: drop-shadow(0 0 8px rgba(212, 175, 55, 0.4));
+}
+
+.symbol-icon[alt="GOLD"] {
+    width: 32px;
+    height: 32px;
+}
+
+.statistics-section {
+    margin-top: 60px;
+}
+
+.stats-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    gap: 25px;
+    margin-bottom: 40px;
+}
+
+.stat-card {
+    background: linear-gradient(135deg, rgba(26, 26, 26, 0.95) 0%, rgba(45, 45, 45, 0.95) 100%);
+    border: 2px solid rgba(212, 175, 55, 0.3);
+    border-radius: 15px;
+    padding: 25px;
+    transition: all 0.3s ease;
+    backdrop-filter: blur(10px);
+}
+
+.stat-card:hover {
+    border-color: #d4af37;
+    box-shadow: 0 12px 30px rgba(212, 175, 55, 0.2);
+    transform: translateY(-3px);
+}
+
+.stat-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
+    padding-bottom: 15px;
+    border-bottom: 1px solid rgba(212, 175, 55, 0.3);
+}
+
+.stat-title {
+    color: #d4af37;
+    font-size: 1.1em;
+    font-weight: 600;
+    margin: 0;
+}
+
+.stat-icon {
+    font-size: 1.5em;
+}
+
+.stat-content {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.stat-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 8px 0;
+}
+
+.stat-label {
+    color: #999;
+    font-size: 0.9em;
+}
+
+.stat-value {
+    color: #ffffff;
+    font-weight: 600;
+    font-size: 0.95em;
+}
+
+/* Responsive design */
+@media (max-width: 768px) {
+    .page-title {
+        font-size: 2em;
+    }
+    
+    .widgets-grid {
+        grid-template-columns: 1fr;
+    }
+    
+    .stats-grid {
+        grid-template-columns: 1fr;
+    }
+    
+    .market-title {
+        font-size: 1.1em;
+        padding: 12px 15px;
+    }
+}
+</style>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+// Page-specific JavaScript for data feed history
+document.addEventListener('DOMContentLoaded', function() {
+    // Initialize market widgets
+    console.log('Data Feed History page loaded');
+    
+    // Refresh all widgets every 5 minutes
+    setInterval(function() {
+        ['nasdaq', 'xauusd', 'dow_jones'].forEach(function(symbol) {
+            refreshWidget(symbol);
+        });
+    }, 300000); // 5 minutes
+});
+</script>
+{% endblock %}

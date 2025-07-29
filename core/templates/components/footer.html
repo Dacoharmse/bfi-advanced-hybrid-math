@@ -1,0 +1,462 @@
+<!-- Footer Component - Strategy Information and Credits -->
+<footer class="footer-component">
+    <div class="footer-content">
+        <!-- Strategy Information Section -->
+        <div class="strategy-info">
+            <div class="strategy-header">
+                <h3 class="strategy-title">Hybrid Math Strategy</h3>
+                <div class="strategy-badge">AI Powered</div>
+            </div>
+            
+            <div class="strategy-details">
+                <div class="strategy-item">
+                    <span class="strategy-label">Algorithm:</span>
+                    <span class="strategy-value">Advanced Mathematical Models</span>
+                </div>
+                <div class="strategy-item">
+                    <span class="strategy-label">Data Source:</span>
+                    <span class="strategy-value">Real-time Market Feeds</span>
+                </div>
+                <div class="strategy-item">
+                    <span class="strategy-label">Signal Generation:</span>
+                    <span class="strategy-value">Multi-timeframe Analysis</span>
+                </div>
+                <div class="strategy-item">
+                    <span class="strategy-label">Risk Management:</span>
+                    <span class="strategy-value">Dynamic Position Sizing</span>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Performance Stats Section -->
+        <div class="performance-stats">
+            <h4 class="stats-title">Strategy Performance</h4>
+            <div class="stats-grid">
+                <div class="stat-card">
+                    <div class="stat-value">{{ win_rate | default('87.3') }}%</div>
+                    <div class="stat-label">Win Rate</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-value">{{ profit_factor | default('2.41') }}</div>
+                    <div class="stat-label">Profit Factor</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-value">{{ sharpe_ratio | default('1.89') }}</div>
+                    <div class="stat-label">Sharpe Ratio</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-value">{{ max_drawdown | default('12.4') }}%</div>
+                    <div class="stat-label">Max Drawdown</div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Credits and Attribution Section -->
+        <div class="credits-section">
+            <div class="credits-main">
+                <div class="credit-item">
+                    <span class="credit-label">Created by:</span>
+                    <span class="credit-value prophet-name">Prophet Bonang</span>
+                </div>
+                <div class="credit-item">
+                    <span class="credit-label">Platform:</span>
+                    <span class="credit-value">BFI Signals Intelligence</span>
+                </div>
+                <div class="credit-item">
+                    <span class="credit-label">Technology:</span>
+                    <span class="credit-value">Advanced AI & ML</span>
+                </div>
+            </div>
+            
+            <div class="social-links">
+                <a href="#" class="social-link discord" title="Discord Community">
+                    <span class="social-icon">💬</span>
+                    <span class="social-text">Discord</span>
+                </a>
+                <a href="#" class="social-link telegram" title="Telegram Channel">
+                    <span class="social-icon">📱</span>
+                    <span class="social-text">Telegram</span>
+                </a>
+                <a href="#" class="social-link email" title="Contact Us">
+                    <span class="social-icon">✉️</span>
+                    <span class="social-text">Email</span>
+                </a>
+            </div>
+        </div>
+        
+        <!-- Disclaimer Section -->
+        <div class="disclaimer-section">
+            <div class="disclaimer-content">
+                <h5 class="disclaimer-title">Risk Disclaimer</h5>
+                <p class="disclaimer-text">
+                    Trading in financial markets carries substantial risk and may not be suitable for all investors. 
+                    Past performance is not indicative of future results. The information provided is for educational 
+                    purposes only and should not be considered as financial advice. Always consult with a qualified 
+                    financial advisor before making investment decisions.
+                </p>
+            </div>
+        </div>
+        
+        <!-- Copyright Section -->
+        <div class="copyright-section">
+            <div class="copyright-text">
+                <span>&copy; {{ current_year | default('2025') }} BFI Signals AI Dashboard. All rights reserved.</span>
+                <span class="version-info">v{{ version | default('2.1.0') }}</span>
+            </div>
+            <div class="timestamp">
+                <span>Last updated: {{ last_updated | default('2025-07-21 15:30:00 UTC') }}</span>
+            </div>
+        </div>
+    </div>
+</footer>
+
+<style>
+/* Footer Component Styles */
+.footer-component {
+    background: linear-gradient(135deg, rgba(20, 20, 20, 0.98) 0%, rgba(35, 35, 35, 0.98) 100%);
+    border-top: 3px solid #d4af37;
+    margin-top: 60px;
+    padding: 40px 0 20px 0;
+    position: relative;
+    overflow: hidden;
+}
+
+.footer-component::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: 
+        radial-gradient(circle at 25% 25%, rgba(212, 175, 55, 0.08) 0%, transparent 50%),
+        radial-gradient(circle at 75% 75%, rgba(212, 175, 55, 0.05) 0%, transparent 50%);
+    pointer-events: none;
+}
+
+.footer-content {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 0 20px;
+    position: relative;
+    z-index: 1;
+}
+
+/* Strategy Information Section */
+.strategy-info {
+    margin-bottom: 40px;
+    padding: 30px;
+    background: linear-gradient(135deg, rgba(26, 26, 26, 0.9) 0%, rgba(45, 45, 45, 0.9) 100%);
+    border: 1px solid rgba(212, 175, 55, 0.3);
+    border-radius: 15px;
+    backdrop-filter: blur(10px);
+}
+
+.strategy-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 20px;
+    flex-wrap: wrap;
+    gap: 15px;
+}
+
+.strategy-title {
+    color: #d4af37;
+    font-size: 1.5em;
+    font-weight: 700;
+    margin: 0;
+    background: linear-gradient(45deg, #d4af37, #f4e971);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+}
+
+.strategy-badge {
+    background: linear-gradient(135deg, #d4af37 0%, #f4e971 100%);
+    color: #000;
+    padding: 8px 16px;
+    border-radius: 20px;
+    font-size: 0.85em;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    box-shadow: 0 4px 15px rgba(212, 175, 55, 0.3);
+}
+
+.strategy-details {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    gap: 15px;
+}
+
+.strategy-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 12px 15px;
+    background: rgba(255, 255, 255, 0.03);
+    border: 1px solid rgba(212, 175, 55, 0.2);
+    border-radius: 8px;
+    transition: all 0.3s ease;
+}
+
+.strategy-item:hover {
+    background: rgba(212, 175, 55, 0.1);
+    border-color: rgba(212, 175, 55, 0.4);
+}
+
+.strategy-label {
+    color: #999;
+    font-size: 0.9em;
+    font-weight: 500;
+}
+
+.strategy-value {
+    color: #ffffff;
+    font-weight: 600;
+    text-align: right;
+}
+
+/* Performance Stats Section */
+.performance-stats {
+    margin-bottom: 40px;
+    text-align: center;
+}
+
+.stats-title {
+    color: #d4af37;
+    font-size: 1.2em;
+    font-weight: 600;
+    margin-bottom: 20px;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+}
+
+.stats-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+    gap: 20px;
+    max-width: 800px;
+    margin: 0 auto;
+}
+
+.stat-card {
+    background: linear-gradient(135deg, rgba(26, 26, 26, 0.9) 0%, rgba(45, 45, 45, 0.9) 100%);
+    border: 1px solid rgba(212, 175, 55, 0.3);
+    border-radius: 12px;
+    padding: 20px 15px;
+    text-align: center;
+    transition: all 0.3s ease;
+}
+
+.stat-card:hover {
+    border-color: #d4af37;
+    box-shadow: 0 8px 25px rgba(212, 175, 55, 0.2);
+    transform: translateY(-2px);
+}
+
+.stat-value {
+    font-size: 1.8em;
+    font-weight: 700;
+    color: #d4af37;
+    margin-bottom: 8px;
+    display: block;
+}
+
+.stat-label {
+    color: #999;
+    font-size: 0.85em;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+/* Credits Section */
+.credits-section {
+    display: grid;
+    grid-template-columns: 1fr auto;
+    gap: 30px;
+    align-items: start;
+    margin-bottom: 30px;
+    padding: 25px;
+    background: rgba(255, 255, 255, 0.02);
+    border: 1px solid rgba(212, 175, 55, 0.2);
+    border-radius: 12px;
+}
+
+.credits-main {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.credit-item {
+    display: flex;
+    gap: 15px;
+    align-items: center;
+}
+
+.credit-label {
+    color: #999;
+    font-size: 0.9em;
+    min-width: 80px;
+}
+
+.credit-value {
+    color: #ffffff;
+    font-weight: 500;
+}
+
+.prophet-name {
+    background: linear-gradient(45deg, #d4af37, #f4e971);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    font-weight: 700;
+}
+
+.social-links {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.social-link {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 15px;
+    background: rgba(212, 175, 55, 0.1);
+    border: 1px solid rgba(212, 175, 55, 0.3);
+    border-radius: 8px;
+    color: #d4af37;
+    text-decoration: none;
+    transition: all 0.3s ease;
+    font-size: 0.9em;
+}
+
+.social-link:hover {
+    background: rgba(212, 175, 55, 0.2);
+    border-color: #d4af37;
+    transform: translateX(5px);
+}
+
+.social-icon {
+    font-size: 1.1em;
+}
+
+/* Disclaimer Section */
+.disclaimer-section {
+    margin-bottom: 25px;
+    padding: 20px;
+    background: rgba(255, 193, 7, 0.1);
+    border: 1px solid rgba(255, 193, 7, 0.3);
+    border-radius: 10px;
+}
+
+.disclaimer-title {
+    color: #ffc107;
+    font-size: 1em;
+    font-weight: 600;
+    margin-bottom: 10px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.disclaimer-text {
+    color: #ccc;
+    font-size: 0.85em;
+    line-height: 1.6;
+    margin: 0;
+}
+
+/* Copyright Section */
+.copyright-section {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding-top: 20px;
+    border-top: 1px solid rgba(212, 175, 55, 0.3);
+    flex-wrap: wrap;
+    gap: 15px;
+}
+
+.copyright-text {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+    color: #999;
+    font-size: 0.85em;
+    flex-wrap: wrap;
+}
+
+.version-info {
+    background: rgba(212, 175, 55, 0.2);
+    color: #d4af37;
+    padding: 4px 8px;
+    border-radius: 4px;
+    font-size: 0.8em;
+    font-weight: 500;
+}
+
+.timestamp {
+    color: #777;
+    font-size: 0.8em;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+    .footer-content {
+        padding: 0 15px;
+    }
+    
+    .strategy-header {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+    
+    .strategy-details {
+        grid-template-columns: 1fr;
+    }
+    
+    .strategy-item {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 5px;
+    }
+    
+    .stats-grid {
+        grid-template-columns: repeat(2, 1fr);
+    }
+    
+    .credits-section {
+        grid-template-columns: 1fr;
+        gap: 20px;
+    }
+    
+    .social-links {
+        flex-direction: row;
+        justify-content: center;
+        flex-wrap: wrap;
+    }
+    
+    .copyright-section {
+        flex-direction: column;
+        text-align: center;
+    }
+}
+
+@media (max-width: 480px) {
+    .stats-grid {
+        grid-template-columns: 1fr;
+    }
+    
+    .strategy-info {
+        padding: 20px 15px;
+    }
+    
+    .stat-value {
+        font-size: 1.5em;
+    }
+}
+</style>

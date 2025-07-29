@@ -25,6 +25,10 @@ from data_fetch import fetch_last_two_1h_bars, get_current_price
 from discord_working import post_signal, test_discord_connection
 from discord_signals import DiscordSignals
 import traceback
+import schedule
+import threading
+import time
+import pytz
 
 # Load environment variables
 load_dotenv('../.env')
@@ -139,6 +143,39 @@ class MarketDataStorage:
     def get_market_close_data(self):
         """Get market close data"""
         return self.data.get('market_close_history', {})
+    
+    def get_latest_market_close_data(self):
+        """Get the most recent market close data for each symbol (previous day's data)"""
+        close_data = self.get_market_close_data()
+        latest_data = {}
+        
+        for symbol in ['nasdaq', 'dow', 'gold']:
+            if symbol in close_data and close_data[symbol]:
+                # Get the most recent date's data for this symbol
+                sorted_dates = sorted(close_data[symbol].keys(), reverse=True)
+                if sorted_dates:
+                    latest_date = sorted_dates[0]
+                    latest_data[symbol] = close_data[symbol][latest_date]
+                    latest_data[symbol]['date'] = latest_date
+                else:
+                    # Fallback to current data if no close data exists
+                    latest_data[symbol] = self.get_market_data(symbol)
+            else:
+                # Fallback to current data if no close data exists
+                latest_data[symbol] = self.get_market_data(symbol)
+        
+        return latest_data
+    
+    def set_auto_generation_enabled(self, enabled):
+        """Enable or disable auto signal generation"""
+        if 'settings' not in self.data:
+            self.data['settings'] = {}
+        self.data['settings']['auto_generation_enabled'] = enabled
+        self.save_data()
+    
+    def is_auto_generation_enabled(self):
+        """Check if auto signal generation is enabled"""
+        return self.data.get('settings', {}).get('auto_generation_enabled', False)
 
 # Initialize market data storage
 market_data_storage = MarketDataStorage()
@@ -229,16 +266,27 @@ def dashboard():
         
         conn.close()
         
-        return render_template('dashboard.html', 
+        # Get latest market close data (previous day's data)
+        market_close_data = market_data_storage.get_latest_market_close_data()
+        
+        return render_template('dashboard_modern.html', 
                              stats=stats,
                              recent_signals=recent_signals,
                              today_signals=today_signals,
                              model_stats=model_stats,
-                             win_rate_stats=win_rate_stats)
+                             win_rate_stats=win_rate_stats,
+                             market_close_data=market_close_data)
     except Exception as e:
-        return render_template('dashboard.html', 
+        # Get market close data even in error case
+        try:
+            market_close_data = market_data_storage.get_latest_market_close_data()
+        except:
+            market_close_data = {'nasdaq': {}, 'dow': {}, 'gold': {}}
+            
+        return render_template('dashboard_modern.html', 
                              error=f"Error loading dashboard: {e}",
                              stats={'total_signals': 0, 'success_rate': 0},
+                             market_close_data=market_close_data,
                              recent_signals=[],
                              today_signals=0,
                              model_stats=[],
@@ -456,7 +504,11 @@ def signals():
 @app.route('/generate_signals')
 def generate_signals():
     """Generate signals page"""
-    return render_template('generate_signals.html')
+    # Get latest market close data (previous day's data)
+    market_close_data = market_data_storage.get_latest_market_close_data()
+    
+    return render_template('generate_signals_modern.html', 
+                         market_close_data=market_close_data)
 
 @app.route('/journal')
 def journal():
@@ -581,7 +633,7 @@ def journal():
         total_completed = overall_stats[1] + overall_stats[2] + overall_stats[3]  # wins + losses + breakevens
         overall_win_rate = (overall_stats[1] / total_completed * 100) if total_completed > 0 else 0
         
-        return render_template('journal.html',
+        return render_template('journal_modern.html',
                              overall_stats=overall_stats,
                              overall_win_rate=round(overall_win_rate, 2),
                              symbol_performance=symbol_performance,
@@ -591,7 +643,7 @@ def journal():
                              monthly_performance=monthly_performance)
         
     except Exception as e:
-        return render_template('journal.html', 
+        return render_template('journal_modern.html', 
                              error=f"Error loading journal data: {e}",
                              overall_stats=(0, 0, 0, 0, 0, 0, 0, 0),
                              overall_win_rate=0,
@@ -658,6 +710,116 @@ def api_test_discord_connection():
             'debug': check_discord_config()
         })
 
+@app.route('/api/dashboard_data')
+def api_dashboard_data():
+    """Get dashboard data including market status and basic info"""
+    try:
+        # Get market close data
+        market_close_data = market_data_storage.get_latest_market_close_data()
+        
+        # Get market status
+        from datetime import datetime
+        now = datetime.now()
+        
+        return jsonify({
+            'success': True,
+            'data': {
+                'market_data': market_close_data,
+                'timestamp': now.isoformat(),
+                'status': 'active'
+            }
+        })
+        
+    except Exception as e:
+        print(f"❌ Dashboard data error: {str(e)}")
+        return jsonify({
+            'success': False,
+            'error': f'Dashboard data error: {str(e)}'
+        })
+
+@app.route('/api/live_market_data')
+def api_live_market_data():
+    """Get live market data - alias for market_close_data"""
+    try:
+        from datetime import datetime
+        market_close_data = market_data_storage.get_latest_market_close_data()
+        
+        return jsonify({
+            'success': True,
+            'data': market_close_data,
+            'timestamp': datetime.now().isoformat()
+        })
+        
+    except Exception as e:
+        print(f"❌ Live market data error: {str(e)}")
+        return jsonify({
+            'success': False,
+            'error': f'Live market data error: {str(e)}'
+        })
+
+@app.route('/api/market_data')
+def api_market_data():
+    """Get market data - alias for market_close_data"""
+    try:
+        from datetime import datetime
+        market_close_data = market_data_storage.get_latest_market_close_data()
+        
+        return jsonify({
+            'success': True,
+            'data': market_close_data,
+            'timestamp': datetime.now().isoformat()
+        })
+        
+    except Exception as e:
+        print(f"❌ Market data error: {str(e)}")
+        return jsonify({
+            'success': False,
+            'error': f'Market data error: {str(e)}'
+        })
+
+@app.route('/api/send_discord_signal', methods=['POST'])
+def api_send_discord_signal():
+    """Send generated signal to Discord"""
+    try:
+        data = request.get_json()
+        if not data or 'signal' not in data:
+            return jsonify({
+                'success': False,
+                'error': 'Invalid request - missing signal data'
+            })
+        
+        signal = data['signal']
+        
+        # Validate required signal fields
+        required_fields = ['instrument', 'direction', 'entry_price', 'take_profit', 'stop_loss', 'confidence']
+        for field in required_fields:
+            if field not in signal:
+                return jsonify({
+                    'success': False,
+                    'error': f'Invalid signal data - missing {field}'
+                })
+        
+        # Use existing post_signal function
+        discord_success = post_signal(signal)
+        
+        if discord_success:
+            return jsonify({
+                'success': True,
+                'message': 'Signal posted to Discord successfully'
+            })
+        else:
+            return jsonify({
+                'success': False,
+                'error': 'Failed to post signal to Discord - check webhook configuration'
+            })
+            
+    except Exception as e:
+        print(f"❌ Discord signal posting error: {str(e)}")
+        return jsonify({
+            'success': False,
+            'error': f'Server error: {str(e)}'
+        })
+
 @app.route('/track_signals')
 def track_signals():
     """Track Signals Page - Mark signals as Win/Loss/Breakeven"""
@@ -717,12 +879,12 @@ def track_signals():
         
         conn.close()
         
-        return render_template('track_signals.html', 
+        return render_template('track_signals_modern.html', 
                              daily_signals=daily_signals,
                              manual_signals=manual_signals)
     except Exception as e:
         print(f"❌ Error loading track signals page: {str(e)}")
-        return render_template('track_signals.html', 
+        return render_template('track_signals_modern.html', 
                              daily_signals=[],
                              manual_signals=[])
 
@@ -1232,55 +1394,69 @@ def api_live_prices():
                 if i > 0:
                     time.sleep(2)  # 2 second delay between symbol requests
                 
-                # Get raw data from enhanced data feed
-                raw_data = enhanced_data_feed.get_market_data(symbol_key)
-                
-                if raw_data:
-                    # Format the data for display
-                    formatted_data = enhanced_data_feed.format_market_data(raw_data, symbol_key)
+                # Special handling for Gold - use web scraper for maximum accuracy
+                if symbol_key == 'gold':
+                    gold_data_found = False
+                    try:
+                        from yahoo_finance_gold_scraper import get_gold_data
+                        print(f"🔄 Attempting to scrape Gold data...")
+                        gold_data = get_gold_data()
+                        if gold_data:
+                            print(f"✅ Got Gold data from web scraper: ${gold_data['price']}")
+                            live_data[symbol_key] = gold_data
+                            # Save to storage
+                            market_data_storage.update_market_data(symbol_key, gold_data)
+                            gold_data_found = True
+                        else:
+                            print(f"❌ Web scraper returned None for Gold")
+                    except Exception as scraper_error:
+                        print(f"❌ Gold scraper error: {scraper_error}")
+                        import traceback
+                        traceback.print_exc()
                     
-                    # Save to storage
-                    market_data_storage.update_market_data(symbol_key, formatted_data)
-                    
-                    # Auto-save market close data every 15 seconds
-                    current_time = datetime.now()
-                    last_save = market_data_storage.data.get('last_close_save')
-                    
-                    if last_save:
-                        last_save_time = datetime.fromisoformat(last_save)
-                        time_diff = (current_time - last_save_time).total_seconds()
-                        
-                        # Save every 15 seconds
-                        if time_diff >= 15:
-                            market_data_storage.save_market_close_data()
-                            market_data_storage.data['last_close_save'] = current_time.isoformat()
-                            market_data_storage.save_data()
-                            print(f"💾 Auto-saved market close data for {symbol_key}")
-                    else:
-                        # First time saving
-                        market_data_storage.save_market_close_data()
-                        market_data_storage.data['last_close_save'] = current_time.isoformat()
-                        market_data_storage.save_data()
-                        print(f"💾 Auto-saved market close data for {symbol_key}")
-                    
-                    live_data[symbol_key] = formatted_data
+                    # Fallback to enhanced data feed if scraper failed
+                    if not gold_data_found:
+                        print(f"🔄 Using enhanced data feed fallback for Gold...")
+                        try:
+                            raw_data = enhanced_data_feed.get_market_data(symbol_key)
+                            if raw_data:
+                                formatted_data = enhanced_data_feed.format_market_data(raw_data, symbol_key)
+                                live_data[symbol_key] = formatted_data
+                                market_data_storage.update_market_data(symbol_key, formatted_data)
+                                print(f"✅ Got Gold data from enhanced data feed fallback")
+                            else:
+                                print(f"❌ Enhanced data feed also failed for Gold")
+                        except Exception as fallback_error:
+                            print(f"❌ Enhanced data feed fallback error: {fallback_error}")
                 else:
-                    # Use stored data if available
-                    stored_data = market_data_storage.get_market_data(symbol_key)
-                    if stored_data:
-                        live_data[symbol_key] = stored_data
-                        print(f"📦 Using stored data for {symbol_key}")
+                    # Use enhanced data feed for other symbols (NASDAQ, DOW)
+                    raw_data = enhanced_data_feed.get_market_data(symbol_key)
+                    
+                    if raw_data:
+                        # Format the data for display
+                        formatted_data = enhanced_data_feed.format_market_data(raw_data, symbol_key)
+                        
+                        # Save to storage
+                        market_data_storage.update_market_data(symbol_key, formatted_data)
+                        
+                        live_data[symbol_key] = formatted_data
                     else:
-                        live_data[symbol_key] = {
-                            'price': '--',
-                            'change': '--',
-                            'changePercent': '--',
-                            'rawChange': 0,
-                            'previousClose': '--',
-                            'high': '--',
-                            'low': '--'
-                        }
-                        print(f"❌ No data available for {symbol_key}")
+                        # Use stored data if available
+                        stored_data = market_data_storage.get_market_data(symbol_key)
+                        if stored_data:
+                            live_data[symbol_key] = stored_data
+                            print(f"📦 Using stored data for {symbol_key}")
+                        else:
+                            live_data[symbol_key] = {
+                                'price': '--',
+                                'change': '--',
+                                'changePercent': '--',
+                                'rawChange': 0,
+                                'previousClose': '--',
+                                'high': '--',
+                                'low': '--'
+                            }
+                            print(f"❌ No data available for {symbol_key}")
                         
             except Exception as e:
                 print(f"❌ Error fetching {symbol_key} data: {str(e)}")
@@ -1328,6 +1504,81 @@ def api_live_prices():
             'timestamp': datetime.now().isoformat(),
             'connection_status': enhanced_data_feed.get_connection_status() if 'enhanced_data_feed' in locals() else {},
             'last_successful_fetch': enhanced_data_feed.get_last_successful_fetch() if 'enhanced_data_feed' in locals() else {}
+        })
+
+@app.route('/api/market_close_data')
+def api_market_close_data():
+    """Get market close data for signal generation (Hybrid Math Strategy)"""
+    try:
+        # Get latest market close data (previous day's data)
+        market_close_data = market_data_storage.get_latest_market_close_data()
+        
+        return jsonify({
+            'success': True,
+            'data': {
+                'nasdaq': {
+                    'current_value': float(market_close_data.get('nasdaq', {}).get('price', '0').replace(',', '')),
+                    'net_change': market_close_data.get('nasdaq', {}).get('rawChange', 0),
+                    'previous_close': float(market_close_data.get('nasdaq', {}).get('previousClose', '0').replace(',', '')),
+                    'high': float(market_close_data.get('nasdaq', {}).get('high', '0').replace(',', '')),
+                    'low': float(market_close_data.get('nasdaq', {}).get('low', '0').replace(',', '')),
+                    'change_percent': float(market_close_data.get('nasdaq', {}).get('changePercent', '0%').replace('%', '').replace('+', '')),
+                    'date': market_close_data.get('nasdaq', {}).get('date', '')
+                },
+                'dow': {
+                    'current_value': float(market_close_data.get('dow', {}).get('price', '0').replace(',', '')),
+                    'net_change': market_close_data.get('dow', {}).get('rawChange', 0),
+                    'previous_close': float(market_close_data.get('dow', {}).get('previousClose', '0').replace(',', '')),
+                    'high': float(market_close_data.get('dow', {}).get('high', '0').replace(',', '')),
+                    'low': float(market_close_data.get('dow', {}).get('low', '0').replace(',', '')),
+                    'change_percent': float(market_close_data.get('dow', {}).get('changePercent', '0%').replace('%', '').replace('+', '')),
+                    'date': market_close_data.get('dow', {}).get('date', '')
+                }
+            },
+            'timestamp': datetime.now().isoformat(),
+            'message': 'Using previous day market close data for Hybrid Math Strategy'
+        })
+    except Exception as e:
+        return jsonify({
+            'success': False,
+            'error': str(e),
+            'message': 'Error fetching market close data'
+        })
+
+@app.route('/api/auto_generation_status')
+def api_auto_generation_status():
+    """Get auto signal generation status"""
+    try:
+        enabled = market_data_storage.is_auto_generation_enabled()
+        return jsonify({
+            'success': True,
+            'enabled': enabled,
+            'message': f'Auto generation is {"enabled" if enabled else "disabled"}'
+        })
+    except Exception as e:
+        return jsonify({
+            'success': False,
+            'error': str(e)
+        })
+
+@app.route('/api/toggle_auto_generation', methods=['POST'])
+def api_toggle_auto_generation():
+    """Toggle auto signal generation on/off"""
+    try:
+        data = request.get_json()
+        enabled = data.get('enabled', False)
+        
+        market_data_storage.set_auto_generation_enabled(enabled)
+        
+        return jsonify({
+            'success': True,
+            'enabled': enabled,
+            'message': f'Auto generation {"enabled" if enabled else "disabled"} successfully'
+        })
+    except Exception as e:
+        return jsonify({
+            'success': False,
+            'error': str(e)
         })
 
 @app.route('/api/market_timer')
@@ -1556,15 +1807,287 @@ def data_feed_history():
             except Exception as e:
                 print(f"Error loading historical data: {e}")
         
-        return render_template('data_feed_history.html', 
+        # Create pagination info for the template
+        pagination_info = {
+            'nasdaq': {
+                'total_items': len(symbol_data['nasdaq']),
+                'total_pages': 1,
+                'current_page': 1,
+                'has_prev': False,
+                'has_next': False,
+                'prev_page': None,
+                'next_page': None,
+                'start_item': 1 if len(symbol_data['nasdaq']) > 0 else 0,
+                'end_item': len(symbol_data['nasdaq'])
+            },
+            'dow': {
+                'total_items': len(symbol_data['dow']),
+                'total_pages': 1,
+                'current_page': 1,
+                'has_prev': False,
+                'has_next': False,
+                'prev_page': None,
+                'next_page': None,
+                'start_item': 1 if len(symbol_data['dow']) > 0 else 0,
+                'end_item': len(symbol_data['dow'])
+            },
+            'gold': {
+                'total_items': len(symbol_data['gold']),
+                'total_pages': 1,
+                'current_page': 1,
+                'has_prev': False,
+                'has_next': False,
+                'prev_page': None,
+                'next_page': None,
+                'start_item': 1 if len(symbol_data['gold']) > 0 else 0,
+                'end_item': len(symbol_data['gold'])
+            }
+        }
+        
+        # Get latest market close data (previous day's data) for widgets
+        market_close_data = market_data_storage.get_latest_market_close_data()
+        
+        return render_template('data_feed_history_modern.html', 
                              symbol_data=symbol_data,
-                             date_filter=date_filter)
+                             date_filter=date_filter,
+                             pagination_info=pagination_info,
+                             market_close_data=market_close_data)
                              
     except Exception as e:
-        return render_template('data_feed_history.html', 
+        # Create empty pagination info for error case
+        pagination_info = {
+            'nasdaq': {
+                'total_items': 0,
+                'total_pages': 1,
+                'current_page': 1,
+                'has_prev': False,
+                'has_next': False,
+                'prev_page': None,
+                'next_page': None,
+                'start_item': 0,
+                'end_item': 0
+            },
+            'dow': {
+                'total_items': 0,
+                'total_pages': 1,
+                'current_page': 1,
+                'has_prev': False,
+                'has_next': False,
+                'prev_page': None,
+                'next_page': None,
+                'start_item': 0,
+                'end_item': 0
+            },
+            'gold': {
+                'total_items': 0,
+                'total_pages': 1,
+                'current_page': 1,
+                'has_prev': False,
+                'has_next': False,
+                'prev_page': None,
+                'next_page': None,
+                'start_item': 0,
+                'end_item': 0
+            }
+        }
+        
+        # Get market close data even in error case
+        try:
+            market_close_data = market_data_storage.get_latest_market_close_data()
+        except:
+            market_close_data = {'nasdaq': {}, 'dow': {}, 'gold': {}}
+        
+        return render_template('data_feed_history_modern.html', 
                              symbol_data={'nasdaq': [], 'gold': [], 'dow': []},
                              date_filter='',
+                             pagination_info=pagination_info,
+                             market_close_data=market_close_data,
                              error=f"Error loading data feed history: {e}")
+
+def generate_auto_signal_for_next_day():
+    """Generate signal automatically for the next trading day using market close data"""
+    try:
+        from datetime import datetime, timedelta
+        import random
+        
+        # Check if auto generation is enabled
+        if not market_data_storage.is_auto_generation_enabled():
+            print("⏸️ Auto signal generation is disabled")
+            return
+        
+        print("🤖 Starting auto signal generation for next trading day...")
+        
+        # Get market close data (previous day's data)
+        market_close_data = market_data_storage.get_latest_market_close_data()
+        
+        # Calculate next trading day (skip weekends)
+        tomorrow = datetime.now() + timedelta(days=1)
+        while tomorrow.weekday() >= 5:  # Skip Saturday (5) and Sunday (6)
+            tomorrow += timedelta(days=1)
+        
+        next_trading_day = tomorrow.strftime('%Y-%m-%d')
+        
+        # Generate signals for available instruments
+        signals_generated = []
+        instruments = ['NASDAQ', 'DOW', 'GOLD']
+        
+        for instrument in instruments:
+            symbol_key = instrument.lower()
+            if symbol_key in market_close_data and market_close_data[symbol_key]:
+                signal = create_hybrid_math_auto_signal(instrument, market_close_data[symbol_key], next_trading_day)
+                if signal:
+                    signals_generated.append(signal)
+                    print(f"✅ Generated {instrument} signal for {next_trading_day}")
+        
+        if signals_generated:
+            print(f"🎯 Successfully generated {len(signals_generated)} signals for {next_trading_day}")
+            
+            # Send signals to Discord
+            for signal in signals_generated:
+                try:
+                    print(f"📤 Posting {signal['instrument']} signal to Discord...")
+                    discord_success = post_signal(signal)
+                    if discord_success:
+                        print(f"✅ {signal['instrument']} signal posted to Discord successfully")
+                    else:
+                        print(f"❌ Failed to post {signal['instrument']} signal to Discord")
+                except Exception as e:
+                    print(f"❌ Error posting {signal['instrument']} signal to Discord: {e}")
+        else:
+            print("❌ No signals generated - insufficient market data")
+            
+        return signals_generated
+        
+    except Exception as e:
+        print(f"❌ Error in auto signal generation: {e}")
+        return []
+
+def create_hybrid_math_auto_signal(instrument, market_data, signal_date):
+    """Create a hybrid math signal using market close data for specified date"""
+    try:
+        # Extract market data
+        current_value = float(str(market_data.get('price', '0')).replace(',', ''))
+        raw_change = market_data.get('rawChange', 0)
+        previous_close = float(str(market_data.get('previousClose', '0')).replace(',', ''))
+        high = float(str(market_data.get('high', '0')).replace(',', ''))
+        low = float(str(market_data.get('low', '0')).replace(',', ''))
+        change_percent = float(str(market_data.get('changePercent', '0%')).replace('%', '').replace('+', ''))
+        
+        if current_value == 0 or previous_close == 0:
+            return None
+        
+        # Hybrid Math Strategy Logic
+        # Determine bias based on net change and price position
+        bias = 'LONG' if raw_change > 0 else 'SHORT'
+        direction = 'BUY' if bias == 'LONG' else 'SELL'
+        
+        # Calculate position within daily range
+        if high != low:
+            cv_position = (current_value - low) / (high - low)
+        else:
+            cv_position = 0.5
+        
+        # Calculate probability based on change magnitude and position
+        change_magnitude = abs(change_percent)
+        base_probability = 0.65  # Base probability
+        
+        # Adjust probability based on factors
+        if change_magnitude > 1.0:
+            base_probability += 0.15  # Strong move
+        if cv_position > 0.7 or cv_position < 0.3:
+            base_probability += 0.10  # At extremes
+        
+        probability = min(base_probability, 0.95)  # Cap at 95%
+        
+        # Determine risk level
+        if change_magnitude > 2.0:
+            risk_level = 'HIGH'
+        elif change_magnitude > 1.0:
+            risk_level = 'MEDIUM'
+        else:
+            risk_level = 'LOW'
+        
+        # Calculate entry points and targets using Hybrid Math Strategy
+        entry_price = current_value
+        
+        # Calculate take profit (CV + Net Change for LONG, CV - Net Change for SHORT)
+        if bias == 'LONG':
+            take_profit = current_value + abs(raw_change)
+            stop_loss = current_value - (75 if instrument == 'NASDAQ' else 100 if instrument == 'DOW' else 10)
+        else:
+            take_profit = current_value - abs(raw_change)
+            stop_loss = current_value + (75 if instrument == 'NASDAQ' else 100 if instrument == 'DOW' else 10)
+        
+        # Map instrument to display symbol
+        symbol_map = {
+            'NASDAQ': 'NAS100',
+            'DOW': 'US30',
+            'GOLD': 'XAUUSD'
+        }
+        
+        # Create signal object compatible with post_signal function
+        signal = {
+            # Required fields for post_signal
+            'symbol': symbol_map.get(instrument, instrument),
+            'display_name': symbol_map.get(instrument, instrument),
+            'instrument': instrument,
+            'direction': direction,
+            'bias': bias,
+            'entry_price': entry_price,
+            'entry1': entry_price,
+            'take_profit': take_profit,
+            'tp1': take_profit,
+            'stop_loss': stop_loss,
+            'sl_tight': stop_loss,
+            'confidence': int(probability * 100),
+            'probability_percentage': probability * 100,
+            'probability_label': 'High' if probability > 0.8 else 'Medium' if probability > 0.65 else 'Low',
+            
+            # Market data fields
+            'current_value': current_value,
+            'net_change': raw_change,
+            'change_percent': change_percent,
+            'previous_close': previous_close,
+            'high': high,
+            'low': low,
+            'today_high': high,
+            'today_low': low,
+            'cv_position': cv_position,
+            
+            # Metadata
+            'timestamp': datetime.now().isoformat(),
+            'strategy': 'Hybrid Math Strategy',
+            'auto_generated': True,
+            'signal_date': signal_date,
+            'market_data_date': market_data.get('date', ''),
+            'risk_level': risk_level,
+            'sentiment': 'Neutral',
+            'sentiment_score': 0.5,
+            'news_count': 0
+        }
+        
+        return signal
+        
+    except Exception as e:
+        print(f"❌ Error creating signal for {instrument}: {e}")
+        return None
+
+@app.route('/api/generate_auto_signal', methods=['POST'])
+def api_generate_auto_signal():
+    """API endpoint to manually trigger auto signal generation"""
+    try:
+        signals = generate_auto_signal_for_next_day()
+        return jsonify({
+            'success': True,
+            'signals_generated': len(signals),
+            'signals': signals,
+            'message': f'Generated {len(signals)} signals for next trading day'
+        })
+    except Exception as e:
+        return jsonify({
+            'success': False,
+            'error': str(e)
+        })
 
 if __name__ == '__main__':
     print("🚀 Starting BFI Signals AI Dashboard...")
@@ -1580,6 +2103,47 @@ if __name__ == '__main__':
         os.makedirs('static')
     
     # Favicon files are handled by the ensure_favicons() function
+    
+    # Setup scheduler for automatic signal generation
+    def setup_scheduler():
+        """Setup scheduler for auto signal generation at market close"""
+        gmt_plus_2 = pytz.timezone('Africa/Cairo')  # GMT+2 timezone
+        
+        def scheduled_auto_generation():
+            """Wrapper function for scheduled market data collection and auto signal generation"""
+            try:
+                print("⏰ Market close routine triggered at 23:05 GMT+2")
+                
+                # Step 1: Save market close data
+                print("💾 Collecting and saving market close data...")
+                market_data_storage.save_market_close_data()
+                print("✅ Market close data saved successfully")
+                
+                # Step 2: Generate signals for next day if auto generation is enabled
+                print("🤖 Checking auto signal generation...")
+                generate_auto_signal_for_next_day()
+                
+            except Exception as e:
+                print(f"❌ Error in scheduled market close routine: {e}")
+                import traceback
+                traceback.print_exc()
+        
+        # Schedule auto signal generation at 23:05 GMT+2 (market close)
+        schedule.every().day.at("23:05").do(scheduled_auto_generation)
+        
+        def run_scheduler():
+            """Run the scheduler in a separate thread"""
+            while True:
+                schedule.run_pending()
+                time.sleep(60)  # Check every minute
+        
+        # Start scheduler in background thread
+        scheduler_thread = threading.Thread(target=run_scheduler, daemon=True)
+        scheduler_thread.start()
+        print("📅 Auto signal generation scheduler started (23:05 GMT+2)")
+    
+    # Initialize scheduler
+    setup_scheduler()
     
     # Use debug=False for production-like experience, True for development
     debug_mode = os.getenv('FLASK_DEBUG', 'False').lower() == 'true'

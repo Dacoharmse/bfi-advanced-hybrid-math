@@ -9,7 +9,7 @@ import requests
 from dotenv import load_dotenv
 
 # Load environment variables
-load_dotenv('../.env')
+load_dotenv('.env')
 
 def test_discord_simple():
     """Simple Discord connection test"""

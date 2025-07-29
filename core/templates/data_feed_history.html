@@ -1039,6 +1039,10 @@
         // Initialize tables on page load
         document.addEventListener('DOMContentLoaded', function() {
             initializeTables();
+            
+            // Force clear any sample data with future dates
+            forceClearSampleData();
+            
             loadStoredData();
             loadInitialData();
             initializeCurrentData();
@@ -1049,6 +1053,87 @@
                 checkDataPersistence();
             }, 1000);
         });
+
+        function forceClearSampleData() {
+            try {
+                const storedTickerData = localStorage.getItem(STORAGE_KEYS.TICKER_DATA);
+                if (storedTickerData) {
+                    const parsed = JSON.parse(storedTickerData);
+                    let hasSampleData = false;
+                    
+                    Object.values(parsed).forEach(data => {
+                        if (Array.isArray(data) && data.length > 0) {
+                            data.forEach(row => {
+                                if (row.date && new Date(row.date) > new Date()) {
+                                    hasSampleData = true;
+                                }
+                            });
+                        }
+                    });
+                    
+                    if (hasSampleData) {
+                        console.log('Force clearing sample data with future dates');
+                        localStorage.removeItem(STORAGE_KEYS.TICKER_DATA);
+                        localStorage.removeItem(STORAGE_KEYS.CURRENT_DATA);
+                        localStorage.removeItem(STORAGE_KEYS.LAST_UPDATE);
+                        tickerData = { nasdaq: [], dow: [], gold: [] };
+                        currentMarketData = {};
+                    }
+                }
+            } catch (error) {
+                console.error('Error force clearing sample data:', error);
+            }
+        }
+
+        // Add global function to manually clear sample data
+        window.clearSampleData = function() {
+            localStorage.removeItem(STORAGE_KEYS.TICKER_DATA);
+            localStorage.removeItem(STORAGE_KEYS.CURRENT_DATA);
+            localStorage.removeItem(STORAGE_KEYS.LAST_UPDATE);
+            tickerData = { nasdaq: [], dow: [], gold: [] };
+            currentMarketData = {};
+            location.reload();
+        };
+
+        // Add function to manually add historical data for testing
+        window.addHistoricalData = function(ticker, date, current, change, previous, high, low) {
+            const historicalEntry = {
+                date: date,
+                current: current,
+                change: change,
+                previous: previous,
+                high: high,
+                low: low
+            };
+            
+            // Check if date already exists
+            const existingIndex = tickerData[ticker].findIndex(row => row.date === date);
+            if (existingIndex >= 0) {
+                // Update existing data
+                tickerData[ticker][existingIndex] = historicalEntry;
+            } else {
+                // Add new data at the beginning
+                tickerData[ticker].unshift(historicalEntry);
+            }
+            
+            // Keep only last 30 days of data
+            if (tickerData[ticker].length > 30) {
+                tickerData[ticker] = tickerData[ticker].slice(0, 30);
+            }
+            
+            saveDataToStorage();
+            renderTable(ticker);
+            
+            console.log(`Added historical data for ${ticker} on ${date}:`, historicalEntry);
+        };
+
+        // Add function to view current historical data
+        window.viewHistoricalData = function() {
+            console.log('Current historical data:');
+            Object.keys(tickerData).forEach(ticker => {
+                console.log(`${ticker}:`, tickerData[ticker]);
+            });
+        };
 
         // Save data when page is unloaded (user navigates away)
         window.addEventListener('beforeunload', function() {
@@ -1094,6 +1179,30 @@
                 const storedCurrentData = localStorage.getItem(STORAGE_KEYS.CURRENT_DATA);
                 const lastUpdate = localStorage.getItem(STORAGE_KEYS.LAST_UPDATE);
                 
+                // Check if stored data contains future dates (sample data)
+                let hasSampleData = false;
+                if (storedTickerData) {
+                    const parsed = JSON.parse(storedTickerData);
+                    Object.values(parsed).forEach(data => {
+                        if (Array.isArray(data) && data.length > 0) {
+                            data.forEach(row => {
+                                if (row.date && new Date(row.date) > new Date()) {
+                                    hasSampleData = true;
+                                }
+                            });
+                        }
+                    });
+                }
+                
+                // If sample data found, clear it and fetch real data
+                if (hasSampleData) {
+                    console.log('Sample data detected, clearing and fetching real data');
+                    localStorage.removeItem(STORAGE_KEYS.TICKER_DATA);
+                    localStorage.removeItem(STORAGE_KEYS.CURRENT_DATA);
+                    localStorage.removeItem(STORAGE_KEYS.LAST_UPDATE);
+                    return;
+                }
+                
                 if (storedTickerData) {
                     tickerData = JSON.parse(storedTickerData);
                     console.log('Loaded ticker data from storage:', Object.keys(tickerData).map(k => `${k}: ${tickerData[k].length} entries`));
@@ -1117,35 +1226,106 @@
         }
 
         function loadInitialData() {
-            // Check if we have stored data, otherwise use sample data
+            // Check if we have stored data, otherwise fetch real data
             const hasStoredData = Object.values(tickerData).some(data => data.length > 0);
             
             if (!hasStoredData) {
-                // Simulate loading historical data
-                const sampleData = {
-                    nasdaq: [
-                        { date: '2025-07-19', current: 23065.47, change: -15.58, previous: 23081.05, high: 23153.21, low: 23018.36 },
-                        { date: '2025-07-18', current: 23081.05, change: 42.30, previous: 23038.75, high: 23121.45, low: 22998.12 }
-                    ],
-                    dow: [
-                        { date: '2025-07-19', current: 44342.19, change: -142.30, previous: 44484.49, high: 44571.68, low: 44224.59 }
-                    ],
-                    gold: [
-                        { date: '2025-07-19', current: 3353.00, change: 12.90, previous: 3340.10, high: 3353.00, low: 3338.20 }
-                    ]
-                };
-                
-                Object.keys(sampleData).forEach(ticker => {
-                    tickerData[ticker] = sampleData[ticker];
+                // Fetch real market data for historical records
+                fetchRealMarketData();
+            } else {
+                // Render existing stored data
+                Object.keys(tickerData).forEach(ticker => {
+                    renderTable(ticker);
                 });
-                
-                saveDataToStorage();
             }
-            
-            // Render all tables
-            Object.keys(tickerData).forEach(ticker => {
-                renderTable(ticker);
-            });
+        }
+
+        function fetchRealMarketData() {
+            // Fetch current market data to create historical records
+            fetch('/api/live_prices')
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        const today = new Date().toISOString().split('T')[0];
+                        
+                        // Create historical data from current market data
+                        const historicalData = {
+                            nasdaq: [],
+                            dow: [],
+                            gold: []
+                        };
+                        
+                        // Add today's data
+                        if (data.nasdaq) {
+                            historicalData.nasdaq.push({
+                                date: today,
+                                current: parseFloat(data.nasdaq.price.replace(/[$,]/g, '')),
+                                change: data.nasdaq.rawChange || 0,
+                                previous: parseFloat(data.nasdaq.price.replace(/[$,]/g, '')) - (data.nasdaq.rawChange || 0),
+                                high: parseFloat(data.nasdaq.high?.replace(/[$,]/g, '') || data.nasdaq.price.replace(/[$,]/g, '')),
+                                low: parseFloat(data.nasdaq.low?.replace(/[$,]/g, '') || data.nasdaq.price.replace(/[$,]/g, ''))
+                            });
+                        }
+                        
+                        if (data.dow) {
+                            historicalData.dow.push({
+                                date: today,
+                                current: parseFloat(data.dow.price.replace(/[$,]/g, '')),
+                                change: data.dow.rawChange || 0,
+                                previous: parseFloat(data.dow.price.replace(/[$,]/g, '')) - (data.dow.rawChange || 0),
+                                high: parseFloat(data.dow.high?.replace(/[$,]/g, '') || data.dow.price.replace(/[$,]/g, '')),
+                                low: parseFloat(data.dow.low?.replace(/[$,]/g, '') || data.dow.price.replace(/[$,]/g, ''))
+                            });
+                        }
+                        
+                        if (data.gold) {
+                            historicalData.gold.push({
+                                date: today,
+                                current: parseFloat(data.gold.price.replace(/[$,]/g, '')),
+                                change: data.gold.rawChange || 0,
+                                previous: parseFloat(data.gold.price.replace(/[$,]/g, '')) - (data.gold.rawChange || 0),
+                                high: parseFloat(data.gold.high?.replace(/[$,]/g, '') || data.gold.price.replace(/[$,]/g, '')),
+                                low: parseFloat(data.gold.low?.replace(/[$,]/g, '') || data.gold.price.replace(/[$,]/g, ''))
+                            });
+                        }
+                        
+                        // Merge with existing historical data (preserve previous days)
+                        Object.keys(historicalData).forEach(ticker => {
+                            if (historicalData[ticker].length > 0) {
+                                const todayData = historicalData[ticker][0];
+                                
+                                // Check if today's data already exists
+                                const existingIndex = tickerData[ticker].findIndex(row => row.date === today);
+                                if (existingIndex >= 0) {
+                                    // Update existing today's data
+                                    tickerData[ticker][existingIndex] = todayData;
+                                } else {
+                                    // Add new today's data at the beginning
+                                    tickerData[ticker].unshift(todayData);
+                                }
+                                
+                                // Keep only last 30 days of data
+                                if (tickerData[ticker].length > 30) {
+                                    tickerData[ticker] = tickerData[ticker].slice(0, 30);
+                                }
+                            }
+                        });
+                        
+                        saveDataToStorage();
+                        
+                        // Render all tables
+                        Object.keys(tickerData).forEach(ticker => {
+                            renderTable(ticker);
+                        });
+                    }
+                })
+                .catch(error => {
+                    console.error('Error fetching real market data:', error);
+                    // Fallback to empty data
+                    Object.keys(tickerData).forEach(ticker => {
+                        renderTable(ticker);
+                    });
+                });
         }
 
         function renderTable(ticker) {
@@ -1261,66 +1441,83 @@
         }
 
         function refreshData(ticker) {
-            // Simulate data refresh
+            // Fetch real market data
             const button = event.target;
             button.style.transform = 'rotate(360deg)';
             
-            // Store current data as historical before updating
-            if (currentMarketData[ticker]) {
-                const currentData = currentMarketData[ticker];
-                const historicalEntry = {
-                    date: new Date().toISOString().split('T')[0],
-                    current: currentData.current,
-                    change: currentData.change,
-                    previous: currentData.previous,
-                    high: currentData.high,
-                    low: currentData.low
-                };
-                
-                // Add to historical data (keep only last 30 entries)
-                tickerData[ticker].unshift(historicalEntry);
-                if (tickerData[ticker].length > 30) {
-                    tickerData[ticker] = tickerData[ticker].slice(0, 30);
-                }
-            }
-            
-            // Simulate new market data (in real app, this would come from API)
-            const newData = generateNewMarketData(ticker);
-            currentMarketData[ticker] = newData;
-            
-            // Save to localStorage
-            saveDataToStorage();
-            
-            // Update display
-            renderTable(ticker);
-            
-            // Show refresh feedback
-            setTimeout(() => {
-                button.style.transform = 'rotate(0deg)';
-                showRefreshFeedback(ticker);
-            }, 500);
+            // Fetch real market data from API
+            fetch('/api/live_prices')
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success && data[ticker]) {
+                        const marketData = data[ticker];
+                        const today = new Date().toISOString().split('T')[0];
+                        
+                        // Create new historical entry
+                        const historicalEntry = {
+                            date: today,
+                            current: parseFloat(marketData.price.replace(/[$,]/g, '')),
+                            change: marketData.rawChange || 0,
+                            previous: parseFloat(marketData.price.replace(/[$,]/g, '')) - (marketData.rawChange || 0),
+                            high: parseFloat(marketData.high?.replace(/[$,]/g, '') || marketData.price.replace(/[$,]/g, '')),
+                            low: parseFloat(marketData.low?.replace(/[$,]/g, '') || marketData.price.replace(/[$,]/g, ''))
+                        };
+                        
+                        // Update current market data
+                        currentMarketData[ticker] = {
+                            current: historicalEntry.current,
+                            change: historicalEntry.change,
+                            previous: historicalEntry.previous,
+                            high: historicalEntry.high,
+                            low: historicalEntry.low
+                        };
+                        
+                        // Check if today's data already exists
+                        const existingIndex = tickerData[ticker].findIndex(row => row.date === today);
+                        if (existingIndex >= 0) {
+                            // Update existing today's data
+                            tickerData[ticker][existingIndex] = historicalEntry;
+                        } else {
+                            // Add new today's data at the beginning
+                            tickerData[ticker].unshift(historicalEntry);
+                        }
+                        
+                        // Keep only last 30 days of data
+                        if (tickerData[ticker].length > 30) {
+                            tickerData[ticker] = tickerData[ticker].slice(0, 30);
+                        }
+                        
+                        // Save to localStorage
+                        saveDataToStorage();
+                        
+                        // Update display
+                        renderTable(ticker);
+                        
+                        // Show refresh feedback
+                        setTimeout(() => {
+                            button.style.transform = 'rotate(0deg)';
+                            showRefreshFeedback(ticker);
+                        }, 500);
+                    }
+                })
+                .catch(error => {
+                    console.error('Error fetching real market data:', error);
+                    // Show error feedback
+                    setTimeout(() => {
+                        button.style.transform = 'rotate(0deg)';
+                        showErrorFeedback(ticker);
+                    }, 500);
+                });
         }
 
-        function generateNewMarketData(ticker) {
-            // Simulate realistic market data changes
-            const baseValues = {
-                nasdaq: { current: 23065.47, previous: 23081.05 },
-                dow: { current: 44342.19, previous: 44484.49 },
-                gold: { current: 3353.00, previous: 3340.10 }
-            };
-            
-            const base = baseValues[ticker];
-            const variation = (Math.random() - 0.5) * 0.02; // ±1% variation
-            const newCurrent = base.current * (1 + variation);
-            const change = newCurrent - base.previous;
-            
-            return {
-                current: parseFloat(newCurrent.toFixed(2)),
-                change: parseFloat(change.toFixed(2)),
-                previous: base.previous,
-                high: parseFloat((newCurrent * 1.005).toFixed(2)),
-                low: parseFloat((newCurrent * 0.995).toFixed(2))
-            };
+        function showErrorFeedback(ticker) {
+            const table = document.getElementById(`${ticker}-table`);
+            if (table) {
+                table.style.background = 'rgba(239, 68, 68, 0.1)';
+                setTimeout(() => {
+                    table.style.background = '';
+                }, 1000);
+            }
         }
 
         function showRefreshFeedback(ticker) {

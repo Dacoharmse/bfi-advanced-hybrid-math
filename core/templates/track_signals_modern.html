@@ -1,0 +1,566 @@
+{% extends "base_modern.html" %}
+
+{% block title %}Performance Tracking - BFI Signals AI{% endblock %}
+
+{% block page_title %}Performance Tracking{% endblock %}
+
+{% block extra_css %}
+<style>
+    /* Performance Tracking Specific Styles */
+    .performance-dashboard {
+        display: grid;
+        gap: 24px;
+        margin-bottom: 32px;
+    }
+
+    /* Stats Overview */
+    .stats-overview {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+        gap: 20px;
+        margin-bottom: 32px;
+    }
+
+    .stat-card {
+        background: var(--card-bg);
+        backdrop-filter: blur(10px);
+        border: 1px solid var(--golden-accent);
+        border-radius: var(--border-radius);
+        padding: 24px;
+        box-shadow: var(--box-shadow);
+        transition: all 0.3s ease;
+        position: relative;
+        overflow: hidden;
+    }
+
+    .stat-card::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        height: 3px;
+        background: linear-gradient(90deg, var(--golden-primary), var(--golden-bright));
+    }
+
+    .stat-card.daily-card::before {
+        background: linear-gradient(90deg, var(--info-color), var(--golden-primary));
+    }
+
+    .stat-card.manual-card::before {
+        background: linear-gradient(90deg, var(--warning-color), var(--golden-primary));
+    }
+
+    .stat-card.pending-card::before {
+        background: linear-gradient(90deg, var(--nasdaq-color), var(--golden-primary));
+    }
+
+    .stat-card.wins-card::before {
+        background: linear-gradient(90deg, var(--success-color), var(--golden-primary));
+    }
+
+    .stat-card:hover {
+        border-color: var(--golden-secondary);
+        transform: translateY(-2px);
+        box-shadow: var(--golden-glow);
+    }
+
+    .stat-icon {
+        font-size: 32px;
+        margin-bottom: 12px;
+        display: block;
+    }
+
+    .stat-content h3 {
+        font-size: 14px;
+        color: var(--text-secondary);
+        margin-bottom: 8px;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        font-weight: 500;
+    }
+
+    .stat-number {
+        font-size: 28px;
+        font-weight: 700;
+        color: var(--text-primary);
+        display: block;
+        margin-bottom: 4px;
+        font-variant-numeric: tabular-nums;
+    }
+
+    .stat-number.success {
+        color: var(--success-color);
+    }
+
+    .stat-subtitle {
+        font-size: 12px;
+        color: var(--text-muted);
+    }
+
+    /* Signals Section */
+    .signals-section {
+        margin-bottom: 40px;
+    }
+
+    .section-title {
+        font-size: 24px;
+        font-weight: 600;
+        color: var(--text-primary);
+        margin-bottom: 20px;
+        display: flex;
+        align-items: center;
+        gap: 12px;
+    }
+
+    .section-title::before {
+        content: attr(data-icon);
+        font-size: 28px;
+    }
+
+    /* Signals Table Card */
+    .signals-table-card {
+        background: var(--card-bg);
+        backdrop-filter: blur(10px);
+        border: 1px solid var(--golden-accent);
+        border-radius: var(--border-radius-lg);
+        overflow: hidden;
+        box-shadow: var(--box-shadow);
+    }
+
+    /* Modern Table */
+    .modern-table {
+        width: 100%;
+        border-collapse: collapse;
+        font-size: 14px;
+    }
+
+    .modern-table th {
+        background: rgba(212, 175, 55, 0.05);
+        padding: 16px 20px;
+        text-align: left;
+        font-weight: 600;
+        font-size: 12px;
+        color: var(--text-secondary);
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        border-bottom: 1px solid var(--golden-accent);
+    }
+
+    .modern-table td {
+        padding: 16px 20px;
+        color: var(--text-primary);
+        font-weight: 500;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+        font-variant-numeric: tabular-nums;
+    }
+
+    .modern-table tbody tr {
+        transition: background-color 0.2s ease;
+    }
+
+    .modern-table tbody tr:hover {
+        background: rgba(212, 175, 55, 0.03);
+    }
+
+    /* Signal Type Badge */
+    .signal-badge {
+        padding: 4px 8px;
+        border-radius: 12px;
+        font-size: 11px;
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+    }
+
+    .signal-badge.long {
+        background: rgba(0, 255, 136, 0.1);
+        color: var(--success-color);
+        border: 1px solid rgba(0, 255, 136, 0.2);
+    }
+
+    .signal-badge.short {
+        background: rgba(255, 71, 87, 0.1);
+        color: var(--danger-color);
+        border: 1px solid rgba(255, 71, 87, 0.2);
+    }
+
+    /* Probability Badge */
+    .probability-badge {
+        padding: 4px 8px;
+        border-radius: 12px;
+        font-size: 11px;
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+    }
+
+    .probability-badge.high {
+        background: rgba(0, 255, 136, 0.1);
+        color: var(--success-color);
+        border: 1px solid rgba(0, 255, 136, 0.2);
+    }
+
+    .probability-badge.medium {
+        background: rgba(255, 165, 2, 0.1);
+        color: var(--warning-color);
+        border: 1px solid rgba(255, 165, 2, 0.2);
+    }
+
+    .probability-badge.low {
+        background: rgba(255, 71, 87, 0.1);
+        color: var(--danger-color);
+        border: 1px solid rgba(255, 71, 87, 0.2);
+    }
+
+    /* Outcome Dropdown */
+    .outcome-dropdown {
+        background: var(--secondary-bg);
+        border: 1px solid var(--golden-accent);
+        border-radius: 8px;
+        padding: 8px 12px;
+        color: var(--text-primary);
+        font-size: 13px;
+        font-weight: 500;
+        min-width: 120px;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        appearance: none;
+    }
+
+    .outcome-dropdown:focus {
+        outline: none;
+        border-color: var(--golden-secondary);
+        box-shadow: 0 0 10px rgba(212, 175, 55, 0.3);
+    }
+
+    .outcome-dropdown:hover {
+        border-color: var(--golden-secondary);
+    }
+
+    .outcome-dropdown option {
+        background: var(--secondary-bg);
+        color: var(--text-primary);
+        padding: 8px;
+    }
+
+    .outcome-dropdown.outcome-win {
+        background: rgba(0, 255, 136, 0.1);
+        border-color: var(--success-color);
+    }
+
+    .outcome-dropdown.outcome-loss {
+        background: rgba(255, 71, 87, 0.1);
+        border-color: var(--danger-color);
+    }
+
+    .outcome-dropdown.outcome-breakeven {
+        background: rgba(255, 165, 2, 0.1);
+        border-color: var(--warning-color);
+    }
+
+    .outcome-dropdown.outcome-pending {
+        background: rgba(55, 66, 250, 0.1);
+        border-color: var(--info-color);
+    }
+
+    /* Empty State */
+    .empty-state {
+        text-align: center;
+        padding: 60px 20px;
+        color: var(--text-muted);
+    }
+
+    .empty-state h3 {
+        font-size: 18px;
+        margin-bottom: 8px;
+        color: var(--text-secondary);
+    }
+
+    .empty-state p {
+        font-size: 14px;
+        margin-bottom: 20px;
+    }
+
+    .empty-state .btn {
+        margin-top: 16px;
+    }
+
+    /* Responsive Design */
+    @media (max-width: 768px) {
+        .stats-overview {
+            grid-template-columns: repeat(2, 1fr);
+        }
+        
+        .modern-table {
+            font-size: 12px;
+        }
+        
+        .modern-table th,
+        .modern-table td {
+            padding: 12px 16px;
+        }
+        
+        .outcome-dropdown {
+            font-size: 12px;
+            padding: 6px 8px;
+            min-width: 100px;
+        }
+    }
+
+    @media (max-width: 480px) {
+        .stats-overview {
+            grid-template-columns: 1fr;
+        }
+        
+        .modern-table th,
+        .modern-table td {
+            padding: 10px 12px;
+            font-size: 11px;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="performance-dashboard">
+    <!-- Quick Stats Row -->
+    <section class="stats-overview">
+        <div class="stat-card daily-card">
+            <div class="stat-icon">📈</div>
+            <div class="stat-content">
+                <h3>Daily Signals</h3>
+                <span class="stat-number">{{ daily_signals|length }}</span>
+                <div class="stat-subtitle">Auto-generated signals</div>
+            </div>
+        </div>
+        
+        <div class="stat-card manual-card">
+            <div class="stat-icon">✍️</div>
+            <div class="stat-content">
+                <h3>Manual Signals</h3>
+                <span class="stat-number">{{ manual_signals|length }}</span>
+                <div class="stat-subtitle">User-created signals</div>
+            </div>
+        </div>
+        
+        <div class="stat-card pending-card">
+            <div class="stat-icon">⏳</div>
+            <div class="stat-content">
+                <h3>Pending</h3>
+                <span class="stat-number">{{ (daily_signals + manual_signals)|selectattr('actual_outcome', 'none')|list|length }}</span>
+                <div class="stat-subtitle">Awaiting outcome</div>
+            </div>
+        </div>
+        
+        <div class="stat-card wins-card">
+            <div class="stat-icon">✅</div>
+            <div class="stat-content">
+                <h3>Wins</h3>
+                <span class="stat-number success">{{ (daily_signals + manual_signals)|selectattr('actual_outcome', 'equalto', 1)|list|length }}</span>
+                <div class="stat-subtitle">Successful trades</div>
+            </div>
+        </div>
+    </section>
+    
+    <!-- Daily Signals Section -->
+    <section class="signals-section">
+        <h2 class="section-title" data-icon="📈">Daily Signals</h2>
+        <div class="signals-table-card">
+            {% if daily_signals %}
+            <table class="modern-table">
+                <thead>
+                    <tr>
+                        <th>Symbol</th>
+                        <th>Type</th>
+                        <th>Probability</th>
+                        <th>Risk Level</th>
+                        <th>Date</th>
+                        <th>Main Outcome</th>
+                        <th>Risky Play</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for signal in daily_signals %}
+                    <tr>
+                        <td><strong>{{ signal[1] }}</strong></td>
+                        <td>
+                            <span class="signal-badge {{ signal[2].lower() }}">
+                                {{ signal[2] }}
+                            </span>
+                        </td>
+                        <td>
+                            {% set probability = (signal[3] * 100) | int %}
+                            {% if probability >= 80 %}
+                                <span class="probability-badge high">🟢 {{ probability }}%</span>
+                            {% elif probability >= 65 %}
+                                <span class="probability-badge medium">🟡 {{ probability }}%</span>
+                            {% else %}
+                                <span class="probability-badge low">🔴 {{ probability }}%</span>
+                            {% endif %}
+                        </td>
+                        <td>{{ signal[4].upper() }}</td>
+                        <td>{{ signal[5][:10] }}</td>
+                        <td>
+                            <select class="outcome-dropdown" data-signal-id="{{ signal[0] }}" data-type="main" onchange="updateOutcome(this)">
+                                <option value="">Select Outcome</option>
+                                <option value="1" {% if signal[6] == 1 %}selected{% endif %}>✅ Win</option>
+                                <option value="0" {% if signal[6] == 0 %}selected{% endif %}>❌ Loss</option>
+                                <option value="2" {% if signal[6] == 2 %}selected{% endif %}>⚖️ Breakeven</option>
+                            </select>
+                        </td>
+                        <td>
+                            <select class="outcome-dropdown" data-signal-id="{{ signal[0] }}" data-type="risky" onchange="updateOutcome(this)">
+                                <option value="">Select Outcome</option>
+                                <option value="1" {% if signal[7] == 1 %}selected{% endif %}>✅ Win</option>
+                                <option value="0" {% if signal[7] == 0 %}selected{% endif %}>❌ Loss</option>
+                                <option value="2" {% if signal[7] == 2 %}selected{% endif %}>⚖️ Breakeven</option>
+                            </select>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+            {% else %}
+            <div class="empty-state">
+                <h3>📊 No Daily Signals Found</h3>
+                <p>Generate some automatic signals to see them here for tracking.</p>
+                <a href="/generate_signals" class="btn btn-primary">
+                    🎯 Generate Signals
+                </a>
+            </div>
+            {% endif %}
+        </div>
+    </section>
+    
+    <!-- Manual Signals Section -->
+    <section class="signals-section">
+        <h2 class="section-title" data-icon="✍️">Manual Signals</h2>
+        <div class="signals-table-card">
+            {% if manual_signals %}
+            <table class="modern-table">
+                <thead>
+                    <tr>
+                        <th>Symbol</th>
+                        <th>Type</th>
+                        <th>Probability</th>
+                        <th>Risk Level</th>
+                        <th>Date</th>
+                        <th>Main Outcome</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for signal in manual_signals %}
+                    <tr>
+                        <td><strong>{{ signal[1] }}</strong></td>
+                        <td>
+                            <span class="signal-badge {{ signal[2].lower() }}">
+                                {{ signal[2] }}
+                            </span>
+                        </td>
+                        <td>
+                            {% set probability = (signal[3] * 100) | int %}
+                            {% if probability >= 80 %}
+                                <span class="probability-badge high">🟢 {{ probability }}%</span>
+                            {% elif probability >= 65 %}
+                                <span class="probability-badge medium">🟡 {{ probability }}%</span>
+                            {% else %}
+                                <span class="probability-badge low">🔴 {{ probability }}%</span>
+                            {% endif %}
+                        </td>
+                        <td>{{ signal[4].upper() }}</td>
+                        <td>{{ signal[5][:10] }}</td>
+                        <td>
+                            <select class="outcome-dropdown" data-signal-id="{{ signal[0] }}" data-type="main" onchange="updateOutcome(this)">
+                                <option value="">Select Outcome</option>
+                                <option value="1" {% if signal[6] == 1 %}selected{% endif %}>✅ Win</option>
+                                <option value="0" {% if signal[6] == 0 %}selected{% endif %}>❌ Loss</option>
+                                <option value="2" {% if signal[6] == 2 %}selected{% endif %}>⚖️ Breakeven</option>
+                            </select>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+            {% else %}
+            <div class="empty-state">
+                <h3>✍️ No Manual Signals Found</h3>
+                <p>Create some manual signals to see them here for tracking.</p>
+                <a href="/generate_signals" class="btn btn-primary">
+                    🎯 Create Manual Signal
+                </a>
+            </div>
+            {% endif %}
+        </div>
+    </section>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+function updateOutcome(selectElement) {
+    const signalId = selectElement.getAttribute('data-signal-id');
+    const outcome = selectElement.value;
+    const type = selectElement.getAttribute('data-type');
+    
+    if (!outcome) {
+        return; // Don't send empty values
+    }
+    
+    // Update visual styling based on outcome
+    selectElement.className = 'outcome-dropdown';
+    if (outcome === '1') {
+        selectElement.classList.add('outcome-win');
+    } else if (outcome === '0') {
+        selectElement.classList.add('outcome-loss');
+    } else if (outcome === '2') {
+        selectElement.classList.add('outcome-breakeven');
+    }
+    
+    // Send update to server
+    fetch('/api/update_outcome', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+            signal_id: signalId,
+            outcome: outcome,
+            type: type
+        })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            // Show success feedback
+            showNotification('Outcome updated successfully', 'success');
+        } else {
+            // Show error feedback
+            showNotification('Error updating outcome: ' + (data.error || 'Unknown error'), 'danger');
+            console.error('Error updating outcome:', data.error);
+        }
+    })
+    .catch(error => {
+        console.error('Error updating outcome:', error);
+        showNotification('Failed to update outcome', 'danger');
+    });
+}
+
+// Initialize outcome styling on page load
+document.addEventListener('DOMContentLoaded', function() {
+    const dropdowns = document.querySelectorAll('.outcome-dropdown');
+    dropdowns.forEach(dropdown => {
+        const value = dropdown.value;
+        if (value === '1') {
+            dropdown.classList.add('outcome-win');
+        } else if (value === '0') {
+            dropdown.classList.add('outcome-loss');
+        } else if (value === '2') {
+            dropdown.classList.add('outcome-breakeven');
+        } else {
+            dropdown.classList.add('outcome-pending');
+        }
+    });
+});
+</script>
+{% endblock %}

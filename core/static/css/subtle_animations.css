@@ -1,0 +1,94 @@
+/*
+ * Subtle Animation Overrides
+ * Replaces intensive animations with cleaner, less distracting ones
+ */
+
+/* Override any existing intensive card animations */
+.market-card, .ticker-item {
+    animation: none !important;
+    transition: border-color 0.3s ease, opacity 0.3s ease !important;
+}
+
+/* Remove intensive box-shadow animations */
+.market-card:hover, .ticker-item:hover {
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1) !important;
+    transform: none !important;
+}
+
+/* Subtle loading state */
+.market-card.loading, .ticker-item.loading,
+.market-card.data-loading, .ticker-item.data-loading {
+    opacity: 0.85;
+    border-color: rgba(212, 175, 55, 0.3) !important;
+    animation: none !important;
+}
+
+/* Very subtle refresh feedback */
+.market-card.updated, .ticker-item.updated,
+.market-card.data-refreshed, .ticker-item.data-refreshed {
+    border-color: rgba(212, 175, 55, 0.4) !important;
+    animation: none !important;
+    transition: border-color 0.5s ease !important;
+}
+
+/* Remove pulsing, flashing, and scaling animations */
+@keyframes pulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 1; }
+}
+
+@keyframes flash {
+    0%, 100% { background-color: transparent; }
+    50% { background-color: transparent; }
+}
+
+/* Override any existing value highlight animations */
+.value-updated, .price-updated, .change-updated {
+    background-color: transparent !important;
+    animation: none !important;
+    transition: color 0.2s ease !important;
+}
+
+/* Smooth color transitions for positive/negative changes only */
+.positive {
+    color: #00ff88 !important;
+    transition: color 0.2s ease !important;
+}
+
+.negative {
+    color: #ff4757 !important;
+    transition: color 0.2s ease !important;
+}
+
+.neutral {
+    color: #ffd700 !important;
+    transition: color 0.2s ease !important;
+}
+
+/* Remove any bounce or scale effects */
+.market-card *, .ticker-item * {
+    transform: none !important;
+    animation: none !important;
+}
+
+/* Keep only the essential refresh button spin (this one is useful) */
+.refresh-btn.loading .refresh-icon {
+    animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+    from { transform: rotate(0deg); }
+    to { transform: rotate(360deg); }
+}
+
+/* Disable other button animations */
+.btn, .button {
+    transition: background-color 0.2s ease, border-color 0.2s ease !important;
+    transform: none !important;
+    animation: none !important;
+}
+
+.btn:hover, .button:hover {
+    transform: none !important;
+    animation: none !important;
+}

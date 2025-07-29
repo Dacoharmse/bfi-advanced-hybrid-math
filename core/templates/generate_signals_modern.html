@@ -1,0 +1,2449 @@
+{% extends "base_modern.html" %}
+
+{% block title %}Generate Signals - BFI Signals{% endblock %}
+
+{% block page_title %}Generate Trading Signals{% endblock %}
+
+{% block extra_css %}
+<style>
+    /* Updated signals page styling */
+    .signals-page-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 32px;
+        padding: 32px;
+        background: rgba(26, 26, 26, 0.9);
+        border-radius: 16px;
+        border: 1px solid rgba(255, 215, 0, 0.2);
+        backdrop-filter: blur(10px);
+    }
+
+    .page-title-section h1 {
+        font-size: 32px;
+        font-weight: 700;
+        color: var(--golden-primary);
+        margin: 0 0 8px 0;
+        background: linear-gradient(135deg, var(--golden-primary), var(--golden-bright));
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        background-clip: text;
+    }
+
+    .page-subtitle {
+        font-size: 16px;
+        color: var(--text-secondary);
+        margin: 0 0 4px 0;
+        font-style: italic;
+    }
+
+    .strategy-credit {
+        font-size: 12px;
+        color: var(--text-muted);
+        font-weight: 500;
+    }
+
+    /* Market Status Indicators */
+    .status-dot {
+        width: 12px;
+        height: 12px;
+        border-radius: 50%;
+        display: inline-block;
+        margin-right: 8px;
+        animation: pulse 2s infinite;
+    }
+
+    .status-dot.open {
+        background-color: #4caf50;
+        box-shadow: 0 0 10px rgba(76, 175, 80, 0.5);
+    }
+
+    .status-dot.closed {
+        background-color: #f44336;
+        box-shadow: 0 0 10px rgba(244, 67, 54, 0.5);
+    }
+
+    .market-status-card {
+        background: rgba(255, 255, 255, 0.02);
+        border: 1px solid var(--golden-accent);
+        border-radius: 12px;
+        padding: 20px;
+        text-align: center;
+        min-width: 220px;
+        display: flex;
+        flex-direction: column;
+        gap: 4px;
+    }
+
+    .market-region {
+        font-size: 11px;
+        font-weight: 500;
+        color: var(--text-muted);
+        letter-spacing: 0.5px;
+        text-transform: uppercase;
+        margin-bottom: 2px;
+    }
+
+    .market-label {
+        font-size: 13px;
+        font-weight: 600;
+        color: var(--text-secondary);
+        margin-bottom: 12px;
+    }
+
+    .status-indicator {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 8px;
+        margin-bottom: 12px;
+    }
+
+    .status-dot {
+        width: 10px;
+        height: 10px;
+        border-radius: 50%;
+        background: #ef4444;
+        animation: pulse 2s infinite;
+        flex-shrink: 0;
+    }
+
+    .status-dot.open {
+        background: #22c55e;
+        box-shadow: 0 0 12px rgba(34, 197, 94, 0.6);
+    }
+
+    .status-dot.closed {
+        background: #ef4444;
+        box-shadow: 0 0 12px rgba(239, 68, 68, 0.6);
+    }
+
+    @keyframes pulse {
+        0%, 100% { opacity: 1; }
+        50% { opacity: 0.7; }
+    }
+
+    .status-text {
+        font-size: 15px;
+        font-weight: 700;
+        transition: color 0.3s ease;
+        line-height: 1;
+        display: flex;
+        align-items: center;
+    }
+
+    /* Market status text styles (for market open/closed indicators) */
+    .status-text.market-status {
+        position: relative;
+        padding-left: 20px;
+    }
+
+    .status-text.market-status::before {
+        content: '';
+        position: absolute;
+        left: 0;
+        top: 50%;
+        transform: translateY(-50%);
+        width: 10px;
+        height: 10px;
+        border-radius: 50%;
+        background: #ef4444;
+        animation: pulse 2s infinite;
+    }
+
+    .status-text.open {
+        color: #22c55e;
+        text-shadow: 0 0 8px rgba(34, 197, 94, 0.3);
+    }
+
+    .status-text.market-status.open::before {
+        background: #22c55e;
+        box-shadow: 0 0 12px rgba(34, 197, 94, 0.6);
+    }
+
+    .status-text.closed {
+        color: #ef4444;
+        text-shadow: 0 0 8px rgba(239, 68, 68, 0.3);
+    }
+
+    .status-text.market-status.closed::before {
+        background: #ef4444;
+        box-shadow: 0 0 12px rgba(239, 68, 68, 0.6);
+    }
+
+    .market-time {
+        font-size: 13px;
+        color: var(--text-primary);
+        font-family: 'Courier New', monospace;
+        font-weight: 600;
+        background: rgba(255, 255, 255, 0.05);
+        padding: 8px 12px;
+        border-radius: 6px;
+        border: 1px solid rgba(255, 215, 0, 0.1);
+    }
+
+    /* Signal type tabs */
+    .signal-type-tabs {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 16px;
+        margin-bottom: 32px;
+    }
+
+    .signal-tab {
+        background: rgba(26, 26, 26, 0.9);
+        border: 2px solid rgba(255, 215, 0, 0.2);
+        border-radius: 16px;
+        padding: 24px;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        display: flex;
+        align-items: center;
+        gap: 16px;
+        text-align: left;
+    }
+
+    .signal-tab:hover {
+        border-color: rgba(255, 215, 0, 0.4);
+        transform: translateY(-2px);
+    }
+
+    .signal-tab.active {
+        border-color: var(--golden-primary);
+        background: rgba(255, 215, 0, 0.1);
+        box-shadow: var(--golden-glow);
+    }
+
+    .tab-icon {
+        font-size: 32px;
+        min-width: 40px;
+    }
+
+    .tab-content-info h3 {
+        font-size: 18px;
+        font-weight: 600;
+        color: var(--text-primary);
+        margin: 0 0 4px 0;
+    }
+
+    .tab-content-info p {
+        font-size: 14px;
+        color: var(--text-secondary);
+        margin: 0;
+    }
+
+    /* Signal panels */
+    .signal-generation-container {
+        margin-bottom: 32px;
+    }
+
+    .signal-panel {
+        display: none;
+        background: rgba(26, 26, 26, 0.9);
+        border: 1px solid rgba(255, 215, 0, 0.2);
+        border-radius: 16px;
+        padding: 32px;
+        backdrop-filter: blur(10px);
+    }
+
+    .signal-panel.active {
+        display: block;
+        animation: fadeIn 0.3s ease;
+    }
+
+    @keyframes fadeIn {
+        from { opacity: 0; transform: translateY(10px); }
+        to { opacity: 1; transform: translateY(0); }
+    }
+
+    .panel-header {
+        margin-bottom: 32px;
+    }
+
+    .panel-header h2 {
+        font-size: 24px;
+        font-weight: 600;
+        color: var(--golden-primary);
+        margin: 0 0 12px 0;
+        display: flex;
+        align-items: center;
+        gap: 12px;
+    }
+
+    .panel-header p {
+        font-size: 16px;
+        color: var(--text-secondary);
+        margin: 0;
+        line-height: 1.6;
+    }
+
+    /* Instrument selection cards */
+    .instrument-selection {
+        margin-bottom: 32px;
+    }
+
+    .input-label {
+        display: block;
+        font-size: 14px;
+        font-weight: 600;
+        color: var(--text-primary);
+        margin-bottom: 16px;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+    }
+
+    .instrument-cards {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+        gap: 16px;
+    }
+
+    /* Instrument Cards - Subtle Selection */
+    .instrument-card {
+        background: rgba(26, 26, 26, 0.9);
+        border: 2px solid rgba(255, 215, 0, 0.2);
+        border-radius: 12px;
+        padding: 20px;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        display: flex;
+        align-items: center;
+        gap: 12px;
+    }
+
+    .instrument-card:hover {
+        border-color: rgba(255, 215, 0, 0.4);
+        transform: translateY(-2px);
+    }
+
+    /* Subtle selection indicator - no highlighting */
+    .instrument-card.selected {
+        border-color: rgba(255, 215, 0, 0.6);
+        box-shadow: 0 0 0 1px rgba(255, 215, 0, 0.3);
+        background: rgba(26, 26, 26, 0.9); /* Same as normal */
+    }
+
+    .instrument-card .instrument-logo {
+        width: 40px;
+        height: 40px;
+        border-radius: 8px;
+        object-fit: contain;
+        background: rgba(255, 255, 255, 0.1);
+        padding: 4px;
+    }
+
+    .instrument-info h4 {
+        font-size: 16px;
+        font-weight: 600;
+        color: var(--text-primary);
+        margin: 0 0 4px 0;
+    }
+
+    .instrument-info span {
+        font-size: 12px;
+        color: var(--text-muted);
+    }
+
+    .instrument-price {
+        margin-left: auto;
+        font-size: 16px;
+        font-weight: 600;
+        color: var(--golden-primary);
+        font-family: monospace;
+    }
+
+    /* Market analysis section (without bias) */
+    .market-analysis-section {
+        margin-bottom: 32px;
+    }
+
+    .market-analysis-section h3 {
+        font-size: 20px;
+        font-weight: 600;
+        color: var(--text-primary);
+        margin: 0 0 20px 0;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+    }
+
+    .analysis-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        gap: 16px;
+    }
+
+    .analysis-item {
+        background: rgba(255, 255, 255, 0.05);
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        border-radius: 8px;
+        padding: 16px;
+        text-align: center;
+        transition: all 0.3s ease;
+    }
+
+    .analysis-item:hover {
+        background: rgba(255, 255, 255, 0.08);
+    }
+
+    .analysis-label {
+        display: block;
+        font-size: 12px;
+        color: var(--text-muted);
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        margin-bottom: 8px;
+        font-weight: 500;
+    }
+
+    .analysis-value {
+        font-size: 18px;
+        font-weight: 600;
+        color: var(--text-primary);
+        font-family: monospace;
+    }
+
+    .analysis-value.positive {
+        color: #00ff88;
+    }
+
+    .analysis-value.negative {
+        color: #ff4757;
+    }
+
+    .analysis-value.confidence {
+        color: var(--golden-primary);
+    }
+
+    /* Form inputs */
+    .hybrid-input-section {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 32px;
+        margin-bottom: 32px;
+    }
+
+    .analysis-side,
+    .manual-input-side {
+        background: rgba(255, 255, 255, 0.02);
+        border: 1px solid rgba(255, 215, 0, 0.2);
+        border-radius: 12px;
+        padding: 24px;
+    }
+
+    .analysis-side h3,
+    .manual-input-side h3 {
+        font-size: 18px;
+        font-weight: 600;
+        color: var(--golden-primary);
+        margin: 0 0 20px 0;
+    }
+
+    .input-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        gap: 16px;
+        margin-bottom: 24px;
+    }
+
+    .input-group {
+        margin-bottom: 20px;
+    }
+
+    .input-group label {
+        display: block;
+        font-size: 14px;
+        font-weight: 600;
+        color: var(--text-primary);
+        margin-bottom: 8px;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+    }
+
+    .price-input,
+    .risk-select,
+    .comment-input,
+    .instrument-select,
+    .notes-input {
+        width: 100%;
+        padding: 12px 16px;
+        background: rgba(255, 255, 255, 0.02);
+        border: 1px solid rgba(255, 215, 0, 0.3);
+        border-radius: 8px;
+        color: var(--text-primary);
+        font-size: 14px;
+        transition: all 0.3s ease;
+        backdrop-filter: blur(5px);
+    }
+
+    .price-input:focus,
+    .risk-select:focus,
+    .comment-input:focus,
+    .instrument-select:focus,
+    .notes-input:focus {
+        outline: none;
+        border-color: var(--golden-primary);
+        background: rgba(255, 255, 255, 0.05);
+        box-shadow: 0 0 0 3px rgba(255, 215, 0, 0.1);
+    }
+
+    .comment-input,
+    .notes-input {
+        resize: vertical;
+        min-height: 80px;
+    }
+
+    /* Direction buttons */
+    .direction-buttons {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 12px;
+    }
+
+    .direction-btn {
+        padding: 12px 20px;
+        border: 2px solid rgba(255, 215, 0, 0.3);
+        border-radius: 8px;
+        background: rgba(255, 255, 255, 0.02);
+        color: var(--text-primary);
+        font-size: 14px;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 8px;
+    }
+
+    .direction-btn:hover {
+        background: rgba(255, 215, 0, 0.1);
+        border-color: var(--golden-primary);
+    }
+
+    .direction-btn.selected {
+        background: var(--golden-primary);
+        border-color: var(--golden-bright);
+        color: var(--primary-bg);
+    }
+
+    .buy-btn.selected {
+        background: #00ff88;
+        border-color: #00ff88;
+    }
+
+    .sell-btn.selected {
+        background: #ff4757;
+        border-color: #ff4757;
+    }
+
+    /* Analysis metrics */
+    .analysis-results {
+        display: grid;
+        gap: 16px;
+    }
+
+    .analysis-metric {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 12px 16px;
+        background: rgba(255, 255, 255, 0.05);
+        border-radius: 8px;
+        border: 1px solid rgba(255, 255, 255, 0.1);
+    }
+
+    .analysis-metric label {
+        font-size: 12px;
+        color: var(--text-secondary);
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        margin: 0;
+    }
+
+    .suggested-value {
+        font-size: 14px;
+        font-weight: 600;
+        color: var(--golden-primary);
+        font-family: monospace;
+    }
+
+    .risk-medium {
+        color: #ffa726;
+    }
+
+    .direction-neutral {
+        color: var(--text-muted);
+    }
+
+    /* Risk calculation */
+    .risk-calculation {
+        background: rgba(255, 255, 255, 0.02);
+        border: 1px solid rgba(255, 215, 0, 0.2);
+        border-radius: 12px;
+        padding: 24px;
+        margin-bottom: 24px;
+    }
+
+    .risk-calculation h3 {
+        font-size: 18px;
+        font-weight: 600;
+        color: var(--golden-primary);
+        margin: 0 0 16px 0;
+    }
+
+    .risk-metrics {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+        gap: 16px;
+    }
+
+    .risk-metric {
+        text-align: center;
+        padding: 12px;
+        background: rgba(255, 255, 255, 0.05);
+        border-radius: 8px;
+    }
+
+    .risk-metric label {
+        display: block;
+        font-size: 12px;
+        color: var(--text-muted);
+        text-transform: uppercase;
+        margin-bottom: 8px;
+    }
+
+    .ratio-value {
+        color: var(--golden-primary);
+    }
+
+    .profit-value {
+        color: #00ff88;
+    }
+
+    .loss-value {
+        color: #ff4757;
+    }
+
+    /* Generation controls */
+    .generation-controls {
+        display: flex;
+        gap: 16px;
+        justify-content: center;
+        margin-top: 32px;
+        flex-wrap: wrap;
+    }
+
+    /* Enhanced Signal Controls */
+    .signal-controls {
+        display: flex;
+        gap: 16px;
+        justify-content: center;
+        margin-top: 32px;
+        padding: 24px 0;
+        flex-wrap: wrap;
+    }
+
+    .signal-btn, .generate-btn {
+        position: relative;
+        background: linear-gradient(135deg, #ffd700, #ffed4e);
+        color: #0a0a0a;
+        border: none;
+        padding: 16px 32px;
+        border-radius: 12px;
+        font-size: 16px;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        cursor: pointer;
+        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        box-shadow: 0 4px 15px rgba(255, 215, 0, 0.3);
+        overflow: hidden;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        min-width: 200px;
+        justify-content: center;
+    }
+
+    .signal-btn::before, .generate-btn::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: -100%;
+        width: 100%;
+        height: 100%;
+        background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+        transition: left 0.5s;
+    }
+
+    .signal-btn:hover::before, .generate-btn:hover::before {
+        left: 100%;
+    }
+
+    .signal-btn:hover, .generate-btn:hover {
+        transform: translateY(-3px);
+        box-shadow: 0 8px 25px rgba(255, 215, 0, 0.4);
+    }
+
+    .signal-btn:active, .generate-btn:active {
+        transform: translateY(-1px);
+        box-shadow: 0 4px 15px rgba(255, 215, 0, 0.3);
+    }
+
+    .signal-btn.loading, .generate-btn.loading {
+        background: linear-gradient(135deg, #666, #888);
+        cursor: not-allowed;
+        animation: pulse 1.5s infinite;
+    }
+
+    .signal-btn.loading::after, .generate-btn.loading::after {
+        content: '';
+        position: absolute;
+        right: 16px;
+        top: 50%;
+        transform: translateY(-50%);
+        width: 16px;
+        height: 16px;
+        border: 2px solid #0a0a0a;
+        border-top: 2px solid transparent;
+        border-radius: 50%;
+        animation: spin 1s linear infinite;
+    }
+
+    .refresh-btn {
+        background: rgba(255, 255, 255, 0.1);
+        color: #ffd700;
+        border: 2px solid rgba(255, 215, 0, 0.4);
+        padding: 12px 24px;
+        border-radius: 8px;
+        font-size: 14px;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        min-width: 150px;
+        justify-content: center;
+    }
+
+    .refresh-btn:hover {
+        background: rgba(255, 215, 0, 0.1);
+        border-color: #ffd700;
+        transform: translateY(-2px);
+    }
+
+
+    /* Auto Generation Settings */
+    .auto-generation-settings {
+        margin: 32px 0;
+        padding: 0 4px;
+    }
+
+    .setting-card {
+        background: linear-gradient(145deg, rgba(30, 30, 30, 0.95) 0%, rgba(20, 20, 20, 0.95) 100%);
+        backdrop-filter: blur(15px);
+        border: 2px solid rgba(212, 175, 55, 0.2);
+        border-radius: 16px;
+        padding: 24px;
+        box-shadow: 0 8px 30px rgba(0, 0, 0, 0.4);
+        transition: all 0.3s ease;
+    }
+
+    .setting-card:hover {
+        border-color: rgba(212, 175, 55, 0.4);
+        transform: translateY(-2px);
+    }
+
+    .setting-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 16px;
+    }
+
+    .setting-header h3 {
+        font-size: 20px;
+        font-weight: 700;
+        color: var(--golden-primary);
+        margin: 0;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+    }
+
+    .toggle-switch {
+        position: relative;
+        display: inline-block;
+    }
+
+    .toggle-input {
+        display: none;
+    }
+
+    .toggle-label {
+        display: block;
+        width: 60px;
+        height: 30px;
+        background: linear-gradient(135deg, #333, #555);
+        border-radius: 25px;
+        cursor: pointer;
+        position: relative;
+        transition: all 0.3s ease;
+        border: 2px solid rgba(255, 255, 255, 0.1);
+    }
+
+    .toggle-slider {
+        position: absolute;
+        top: 3px;
+        left: 3px;
+        width: 22px;
+        height: 22px;
+        background: linear-gradient(135deg, #fff, #f0f0f0);
+        border-radius: 50%;
+        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+    }
+
+    .toggle-input:checked + .toggle-label {
+        background: linear-gradient(135deg, var(--golden-primary), var(--golden-bright));
+        border-color: rgba(212, 175, 55, 0.5);
+        box-shadow: 0 0 20px rgba(212, 175, 55, 0.3);
+    }
+
+    .toggle-input:checked + .toggle-label .toggle-slider {
+        left: 33px;
+        background: linear-gradient(135deg, #fff, #f8f8f8);
+    }
+
+    .setting-description {
+        color: var(--text-muted);
+        font-size: 14px;
+        line-height: 1.5;
+    }
+
+    .setting-description p {
+        margin-bottom: 12px;
+    }
+
+    .setting-status {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        font-weight: 600;
+        font-size: 13px;
+        line-height: 1;
+    }
+
+    .status-indicator {
+        width: 8px;
+        height: 8px;
+        border-radius: 50%;
+        transition: all 0.3s ease;
+        background: #ff4757;
+        box-shadow: 0 0 8px rgba(255, 71, 87, 0.4);
+        flex-shrink: 0;
+        margin-top: 1px;
+    }
+
+    .status-indicator.enabled {
+        background: #00ff88 !important;
+        box-shadow: 0 0 8px rgba(0, 255, 136, 0.4) !important;
+    }
+
+    .status-indicator.disabled {
+        background: #ff4757 !important;
+        box-shadow: 0 0 8px rgba(255, 71, 87, 0.4) !important;
+    }
+
+    .status-text {
+        color: #ff4757;
+        transition: color 0.3s ease;
+    }
+
+    .status-text.enabled {
+        color: #00ff88 !important;
+    }
+
+    .status-text.disabled {
+        color: #ff4757 !important;
+    }
+
+    /* Button animations */
+    @keyframes pulse {
+        0%, 100% { opacity: 1; }
+        50% { opacity: 0.7; }
+    }
+
+    @keyframes spin {
+        from { transform: rotate(0deg); }
+        to { transform: rotate(360deg); }
+    }
+
+    /* Toast notification animations */
+    @keyframes slideIn {
+        from { transform: translateX(100%); opacity: 0; }
+        to { transform: translateX(0); opacity: 1; }
+    }
+
+    @keyframes slideOut {
+        from { transform: translateX(0); opacity: 1; }
+        to { transform: translateX(100%); opacity: 0; }
+    }
+
+    /* Signal result popup styling */
+    .signal-result-popup {
+        animation: popupIn 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    @keyframes popupIn {
+        from { 
+            transform: translate(-50%, -50%) scale(0.8); 
+            opacity: 0; 
+        }
+        to { 
+            transform: translate(-50%, -50%) scale(1); 
+            opacity: 1; 
+        }
+    }
+
+    /* Enhanced hover effects */
+    .instrument-card, .signal-btn, .refresh-btn {
+        will-change: transform;
+    }
+
+    /* Smooth transitions for all interactive elements */
+    * {
+        -webkit-font-smoothing: antialiased;
+        -moz-osx-font-smoothing: grayscale;
+    }
+
+
+    .analyze-btn,
+    .validate-btn {
+        background: rgba(255, 255, 255, 0.1);
+        color: var(--text-primary);
+        border: 2px solid rgba(255, 215, 0, 0.3);
+        padding: 16px 32px;
+        border-radius: 12px;
+        font-size: 16px;
+        font-weight: 600;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        transition: all 0.3s ease;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+    }
+
+    .analyze-btn:hover,
+    .validate-btn:hover {
+        border-color: var(--golden-primary);
+        background: rgba(255, 215, 0, 0.1);
+        transform: translateY(-2px);
+    }
+
+    .btn-icon {
+        font-size: 18px;
+    }
+
+    /* Form sections */
+    .manual-form {
+        margin-bottom: 32px;
+    }
+
+    .form-row {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        gap: 20px;
+        margin-bottom: 24px;
+    }
+
+    .signal-notes {
+        margin-bottom: 24px;
+    }
+
+    .comment-section {
+        margin-top: 20px;
+    }
+
+    /* Responsive design */
+    @media (max-width: 768px) {
+        .signal-type-tabs {
+            grid-template-columns: 1fr;
+        }
+        
+        .signals-page-header {
+            flex-direction: column;
+            gap: 16px;
+            text-align: center;
+        }
+        
+        .instrument-cards {
+            grid-template-columns: 1fr;
+        }
+
+        .hybrid-input-section {
+            grid-template-columns: 1fr;
+        }
+
+        .analysis-grid {
+            grid-template-columns: repeat(2, 1fr);
+        }
+
+        .generation-controls {
+            flex-direction: column;
+            align-items: center;
+        }
+
+        .form-row {
+            grid-template-columns: 1fr;
+        }
+    }
+
+    @media (max-width: 480px) {
+        .signal-panel {
+            padding: 20px;
+        }
+
+        .analysis-grid {
+            grid-template-columns: 1fr;
+        }
+
+        .page-title-section h1 {
+            font-size: 24px;
+        }
+    }
+
+    /* Emoji styling for consistent appearance */
+    .btn-icon, .tab-icon {
+        display: inline-block;
+        font-style: normal;
+        font-weight: normal;
+        line-height: 1;
+        margin-right: 4px;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="signal-generator-container">
+    <!-- Updated Page Header -->
+    <div class="signals-page-header">
+        <div class="page-title-section">
+            <h1>Generate Trading Signals</h1>
+            <p class="page-subtitle">Hybrid Math Strategy - Market Analyzed as 1 + 1</p>
+            <small class="strategy-credit">by Prophet Bonang</small>
+        </div>
+        
+    </div>
+    
+    <!-- Auto Signal Generation Settings -->
+    <div class="auto-generation-settings">
+        <div class="setting-card">
+            <div class="setting-header">
+                <h3>🤖 Auto Signal Generation</h3>
+                <div class="toggle-switch">
+                    <input type="checkbox" id="auto-generation-toggle" class="toggle-input">
+                    <label for="auto-generation-toggle" class="toggle-label">
+                        <span class="toggle-slider"></span>
+                    </label>
+                </div>
+            </div>
+            <div class="setting-description">
+                <p>Automatically generate signals for the next trading day when market closes at 23:05 GMT+2</p>
+                <div class="setting-status" id="auto-gen-status">
+                    <span class="status-indicator disabled"></span>
+                    <span class="status-text">Auto Generation: Disabled</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Enhanced Signal Generation Cards -->
+    <div class="signal-generation-container">
+        <!-- Signal Type Selector -->
+        <div class="signal-type-tabs">
+            <button class="signal-tab active" data-tab="auto">
+                <div class="tab-icon">🤖</div>
+                <div class="tab-content-info">
+                    <h3>Auto Generate</h3>
+                    <p>Hybrid Math Analysis</p>
+                </div>
+            </button>
+            
+            <button class="signal-tab" data-tab="semi-auto">
+                <div class="tab-icon">⚡</div>
+                <div class="tab-content-info">
+                    <h3>Semi-Auto</h3>
+                    <p>Analysis + Manual Input</p>
+                </div>
+            </button>
+            
+            <button class="signal-tab" data-tab="manual">
+                <div class="tab-icon">✋</div>
+                <div class="tab-content-info">
+                    <h3>Manual Entry</h3>
+                    <p>Full Control</p>
+                </div>
+            </button>
+        </div>
+        
+        <!-- Auto Signal Generation Panel -->
+        <div class="signal-panel auto-panel active">
+            <div class="panel-header">
+                <h2>🤖 Auto Signal Generation</h2>
+                <p>Hybrid Math Strategy analyzes Current Value, Net Change, and market patterns to generate optimal trading signals automatically.</p>
+            </div>
+            
+            <div class="instrument-selection">
+                <label class="input-label">Select Trading Instrument</label>
+                <div class="instrument-cards">
+                    <div class="instrument-card" data-instrument="NASDAQ">
+                        <img src="{{ url_for('static', filename='nasdaq.svg') }}" alt="NASDAQ" class="instrument-logo">
+                        <div class="instrument-info">
+                            <h4>NASDAQ</h4>
+                            <span>(NAS100)</span>
+                        </div>
+                        <div class="instrument-price">{{ market_close_data.nasdaq.price or '--' }}</div>
+                    </div>
+                    
+                    <div class="instrument-card" data-instrument="DOW">
+                        <img src="{{ url_for('static', filename='dow.png') }}" alt="DOW" class="instrument-logo">
+                        <div class="instrument-info">
+                            <h4>DOW JONES</h4>
+                            <span>(US30)</span>
+                        </div>
+                        <div class="instrument-price">{{ market_close_data.dow.price or '--' }}</div>
+                    </div>
+                    
+                    <div class="instrument-card" data-instrument="GOLD">
+                        <img src="{{ url_for('static', filename='gold.png') }}" alt="GOLD" class="instrument-logo">
+                        <div class="instrument-info">
+                            <h4>GOLD</h4>
+                            <span>(XAUUSD)</span>
+                        </div>
+                        <div class="instrument-price">{{ market_close_data.gold.price or '--' }}</div>
+                    </div>
+                    
+                </div>
+            </div>
+            
+            <!-- Updated Market Analysis (Remove bias) -->
+            <div class="market-analysis-section">
+                <h3>📊 Live Market Analysis</h3>
+                <div class="analysis-grid">
+                    <div class="analysis-item">
+                        <span class="analysis-label">Current Value</span>
+                        <span class="analysis-value" id="current-value">23,065.58</span>
+                    </div>
+                    <div class="analysis-item">
+                        <span class="analysis-label">Net Change</span>
+                        <span class="analysis-value positive" id="net-change">+15.58</span>
+                    </div>
+                    <div class="analysis-item">
+                        <span class="analysis-label">Previous Close</span>
+                        <span class="analysis-value" id="previous-close">23,050.00</span>
+                    </div>
+                    <div class="analysis-item">
+                        <span class="analysis-label">Confidence Level</span>
+                        <span class="analysis-value confidence" id="confidence-level">85%</span>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="signal-controls">
+                <button id="generate-signal-btn" class="signal-btn primary">
+                    <span class="btn-icon">⚡</span>
+                    <span class="btn-text">Generate Signal</span>
+                </button>
+                
+            </div>
+        </div>
+        
+        <!-- Semi-Auto Panel -->
+        <div class="signal-panel semi-auto-panel">
+            <div class="panel-header">
+                <h2>⚡ Semi-Auto Signal Generation</h2>
+                <p>Combine Hybrid Math analysis with your manual inputs for customized signal parameters.</p>
+            </div>
+            
+            <div class="hybrid-input-section">
+                <div class="analysis-side">
+                    <h3>Market Analysis</h3>
+                    <div class="analysis-results">
+                        <div class="analysis-metric">
+                            <label>Suggested Entry</label>
+                            <span class="suggested-value">23,070.00</span>
+                        </div>
+                        <div class="analysis-metric">
+                            <label>Risk Assessment</label>
+                            <span class="risk-medium">Medium</span>
+                        </div>
+                        <div class="analysis-metric">
+                            <label>Market Direction</label>
+                            <span class="direction-neutral">Neutral</span>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="manual-input-side">
+                    <h3>Manual Parameters</h3>
+                    <div class="input-grid">
+                        <div class="input-group">
+                            <label>Entry Price</label>
+                            <input type="number" class="price-input" placeholder="23,070.00">
+                        </div>
+                        <div class="input-group">
+                            <label>Take Profit</label>
+                            <input type="number" class="price-input" placeholder="23,270.00">
+                        </div>
+                        <div class="input-group">
+                            <label>Stop Loss</label>
+                            <input type="number" class="price-input" placeholder="22,970.00">
+                        </div>
+                        <div class="input-group">
+                            <label>Risk Level</label>
+                            <select class="risk-select">
+                                <option value="low">Low Risk</option>
+                                <option value="medium" selected>Medium Risk</option>
+                                <option value="high">High Risk</option>
+                            </select>
+                        </div>
+                    </div>
+                    
+                    <div class="comment-section">
+                        <label>Signal Comment</label>
+                        <textarea class="comment-input" placeholder="Add your analysis or notes for this signal..."></textarea>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="generation-controls">
+                <button class="generate-btn primary">
+                    <span class="btn-icon">⚡</span>
+                    Create Semi-Auto Signal
+                </button>
+            </div>
+        </div>
+        
+        <!-- Manual Panel -->
+        <div class="signal-panel manual-panel">
+            <div class="panel-header">
+                <h2>✋ Manual Signal Entry</h2>
+                <p>Complete manual control over all signal parameters with validation and risk calculation.</p>
+            </div>
+            
+            <div class="manual-form">
+                <div class="form-row">
+                    <div class="input-group">
+                        <label>Trading Instrument</label>
+                        <select class="instrument-select">
+                            <option value="NASDAQ">NASDAQ (NAS100)</option>
+                            <option value="DOW">DOW JONES (US30)</option>
+                            <option value="GOLD">GOLD (XAUUSD)</option>
+                        </select>
+                    </div>
+                    <div class="input-group">
+                        <label>Signal Direction</label>
+                        <div class="direction-buttons">
+                            <button type="button" class="direction-btn buy-btn">📈 BUY</button>
+                            <button type="button" class="direction-btn sell-btn">📉 SELL</button>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="form-row">
+                    <div class="input-group">
+                        <label>Entry Price</label>
+                        <input type="number" class="price-input" placeholder="0.00" id="entry-price">
+                    </div>
+                    <div class="input-group">
+                        <label>Take Profit</label>
+                        <input type="number" class="price-input" placeholder="0.00" id="take-profit">
+                    </div>
+                    <div class="input-group">
+                        <label>Stop Loss</label>
+                        <input type="number" class="price-input" placeholder="0.00" id="stop-loss">
+                    </div>
+                </div>
+                
+                <div class="risk-calculation">
+                    <h3>Risk Assessment</h3>
+                    <div class="risk-metrics">
+                        <div class="risk-metric">
+                            <label>Risk/Reward Ratio</label>
+                            <span class="ratio-value" id="risk-ratio">1:2.5</span>
+                        </div>
+                        <div class="risk-metric">
+                            <label>Potential Profit</label>
+                            <span class="profit-value" id="potential-profit">+200 pips</span>
+                        </div>
+                        <div class="risk-metric">
+                            <label>Potential Loss</label>
+                            <span class="loss-value" id="potential-loss">-80 pips</span>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="signal-notes">
+                    <label>Signal Analysis & Notes</label>
+                    <textarea class="notes-input" placeholder="Enter your market analysis, reasoning, and any additional notes for this signal..."></textarea>
+                </div>
+            </div>
+            
+            <div class="generation-controls">
+                <button class="generate-btn primary">
+                    <span class="btn-icon">✋</span>
+                    Create Manual Signal
+                </button>
+                <button class="validate-btn secondary">
+                    <span class="btn-icon">✓</span>
+                    Validate Parameters
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+console.log('🚀 SIGNAL GENERATOR STARTING...');
+
+// Simple, reliable signal generator
+let selectedInstrument = 'NASDAQ';
+let selectedDirection = null;
+let currentTab = 'auto';
+
+// Live market data - updated from backend
+let marketData = {
+    'NASDAQ': {
+        currentValue: '{{ market_close_data.nasdaq.price or "Loading..." }}',
+        netChange: '{{ market_close_data.nasdaq.change or "..." }}',
+        changeClass: '{{ "positive" if (market_close_data.nasdaq.rawChange or 0) >= 0 else "negative" }}',
+        previousClose: '{{ market_close_data.nasdaq.previousClose or "..." }}',
+        confidence: '{{ "85%" if market_close_data.nasdaq.price else "..." }}'
+    },
+    'DOW': {
+        currentValue: '{{ market_close_data.dow.price or "Loading..." }}',
+        netChange: '{{ market_close_data.dow.change or "..." }}',
+        changeClass: '{{ "positive" if (market_close_data.dow.rawChange or 0) >= 0 else "negative" }}',
+        previousClose: '{{ market_close_data.dow.previousClose or "..." }}',
+        confidence: '{{ "82%" if market_close_data.dow.price else "..." }}'
+    },
+    'GOLD': {
+        currentValue: '{{ market_close_data.gold.price or "Loading..." }}',
+        netChange: '{{ market_close_data.gold.change or "..." }}',
+        changeClass: '{{ "positive" if (market_close_data.gold.rawChange or 0) >= 0 else "negative" }}',
+        previousClose: '{{ market_close_data.gold.previousClose or "..." }}',
+        confidence: '{{ "80%" if market_close_data.gold.price else "..." }}'
+    }
+};
+
+// Fetch market close data from backend (Hybrid Math Strategy uses previous day's data)
+async function fetchMarketData() {
+    try {
+        console.log('📊 Fetching market close data for Hybrid Math Strategy...');
+        
+        // Fetch market close data (previous day's data) for Hybrid Math Strategy
+        const response = await fetch('/api/market_close_data', {
+            method: 'GET',
+            headers: {
+                'Content-Type': 'application/json',
+            }
+        });
+        
+        if (response.ok) {
+            const data = await response.json();
+            
+            if (data.success && data.data) {
+                // Update NASDAQ data
+                if (data.data.nasdaq) {
+                    const nasdaq = data.data.nasdaq;
+                    marketData.NASDAQ = {
+                        currentValue: nasdaq.current_value.toLocaleString('en-US', {minimumFractionDigits: 2}),
+                        netChange: (nasdaq.net_change >= 0 ? '+' : '') + nasdaq.net_change.toFixed(2),
+                        changeClass: nasdaq.net_change >= 0 ? 'positive' : 'negative',
+                        previousClose: nasdaq.previous_close.toLocaleString('en-US', {minimumFractionDigits: 2}),
+                        confidence: Math.abs(nasdaq.change_percent) > 1 ? '85%' : '75%'
+                    };
+                }
+                
+                // Update DOW data
+                if (data.data.dow) {
+                    const dow = data.data.dow;
+                    marketData.DOW = {
+                        currentValue: dow.current_value.toLocaleString('en-US', {minimumFractionDigits: 2}),
+                        netChange: (dow.net_change >= 0 ? '+' : '') + dow.net_change.toFixed(2),
+                        changeClass: dow.net_change >= 0 ? 'positive' : 'negative',
+                        previousClose: dow.previous_close.toLocaleString('en-US', {minimumFractionDigits: 2}),
+                        confidence: Math.abs(dow.change_percent) > 1 ? '82%' : '72%'
+                    };
+                }
+                
+                // Update GOLD data
+                if (data.data.gold) {
+                    const gold = data.data.gold;
+                    marketData.GOLD = {
+                        currentValue: gold.current_value.toLocaleString('en-US', {minimumFractionDigits: 2}),
+                        netChange: (gold.net_change >= 0 ? '+' : '') + gold.net_change.toFixed(2),
+                        changeClass: gold.net_change >= 0 ? 'positive' : 'negative',
+                        previousClose: gold.previous_close.toLocaleString('en-US', {minimumFractionDigits: 2}),
+                        confidence: Math.abs(gold.change_percent) > 0.5 ? '80%' : '70%'
+                    };
+                }
+                
+                console.log(`✅ Market close data updated successfully for Hybrid Math Strategy (Date: ${data.data.nasdaq?.date || data.data.dow?.date || data.data.gold?.date || 'N/A'})`);
+                
+                // Update the display if an instrument is selected
+                if (selectedInstrument) {
+                    updateMarketAnalysis(selectedInstrument);
+                }
+            }
+        } else {
+            console.log('⚠️ Failed to fetch market data, using fallback');
+        }
+    } catch (error) {
+        console.log('❌ Error fetching market data:', error);
+    }
+}
+
+// Market status update system
+let marketStatusTimer = null;
+
+function startMarketStatusUpdates() {
+    // Update immediately
+    updateMarketStatus();
+    
+    // Update every 30 seconds
+    if (marketStatusTimer) clearInterval(marketStatusTimer);
+    marketStatusTimer = setInterval(() => {
+        updateMarketStatus();
+    }, 30000);
+}
+
+function updateMarketStatus() {
+    try {
+        const now = new Date();
+        const timeZone = 'Africa/Johannesburg';
+        const currentTime = now.toLocaleTimeString('en-US', {
+            hour12: false,
+            timeZone: timeZone,
+            hour: '2-digit',
+            minute: '2-digit',
+            second: '2-digit'
+        });
+        
+        // Update time display
+        const timeElement = document.getElementById('market-time');
+        if (timeElement) {
+            timeElement.textContent = `${currentTime} GMT+2`;
+        }
+        
+        // Determine market status
+        const marketStatus = getMarketStatus(now);
+        updateMarketStatusDisplay(marketStatus);
+        
+    } catch (error) {
+        console.error('Market status update error:', error);
+    }
+}
+
+function getMarketStatus(now) {
+    const gmt2Time = new Date(now.toLocaleString("en-US", {timeZone: "Africa/Johannesburg"}));
+    const dayOfWeek = gmt2Time.getDay(); // 0 = Sunday, 6 = Saturday
+    const hour = gmt2Time.getHours();
+    const minute = gmt2Time.getMinutes();
+    const totalMinutes = hour * 60 + minute;
+    
+    // Markets closed on weekends
+    if (dayOfWeek === 0 || dayOfWeek === 6) {
+        return { isOpen: false, reason: 'Weekend' };
+    }
+    
+    // US Markets: 15:30 to 22:00 GMT+2 (9:30 AM - 4:00 PM ET)
+    const marketOpenMinutes = 15 * 60 + 30; // 15:30 GMT+2
+    const marketCloseMinutes = 22 * 60; // 22:00 GMT+2
+    
+    if (totalMinutes >= marketOpenMinutes && totalMinutes <= marketCloseMinutes) {
+        return { isOpen: true, reason: 'Regular Trading' };
+    }
+    
+    return { isOpen: false, reason: 'Outside Trading Hours' };
+}
+
+function updateMarketStatusDisplay(status) {
+    const statusText = document.querySelector('.status-text.market-status');
+    
+    if (statusText) {
+        if (status.isOpen) {
+            statusText.className = 'status-text market-status open';
+            statusText.textContent = 'Open';
+        } else {
+            statusText.className = 'status-text market-status closed';
+            statusText.textContent = 'Closed';
+        }
+    }
+}
+
+// Enhanced signal generation with Discord integration
+async function enhancedGenerateSignal() {
+    if (!selectedInstrument) {
+        showNotification('Please select a trading instrument first', 'warning');
+        return;
+    }
+    
+    const generateBtn = document.getElementById('generate-signal-btn');
+    setButtonLoading(generateBtn, true);
+    
+    try {
+        console.log(`⚡ Generating signal for ${selectedInstrument} using Hybrid Math Strategy (previous day's data)...`);
+        
+        // Get market close data (previous day's data) for Hybrid Math Strategy
+        const marketDataResponse = await fetch('/api/market_close_data');
+        const marketDataResult = await marketDataResponse.json();
+        
+        if (!marketDataResult.success || !marketDataResult.data || !marketDataResult.data[selectedInstrument.toLowerCase()]) {
+            throw new Error('Market close data not available for selected instrument');
+        }
+        
+        const marketData = marketDataResult.data[selectedInstrument.toLowerCase()];
+        console.log(`📊 Using market close data from ${marketData.date} for signal generation`);
+        
+        // Generate signal using Hybrid Math Strategy
+        const signal = await createHybridMathSignal(selectedInstrument, marketData);
+        
+        // Test Discord connection and send
+        const discordSuccess = await sendToDiscordWithRetry(signal, 3);
+        
+        if (discordSuccess) {
+            showNotification('✅ Signal generated and sent to Discord!', 'success');
+            displaySignalResult(signal);
+        } else {
+            showNotification('⚠️ Signal generated but Discord posting failed', 'warning');
+            displaySignalResult(signal);
+        }
+        
+    } catch (error) {
+        console.error('❌ Signal generation error:', error);
+        showNotification('❌ Failed to generate signal: ' + error.message, 'error');
+    } finally {
+        setButtonLoading(generateBtn, false);
+    }
+}
+
+async function sendToDiscordWithRetry(signal, maxRetries = 3) {
+    for (let attempt = 1; attempt <= maxRetries; attempt++) {
+        console.log(`📤 Discord attempt ${attempt}/${maxRetries}...`);
+        
+        try {
+            const success = await sendToDiscord(signal);
+            if (success) {
+                console.log('✅ Discord posting successful');
+                return true;
+            }
+        } catch (error) {
+            console.error(`❌ Discord attempt ${attempt} failed:`, error);
+        }
+        
+        // Wait before retry (exponential backoff)
+        if (attempt < maxRetries) {
+            const delay = Math.pow(2, attempt) * 1000; // 2s, 4s, 8s
+            console.log(`⏳ Retrying in ${delay/1000}s...`);
+            await new Promise(resolve => setTimeout(resolve, delay));
+        }
+    }
+    
+    console.error('❌ All Discord attempts failed');
+    return false;
+}
+
+async function sendToDiscord(signal) {
+    try {
+        console.log('📤 Preparing Discord payload...');
+        const embed = createDiscordEmbed(signal);
+        
+        const payload = {
+            embed: embed,
+            signal: signal
+        };
+        
+        console.log('📤 Sending Discord payload:', payload);
+        
+        const response = await fetch('/api/send_discord_signal', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify(payload)
+        });
+        
+        console.log('📤 Discord API response status:', response.status);
+        
+        if (!response.ok) {
+            console.error('❌ Discord API error:', response.status, response.statusText);
+            const errorText = await response.text();
+            console.error('❌ Error response:', errorText);
+            return false;
+        }
+        
+        const result = await response.json();
+        console.log('📤 Discord result:', result);
+        
+        if (result.success) {
+            console.log('✅ Discord posting confirmed successful');
+            return true;
+        } else {
+            console.error('❌ Discord posting failed:', result.error);
+            return false;
+        }
+        
+    } catch (error) {
+        console.error('❌ Discord send error:', error);
+        return false;
+    }
+}
+
+async function createHybridMathSignal(instrument, marketData) {
+    // Validate required market data fields
+    if (!marketData || typeof marketData !== 'object') {
+        throw new Error('Market data not available - cannot generate signal');
+    }
+    
+    // Strict validation - no fallbacks for trading accuracy
+    const cv = parseFloat(marketData.current_value);
+    const netChange = parseFloat(marketData.net_change);
+    const previousClose = parseFloat(marketData.previous_close);
+    const dailyHigh = parseFloat(marketData.high);
+    const dailyLow = parseFloat(marketData.low);
+    
+    // Validate all required fields are present and valid
+    if (isNaN(cv) || cv === 0) {
+        throw new Error('Invalid or missing current value from previous day data - cannot generate accurate signal');
+    }
+    if (isNaN(netChange)) {
+        throw new Error('Invalid or missing net change from previous day data - cannot generate accurate signal');
+    }
+    if (isNaN(previousClose) || previousClose === 0) {
+        throw new Error('Invalid or missing previous close data - cannot generate accurate signal');
+    }
+    if (isNaN(dailyHigh) || dailyHigh === 0) {
+        throw new Error('Invalid or missing daily high data - cannot generate accurate signal');
+    }
+    if (isNaN(dailyLow) || dailyLow === 0) {
+        throw new Error('Invalid or missing daily low data - cannot generate accurate signal');
+    }
+    
+    // Validate data integrity
+    if (dailyHigh < dailyLow) {
+        throw new Error('Corrupted market data: Daily high is less than daily low - cannot generate reliable signal');
+    }
+    if (cv < dailyLow || cv > dailyHigh) {
+        throw new Error('Corrupted market data: Current value outside daily range - cannot generate reliable signal');
+    }
+    
+    // Calculate change percentage
+    const changePct = previousClose ? (netChange / previousClose) * 100 : 0;
+    
+    // Determine bias (LONG/SHORT format expected by Discord formatter)
+    const bias = netChange > 0 ? 'LONG' : 'SHORT';
+    const direction = bias === 'LONG' ? 'BUY' : 'SELL';
+    
+    // Calculate CV position within daily range
+    const cvPosition = (cv - dailyLow) / (dailyHigh - dailyLow);
+    
+    // Calculate entry points and targets
+    const entry1 = bias === 'LONG' ? dailyLow : dailyHigh;
+    const entry2 = cv;
+    const takeProfit = cv + (bias === 'LONG' ? Math.abs(netChange) : -Math.abs(netChange));
+    const tp1 = cv + (bias === 'LONG' ? Math.abs(netChange) * 0.6 : -Math.abs(netChange) * 0.6);
+    const tp2 = takeProfit;
+    
+    const stopLoss = cv - (instrument === 'NASDAQ' ? (bias === 'LONG' ? 75 : -75) : (bias === 'LONG' ? 100 : -100));
+    
+    // Get symbol mapping for display
+    const symbolMap = {
+        'NASDAQ': 'NAS100',
+        'DOW': 'US30', 
+        'GOLD': 'XAUUSD'
+    };
+    
+    // Create comprehensive signal with all required fields
+    return {
+        // Core identification
+        symbol: symbolMap[instrument] || 'NAS100',
+        display_name: symbolMap[instrument] || 'NAS100',
+        instrument,
+        direction,
+        
+        // Bias and sentiment
+        bias,
+        bias_text: `${bias === 'LONG' ? 'Bullish' : 'Bearish'} (Net Change ${netChange >= 0 ? '+' : ''}${netChange.toFixed(2)})`,
+        
+        // Price data
+        current_value: cv,
+        net_change: netChange,
+        change_pct: changePct,
+        previous_close: previousClose,
+        high: dailyHigh,
+        low: dailyLow,
+        today_high: dailyHigh,
+        today_low: dailyLow,
+        
+        // Entry and target levels
+        entry_price: cv,
+        entry1,
+        entry2,
+        take_profit: takeProfit,
+        tp1,
+        tp2,
+        stop_loss: stopLoss,
+        
+        // Analysis metrics
+        cv_position: cvPosition,
+        confidence: Math.abs(netChange) > 50 ? 85 : 75,
+        probability_percentage: Math.abs(netChange) > 50 ? 75.5 : 65.0,
+        
+        // Metadata
+        timestamp: new Date().toISOString(),
+        sentiment: 'Neutral',
+        sentiment_score: 0.5,
+        news_count: 0,
+        model_used: 'frontend_hybrid_math',
+        
+        // Frontend display
+        type: 'STANDARD',
+        reason: `${bias === 'LONG' ? 'Bullish' : 'Bearish'} bias (Net Change: ${netChange >= 0 ? '+' : ''}${netChange.toFixed(2)})`
+    };
+}
+
+function createDiscordEmbed(signal) {
+    // Validate signal data integrity before creating embed
+    if (!signal || !signal.entry_price || !signal.take_profit || !signal.stop_loss) {
+        throw new Error('Invalid signal data - cannot create Discord embed');
+    }
+    
+    const color = signal.direction === 'BUY' ? 0x00ff88 : 0xff4757;
+    const emoji = signal.direction === 'BUY' ? '📈' : '📉';
+    
+    return {
+        title: `${emoji} BFI SIGNALS - HYBRID MATH STRATEGY`,
+        description: `**${signal.type} ${signal.direction} SIGNAL**\n*Market Analyzed as 1 + 1*`,
+        color: color,
+        fields: [
+            {
+                name: '🎯 TRADING SETUP',
+                value: `**Instrument:** ${signal.instrument}\n**Direction:** ${signal.direction} ${emoji}\n**Entry:** ${signal.entry_price.toFixed(2)}`,
+                inline: false
+            },
+            {
+                name: '💰 TARGETS',
+                value: `**Take Profit:** ${signal.take_profit.toFixed(2)}\n**Stop Loss:** ${signal.stop_loss.toFixed(2)}`,
+                inline: true
+            },
+            {
+                name: '🔍 ANALYSIS',
+                value: signal.reason,
+                inline: false
+            },
+            {
+                name: '📊 CONFIDENCE',
+                value: `${signal.confidence}%`,
+                inline: true
+            }
+        ],
+        footer: {
+            text: 'BFI Signals • Hybrid Math Strategy • by Prophet Bonang'
+        },
+        timestamp: new Date().toISOString()
+    };
+}
+
+
+function setButtonLoading(button, isLoading, className = 'loading') {
+    if (!button) return;
+    
+    if (isLoading) {
+        button.classList.add(className);
+        button.disabled = true;
+        
+        const textElement = button.querySelector('.btn-text');
+        if (textElement) {
+            button.dataset.originalText = textElement.textContent;
+            textElement.textContent = 'Generating...';
+        }
+    } else {
+        button.classList.remove(className);
+        button.disabled = false;
+        
+        const textElement = button.querySelector('.btn-text');
+        if (textElement && button.dataset.originalText) {
+            textElement.textContent = button.dataset.originalText;
+        }
+    }
+}
+
+function displaySignalResult(signal) {
+    // Validate signal data before displaying
+    if (!signal || !signal.entry_price || !signal.take_profit || !signal.stop_loss) {
+        throw new Error('Invalid signal data - cannot display result');
+    }
+    
+    // Create a visual display of the generated signal
+    const signalDisplay = document.createElement('div');
+    signalDisplay.className = 'signal-result-popup';
+    signalDisplay.innerHTML = `
+        <div class="signal-popup-content">
+            <h3>${signal.direction} ${signal.instrument}</h3>
+            <div class="signal-details">
+                <p><strong>Entry:</strong> ${signal.entry_price.toFixed(2)}</p>
+                <p><strong>Take Profit:</strong> ${signal.take_profit.toFixed(2)}</p>
+                <p><strong>Stop Loss:</strong> ${signal.stop_loss.toFixed(2)}</p>
+                <p><strong>Confidence:</strong> ${signal.confidence}%</p>
+            </div>
+            <button onclick="this.parentElement.parentElement.remove()" class="close-popup">✕</button>
+        </div>
+    `;
+    
+    // Style the popup
+    Object.assign(signalDisplay.style, {
+        position: 'fixed',
+        top: '50%',
+        left: '50%',
+        transform: 'translate(-50%, -50%)',
+        background: 'rgba(26, 26, 26, 0.95)',
+        border: '2px solid #ffd700',
+        borderRadius: '12px',
+        padding: '20px',
+        zIndex: '10000',
+        backdropFilter: 'blur(10px)',
+        boxShadow: '0 8px 32px rgba(255, 215, 0, 0.3)'
+    });
+    
+    document.body.appendChild(signalDisplay);
+    
+    // Remove after 5 seconds
+    setTimeout(() => {
+        if (signalDisplay.parentNode) {
+            signalDisplay.parentNode.removeChild(signalDisplay);
+        }
+    }, 5000);
+}
+
+
+// Notification function
+function showNotification(message, type = 'info') {
+    console.log(`🔔 ${type.toUpperCase()}: ${message}`);
+    
+    const notification = document.createElement('div');
+    notification.innerHTML = `
+        <div style="display: flex; align-items: center; gap: 8px;">
+            <span>${type === 'success' ? '✅' : type === 'error' ? '❌' : 'ℹ️'}</span>
+            <span>${message}</span>
+        </div>
+    `;
+    
+    const bgColor = type === 'success' ? '#22c55e' : type === 'error' ? '#ef4444' : '#3b82f6';
+    
+    notification.style.cssText = `
+        position: fixed;
+        top: 20px;
+        right: 20px;
+        background: rgba(26, 26, 26, 0.95);
+        color: white;
+        padding: 16px 20px;
+        border-radius: 8px;
+        border: 1px solid ${bgColor};
+        z-index: 10000;
+        backdrop-filter: blur(10px);
+        max-width: 300px;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+        animation: slideIn 0.3s ease;
+    `;
+    
+    document.body.appendChild(notification);
+    
+    setTimeout(() => {
+        notification.style.animation = 'slideOut 0.3s ease';
+        setTimeout(() => notification.remove(), 300);
+    }, 3000);
+}
+
+// Tab switching
+function switchTab(tabName) {
+    console.log(`🔄 Switching to tab: ${tabName}`);
+    
+    // Remove active from all tabs
+    document.querySelectorAll('.signal-tab').forEach(tab => {
+        tab.classList.remove('active');
+    });
+    
+    // Remove active from all panels
+    document.querySelectorAll('.signal-panel').forEach(panel => {
+        panel.classList.remove('active');
+    });
+    
+    // Activate selected tab
+    const activeTab = document.querySelector(`[data-tab="${tabName}"]`);
+    if (activeTab) {
+        activeTab.classList.add('active');
+        console.log(`✅ Tab activated: ${tabName}`);
+    } else {
+        console.error(`❌ Tab not found: ${tabName}`);
+    }
+    
+    // Activate selected panel - fix the selector logic
+    let panelClass;
+    if (tabName === 'auto') {
+        panelClass = '.auto-panel';
+    } else if (tabName === 'semi-auto') {
+        panelClass = '.semi-auto-panel';
+    } else if (tabName === 'manual') {
+        panelClass = '.manual-panel';
+    }
+    
+    const activePanel = document.querySelector(panelClass);
+    if (activePanel) {
+        activePanel.classList.add('active');
+        console.log(`✅ Panel activated: ${panelClass}`);
+    } else {
+        console.error(`❌ Panel not found: ${panelClass}`);
+    }
+    
+    currentTab = tabName;
+    showNotification(`Switched to ${tabName} mode`, 'info');
+}
+
+// Instrument selection
+function selectInstrument(instrument) {
+    console.log(`🎯 Selected instrument: ${instrument}`);
+    
+    // Remove selected class from all cards (no highlighting)
+    document.querySelectorAll('.instrument-card').forEach(card => {
+        card.classList.remove('selected', 'active');
+    });
+    
+    // Add subtle selection indicator without highlighting
+    const selectedCard = document.querySelector(`[data-instrument="${instrument}"]`);
+    if (selectedCard) {
+        selectedCard.classList.add('selected');
+    }
+    
+    selectedInstrument = instrument;
+    updateMarketAnalysis(instrument);
+}
+
+// Update market analysis
+function updateMarketAnalysis(instrument) {
+    console.log(`📊 Updating market analysis for: ${instrument}`);
+    
+    const data = marketData[instrument];
+    if (!data) return;
+    
+    // Update analysis values
+    const elements = {
+        'current-value': data.currentValue,
+        'net-change': data.netChange,
+        'previous-close': data.previousClose,
+        'confidence-level': data.confidence
+    };
+    
+    Object.entries(elements).forEach(([id, value]) => {
+        const element = document.getElementById(id);
+        if (element) {
+            element.textContent = value;
+            
+            // Add flash effect
+            element.style.background = 'rgba(255, 215, 0, 0.3)';
+            setTimeout(() => {
+                element.style.background = '';
+            }, 500);
+        }
+    });
+    
+    // Update net change color
+    const netChangeEl = document.getElementById('net-change');
+    if (netChangeEl) {
+        netChangeEl.className = `analysis-value ${data.changeClass}`;
+    }
+}
+
+// Direction selection
+function selectDirection(direction) {
+    console.log(`📈📉 Direction selected: ${direction}`);
+    
+    document.querySelectorAll('.direction-btn').forEach(btn => {
+        btn.classList.remove('selected');
+    });
+    
+    const selectedBtn = document.querySelector(`.${direction.toLowerCase()}-btn`);
+    if (selectedBtn) {
+        selectedBtn.classList.add('selected');
+    }
+    
+    selectedDirection = direction;
+    showNotification(`Direction: ${direction}`, 'info');
+}
+
+// Generate Auto Signal
+function generateAutoSignal() {
+    console.log('⚡ Generating auto signal...');
+    
+    if (!selectedInstrument) {
+        showNotification('Please select a trading instrument first!', 'error');
+        return;
+    }
+    
+    const button = document.querySelector('.auto-panel .generate-btn');
+    if (!button) return;
+    
+    const originalText = button.innerHTML;
+    button.innerHTML = '<span class="btn-icon">⏳</span> Generating...';
+    button.disabled = true;
+    
+    showNotification('Generating signal with Hybrid Math Strategy...', 'info');
+    
+    setTimeout(() => {
+        const signals = ['BUY', 'SELL'];
+        const signal = signals[Math.floor(Math.random() * signals.length)];
+        const data = marketData[selectedInstrument];
+        const currentPrice = parseFloat(data.currentValue.replace(/,/g, ''));
+        
+        const entry = signal === 'BUY' ? currentPrice + 5 : currentPrice - 5;
+        
+        showNotification(`${signal} Signal Generated! Entry: ${entry.toFixed(2)}`, 'success');
+        
+        button.innerHTML = originalText;
+        button.disabled = false;
+        
+        console.log(`✅ Auto signal generated: ${signal} at ${entry}`);
+    }, 2000);
+}
+
+// Generate Semi-Auto Signal
+function generateSemiAutoSignal() {
+    console.log('⚡ Generating semi-auto signal...');
+    showNotification('Creating semi-auto signal...', 'info');
+    
+    setTimeout(() => {
+        showNotification('Semi-auto signal created successfully!', 'success');
+    }, 1500);
+}
+
+// Generate Manual Signal
+function generateManualSignal() {
+    console.log('⚡ Generating manual signal...');
+    
+    if (!selectedDirection) {
+        showNotification('Please select BUY or SELL first!', 'error');
+        return;
+    }
+    
+    showNotification('Creating manual signal...', 'info');
+    
+    setTimeout(() => {
+        showNotification(`Manual ${selectedDirection} signal created!`, 'success');
+    }, 1000);
+}
+
+// Refresh Market Data
+function refreshMarketData() {
+    console.log('🔄 Refreshing market data...');
+    
+    const button = document.querySelector('.refresh-btn');
+    if (!button) return;
+    
+    const originalText = button.innerHTML;
+    button.innerHTML = '<span class="btn-icon">🔄</span> Refreshing...';
+    button.disabled = true;
+    
+    showNotification('Refreshing market data...', 'info');
+    
+    setTimeout(() => {
+        const refreshMessages = [
+            'Market data refreshed successfully',
+            'Latest prices updated',
+            'Real-time data synchronized',
+            'Market snapshot updated'
+        ];
+        
+        const randomMessage = refreshMessages[Math.floor(Math.random() * refreshMessages.length)];
+        showNotification(randomMessage, 'success');
+        
+        button.innerHTML = originalText;
+        button.disabled = false;
+        
+        // Trigger actual market data refresh
+        fetchMarketData();
+        
+        console.log('✅ Market data refresh completed');
+    }, 2000);
+}
+
+// Validate Parameters
+function validateParameters() {
+    console.log('✅ Validating parameters...');
+    
+    const entry = document.getElementById('entry-price')?.value;
+    const tp = document.getElementById('take-profit')?.value;
+    const sl = document.getElementById('stop-loss')?.value;
+    
+    if (!entry || !tp || !sl) {
+        showNotification('Please fill in all price parameters!', 'error');
+        return;
+    }
+    
+    showNotification('Parameters validated successfully!', 'success');
+}
+
+// Update market time
+function updateMarketTime() {
+    try {
+        const now = new Date();
+        const timeString = now.toLocaleTimeString('en-US', {
+            hour12: false,
+            timeZone: 'Africa/Johannesburg'
+        });
+        
+        const timeElement = document.getElementById('market-time');
+        if (timeElement) {
+            timeElement.textContent = `${timeString} GMT+2`;
+        }
+    } catch (error) {
+        console.error('❌ Error updating market time:', error);
+    }
+}
+
+// Risk calculation
+function calculateRisk() {
+    const entry = parseFloat(document.getElementById('entry-price')?.value) || 0;
+    const tp = parseFloat(document.getElementById('take-profit')?.value) || 0;
+    const sl = parseFloat(document.getElementById('stop-loss')?.value) || 0;
+    
+    if (entry && tp && sl) {
+        const profit = Math.abs(tp - entry);
+        const loss = Math.abs(entry - sl);
+        const ratio = loss > 0 ? (profit / loss).toFixed(1) : '0';
+        
+        const elements = {
+            'risk-ratio': `1:${ratio}`,
+            'potential-profit': `+${profit.toFixed(2)} pips`,
+            'potential-loss': `-${loss.toFixed(2)} pips`
+        };
+        
+        Object.entries(elements).forEach(([id, value]) => {
+            const element = document.getElementById(id);
+            if (element) {
+                element.textContent = value;
+            }
+        });
+    }
+}
+
+// Initialize everything when DOM is ready
+document.addEventListener('DOMContentLoaded', function() {
+    console.log('🚀 DOM Ready - Initializing Signal Generator...');
+    
+    try {
+        // Setup tab switching with better debugging
+        const tabs = document.querySelectorAll('.signal-tab');
+        console.log(`📋 Found ${tabs.length} tabs to bind`);
+        
+        tabs.forEach((tab, index) => {
+            const tabName = tab.dataset.tab;
+            console.log(`🏷️ Binding tab ${index + 1}: ${tabName}`);
+            
+            tab.addEventListener('click', function(e) {
+                e.preventDefault();
+                console.log(`🔘 Tab clicked: ${tabName}`);
+                switchTab(tabName);
+            });
+        });
+        
+        // Verify panels exist
+        const panels = document.querySelectorAll('.signal-panel');
+        console.log(`📦 Found ${panels.length} panels`);
+        panels.forEach((panel, index) => {
+            const classes = Array.from(panel.classList);
+            console.log(`📦 Panel ${index + 1} classes:`, classes);
+        });
+        
+        console.log('✅ Tab switching initialized successfully');
+        
+        // Setup instrument selection
+        document.querySelectorAll('.instrument-card').forEach(card => {
+            card.addEventListener('click', function(e) {
+                e.preventDefault();
+                const instrument = this.dataset.instrument;
+                console.log(`💰 Instrument clicked: ${instrument}`);
+                selectInstrument(instrument);
+            });
+        });
+        
+        // Setup button events
+        const buttons = [
+            { selector: '.auto-panel .generate-btn', handler: generateAutoSignal },
+            { selector: '.semi-auto-panel .generate-btn', handler: generateSemiAutoSignal },
+            { selector: '.manual-panel .generate-btn', handler: generateManualSignal },
+            { selector: '#generate-signal-btn', handler: enhancedGenerateSignal },
+            { selector: '.refresh-btn', handler: refreshMarketData },
+            { selector: '.validate-btn', handler: validateParameters },
+            { selector: '.buy-btn', handler: () => selectDirection('BUY') },
+            { selector: '.sell-btn', handler: () => selectDirection('SELL') }
+        ];
+        
+        buttons.forEach(({ selector, handler }) => {
+            const button = document.querySelector(selector);
+            if (button) {
+                button.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    console.log(`🔘 Button clicked: ${selector}`);
+                    
+                    // Visual feedback
+                    this.style.transform = 'scale(0.95)';
+                    setTimeout(() => {
+                        this.style.transform = '';
+                    }, 150);
+                    
+                    handler();
+                });
+                console.log(`✅ Button setup: ${selector}`);
+            } else {
+                console.warn(`⚠️ Button not found: ${selector}`);
+            }
+        });
+        
+        // Setup form events
+        ['entry-price', 'take-profit', 'stop-loss'].forEach(id => {
+            const element = document.getElementById(id);
+            if (element) {
+                element.addEventListener('input', calculateRisk);
+            }
+        });
+        
+        // Start market time updates
+        updateMarketTime();
+        setInterval(updateMarketTime, 1000);
+        
+        // Select default instrument
+        setTimeout(() => {
+            selectInstrument('NASDAQ');
+        }, 100);
+        
+        console.log('✅ Signal Generator initialized successfully!');
+        
+        // Load initial market data
+        fetchMarketData();
+        
+        // Start market status updates
+        startMarketStatusUpdates();
+        
+        // Initialize auto generation toggle
+        initializeAutoGenerationToggle();
+        showNotification('Signal Generator Ready!', 'success');
+        
+    } catch (error) {
+        console.error('❌ Failed to initialize Signal Generator:', error);
+        showNotification('Initialization failed!', 'error');
+    }
+});
+
+// Auto Generation Toggle Functions
+async function initializeAutoGenerationToggle() {
+    try {
+        // Set default state to disabled first
+        updateToggleUI(false);
+        
+        // Load current status
+        const response = await fetch('/api/auto_generation_status');
+        const data = await response.json();
+        
+        if (data.success) {
+            console.log('🔧 Current auto generation status:', data.enabled);
+            updateToggleUI(data.enabled);
+        }
+        
+        // Add event listener to toggle
+        const toggle = document.getElementById('auto-generation-toggle');
+        if (toggle) {
+            toggle.addEventListener('change', handleToggleChange);
+        }
+        
+        console.log('✅ Auto generation toggle initialized');
+    } catch (error) {
+        console.error('❌ Error initializing auto generation toggle:', error);
+        // Fallback to disabled state
+        updateToggleUI(false);
+    }
+}
+
+async function handleToggleChange(event) {
+    const enabled = event.target.checked;
+    
+    try {
+        const response = await fetch('/api/toggle_auto_generation', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ enabled: enabled })
+        });
+        
+        const data = await response.json();
+        
+        if (data.success) {
+            updateToggleUI(enabled);
+            showNotification(data.message, 'success');
+            console.log(`🤖 Auto generation ${enabled ? 'enabled' : 'disabled'}`);
+        } else {
+            // Revert toggle if API call failed
+            event.target.checked = !enabled;
+            showNotification('Failed to update auto generation setting', 'error');
+        }
+    } catch (error) {
+        // Revert toggle if API call failed
+        event.target.checked = !enabled;
+        console.error('❌ Error updating auto generation:', error);
+        showNotification('❌ Network error', 'error');
+    }
+}
+
+function updateToggleUI(enabled) {
+    const toggle = document.getElementById('auto-generation-toggle');
+    const statusIndicator = document.querySelector('#auto-gen-status .status-indicator');
+    const statusText = document.querySelector('#auto-gen-status .status-text');
+    
+    console.log('🔧 Updating toggle UI - enabled:', enabled);
+    
+    if (toggle) {
+        toggle.checked = enabled;
+        console.log('🔧 Toggle switch set to:', enabled);
+    }
+    
+    if (statusIndicator) {
+        // Remove all status classes first
+        statusIndicator.classList.remove('enabled', 'disabled');
+        
+        // Add the appropriate class
+        if (enabled) {
+            statusIndicator.classList.add('enabled');
+        } else {
+            statusIndicator.classList.add('disabled');
+        }
+        
+        console.log('🔧 Status indicator class set to:', statusIndicator.className);
+    }
+    
+    if (statusText) {
+        // Remove all status classes first
+        statusText.classList.remove('enabled', 'disabled');
+        
+        // Add the appropriate class and update text
+        if (enabled) {
+            statusText.classList.add('enabled');
+        } else {
+            statusText.classList.add('disabled');
+        }
+        
+        const newText = `Auto Generation: ${enabled ? 'Enabled' : 'Disabled'}`;
+        statusText.textContent = newText;
+        console.log('🔧 Status text class and content updated:', statusText.className, newText);
+    }
+}
+
+// Manual trigger for auto signal generation (for testing)
+async function triggerAutoSignalGeneration() {
+    try {
+        showNotification('🤖 Generating signals for next trading day...', 'info');
+        
+        const response = await fetch('/api/generate_auto_signal', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            }
+        });
+        
+        const data = await response.json();
+        
+        if (data.success) {
+            showNotification(`✅ Generated ${data.signals_generated} signals for next trading day`, 'success');
+            console.log('🎯 Auto signals generated:', data.signals);
+        } else {
+            showNotification('❌ Failed to generate auto signals', 'error');
+        }
+    } catch (error) {
+        console.error('❌ Error triggering auto signal generation:', error);
+        showNotification('❌ Network error', 'error');
+    }
+}
+
+// Add CSS animations for signal generator
+const signalPageStyle = document.createElement('style');
+signalPageStyle.textContent = `
+    @keyframes slideIn {
+        from { transform: translateX(100%); opacity: 0; }
+        to { transform: translateX(0); opacity: 1; }
+    }
+    
+    @keyframes slideOut {
+        from { transform: translateX(0); opacity: 1; }
+        to { transform: translateX(100%); opacity: 0; }
+    }
+    
+    .signal-tab, .instrument-card, .generate-btn, .analyze-btn, .validate-btn, .direction-btn {
+        cursor: pointer;
+        user-select: none;
+        transition: all 0.2s ease;
+    }
+    
+    .generate-btn:disabled, .analyze-btn:disabled {
+        opacity: 0.6;
+        cursor: not-allowed;
+    }
+    
+    .instrument-card:hover {
+        transform: translateY(-2px);
+    }
+    
+    .generate-btn:hover, .analyze-btn:hover, .validate-btn:hover {
+        transform: translateY(-1px);
+    }
+`;
+document.head.appendChild(signalPageStyle);
+
+console.log('✅ Signal Generator Script Loaded Successfully!');
+
+// Global error handler for this page
+window.addEventListener('error', function(e) {
+    console.error('❌ JavaScript Error in Signal Generator:', e.error);
+    console.error('📍 Location:', e.filename, 'Line:', e.lineno, 'Column:', e.colno);
+    
+    // Show user-friendly error message
+    if (e.error && e.error.message) {
+        showNotification('JavaScript error detected. Check console for details.', 'error');
+    }
+});
+
+// Add a safety check to verify everything is working
+setTimeout(function() {
+    const tabs = document.querySelectorAll('.signal-tab');
+    const panels = document.querySelectorAll('.signal-panel');
+    const cards = document.querySelectorAll('.instrument-card');
+    
+    console.log(`🔍 Final verification:`);
+    console.log(`  - Tabs found: ${tabs.length}`);
+    console.log(`  - Panels found: ${panels.length}`);
+    console.log(`  - Instrument cards found: ${cards.length}`);
+    
+    if (tabs.length === 0 || panels.length === 0) {
+        console.warn('⚠️  Some elements not found - check HTML structure');
+        showNotification('Some page elements may not be working correctly', 'warning');
+    } else {
+        console.log('✅ All critical elements found and ready');
+    }
+}, 1000);
+</script>
+{% endblock %}

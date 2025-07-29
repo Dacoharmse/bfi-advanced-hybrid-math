@@ -1,0 +1,1581 @@
+{% extends "base_modern.html" %}
+
+{% block title %}Dashboard - BFI Signals AI{% endblock %}
+
+{% block page_title %}BFI Signals AI Dashboard{% endblock %}
+
+{% block extra_css %}
+<style>
+    /* Dashboard Specific Styles */
+    .dashboard-grid {
+        display: grid;
+        gap: 32px;
+        margin-bottom: 32px;
+        padding: 0 4px;
+    }
+
+    /* Market Overview Section */
+    .market-overview {
+        margin-bottom: 32px;
+    }
+
+    .market-overview h2 {
+        font-size: 24px;
+        font-weight: 600;
+        color: var(--text-primary);
+        margin-bottom: 20px;
+        display: flex;
+        align-items: center;
+        gap: 12px;
+    }
+
+
+    /* Instrument Logo Styling */
+    .instrument-logo {
+        width: 32px;
+        height: 32px;
+        border-radius: 6px;
+        margin-right: 12px;
+        object-fit: cover;
+        background: rgba(255, 255, 255, 0.1);
+        padding: 4px;
+    }
+
+    .instrument-branding {
+        display: flex;
+        align-items: center;
+    }
+
+    .instrument-branding h3 {
+        margin: 0;
+        font-size: 16px;
+        font-weight: 600;
+    }
+
+    .market-cards {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+        gap: 24px;
+        margin-bottom: 32px;
+        align-items: stretch;
+    }
+
+    .market-card {
+        background: linear-gradient(145deg, rgba(30, 30, 30, 0.98) 0%, rgba(20, 20, 20, 0.98) 50%, rgba(15, 15, 15, 0.98) 100%);
+        backdrop-filter: blur(15px);
+        border: 2px solid transparent;
+        border-radius: 20px;
+        padding: 28px;
+        box-shadow: 
+            0 10px 40px rgba(0, 0, 0, 0.5),
+            0 5px 20px rgba(212, 175, 55, 0.1),
+            inset 0 1px 0 rgba(255, 255, 255, 0.05);
+        transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+        position: relative;
+        overflow: hidden;
+        height: 100%;
+        display: flex;
+        flex-direction: column;
+    }
+
+    .market-card::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: linear-gradient(135deg, 
+            rgba(212, 175, 55, 0.03) 0%, 
+            transparent 30%, 
+            transparent 70%, 
+            rgba(212, 175, 55, 0.03) 100%);
+        opacity: 0;
+        transition: opacity 0.4s ease;
+        pointer-events: none;
+    }
+
+    .market-card::after {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        height: 4px;
+        background: linear-gradient(90deg, #00d4ff, #d4af37);
+        border-radius: 20px 20px 0 0;
+    }
+
+    .market-card.dow-card::after {
+        background: linear-gradient(90deg, #4285f4, #d4af37);
+    }
+
+    .market-card.gold-card::after {
+        background: linear-gradient(90deg, #ffd700, #d4af37);
+    }
+
+    .market-card:hover {
+        border-color: rgba(212, 175, 55, 0.6);
+        box-shadow: 
+            0 20px 60px rgba(0, 0, 0, 0.7),
+            0 10px 40px rgba(212, 175, 55, 0.2),
+            inset 0 1px 0 rgba(255, 255, 255, 0.1);
+        transform: translateY(-8px) scale(1.02);
+    }
+
+    .market-card:hover::before {
+        opacity: 1;
+    }
+
+    .card-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 16px;
+    }
+
+    .card-header h3 {
+        font-size: 18px;
+        font-weight: 600;
+        color: var(--text-primary);
+        display: flex;
+        align-items: center;
+        gap: 8px;
+    }
+
+    .change-indicator {
+        padding: 8px 16px;
+        border-radius: 25px;
+        font-size: 13px;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.8px;
+        backdrop-filter: blur(10px);
+        border: 1px solid transparent;
+        transition: all 0.3s ease;
+        position: relative;
+        z-index: 1;
+    }
+
+    .change-indicator.positive {
+        background: linear-gradient(135deg, 
+            rgba(0, 255, 136, 0.15) 0%, 
+            rgba(74, 222, 128, 0.1) 50%, 
+            rgba(34, 197, 94, 0.15) 100%);
+        color: #00ff88;
+        border-color: rgba(0, 255, 136, 0.4);
+        box-shadow: 
+            0 0 20px rgba(0, 255, 136, 0.1),
+            inset 0 1px 0 rgba(255, 255, 255, 0.1);
+    }
+
+    .change-indicator.negative {
+        background: linear-gradient(135deg, 
+            rgba(255, 71, 87, 0.15) 0%, 
+            rgba(248, 113, 113, 0.1) 50%, 
+            rgba(239, 68, 68, 0.15) 100%);
+        color: #ff4757;
+        border-color: rgba(255, 71, 87, 0.4);
+        box-shadow: 
+            0 0 20px rgba(255, 71, 87, 0.1),
+            inset 0 1px 0 rgba(255, 255, 255, 0.1);
+    }
+
+    .price-display {
+        margin-bottom: 16px;
+    }
+
+    .current-price {
+        display: block;
+        font-size: 36px;
+        font-weight: 800;
+        color: #ffffff;
+        margin-bottom: 8px;
+        font-variant-numeric: tabular-nums;
+        text-shadow: 0 0 20px rgba(255, 255, 255, 0.1);
+        letter-spacing: -1px;
+        font-family: 'Inter', monospace;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        position: relative;
+        z-index: 1;
+    }
+
+    .current-price:hover {
+        color: #d4af37;
+        transform: scale(1.02);
+        text-shadow: 0 0 25px rgba(212, 175, 55, 0.4);
+    }
+
+    .net-change {
+        font-size: 18px;
+        font-weight: 700;
+        font-variant-numeric: tabular-nums;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        padding: 4px 8px;
+        border-radius: 8px;
+        display: inline-block;
+    }
+
+    .net-change:hover {
+        transform: scale(1.05);
+        background: rgba(255, 255, 255, 0.05);
+    }
+
+    .net-change.positive {
+        color: #00ff88;
+        text-shadow: 0 0 15px rgba(0, 255, 136, 0.3);
+    }
+
+    .net-change.negative {
+        color: #ff4757;
+        text-shadow: 0 0 15px rgba(255, 71, 87, 0.3);
+    }
+
+    .price-details {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(100px, 1fr));
+        gap: 10px;
+        font-size: 13px;
+        color: rgba(212, 175, 55, 0.9);
+        margin-top: auto;
+        padding-top: 18px;
+        border-top: 1px solid rgba(212, 175, 55, 0.25);
+    }
+
+    .price-detail-item {
+        display: flex;
+        flex-direction: column;
+        padding: 12px 10px;
+        background: linear-gradient(145deg, 
+            rgba(25, 25, 25, 0.8) 0%, 
+            rgba(15, 15, 15, 0.9) 50%, 
+            rgba(10, 10, 10, 0.8) 100%);
+        border-radius: 8px;
+        border: 1px solid rgba(212, 175, 55, 0.15);
+        text-align: center;
+        position: relative;
+        backdrop-filter: blur(3px);
+        box-shadow: 
+            inset 0 1px 0 rgba(255, 255, 255, 0.03),
+            0 2px 8px rgba(0, 0, 0, 0.3);
+        cursor: pointer;
+        transition: all 0.2s ease;
+        gap: 6px;
+    }
+
+    .price-detail-item:hover {
+        border-color: rgba(212, 175, 55, 0.3);
+        transform: translateY(-1px);
+        box-shadow: 
+            inset 0 1px 0 rgba(255, 255, 255, 0.05),
+            0 4px 12px rgba(0, 0, 0, 0.4);
+    }
+
+    .price-detail-label {
+        font-size: 11px;
+        font-weight: 600;
+        color: rgba(212, 175, 55, 0.8);
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        margin-bottom: 2px;
+    }
+
+    .price-detail-value {
+        font-size: 14px;
+        font-weight: 700;
+        color: #ffffff;
+        font-family: 'Inter', monospace;
+        letter-spacing: -0.3px;
+    }
+
+    /* Stats Overview */
+    .stats-overview {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+        gap: 20px;
+        margin-bottom: 40px;
+        align-items: stretch;
+    }
+
+    .stat-card {
+        background: rgba(25, 25, 25, 0.4);
+        backdrop-filter: blur(8px);
+        border: 1px solid rgba(212, 175, 55, 0.15);
+        border-radius: 12px;
+        padding: 24px 20px;
+        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
+        transition: all 0.2s ease;
+        position: relative;
+        height: 100%;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        text-align: center;
+    }
+
+    .stat-card:hover {
+        border-color: rgba(212, 175, 55, 0.3);
+        transform: translateY(-2px);
+        box-shadow: 0 8px 25px rgba(0, 0, 0, 0.3);
+    }
+
+    .stat-card .stat-icon {
+        font-size: 24px;
+        margin-bottom: 12px;
+        display: block;
+        color: rgba(212, 175, 55, 0.8);
+        transition: color 0.2s ease;
+    }
+
+    .stat-card:hover .stat-icon {
+        color: rgba(212, 175, 55, 1);
+    }
+
+    .stat-card .stat-content h3 {
+        font-size: 12px;
+        color: rgba(212, 175, 55, 0.7);
+        margin-bottom: 8px;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        font-weight: 500;
+    }
+
+    .stat-card .stat-number {
+        font-size: 32px;
+        font-weight: 700;
+        color: #ffffff;
+        display: block;
+        margin-bottom: 4px;
+        font-variant-numeric: tabular-nums;
+        font-family: 'Inter', sans-serif;
+        line-height: 1;
+    }
+
+    .stat-card .stat-number.success {
+        color: #00ff88;
+    }
+
+    .stat-card .stat-number.profit {
+        color: #ffd700;
+    }
+
+    .stat-card small {
+        font-size: 10px;
+        color: rgba(255, 255, 255, 0.5);
+        font-weight: 400;
+        letter-spacing: 0.2px;
+    }
+
+
+    /* Recent Signals Section */
+    .recent-signals {
+        margin-bottom: 32px;
+    }
+
+    .section-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 20px;
+    }
+
+    .section-header h2 {
+        font-size: 24px;
+        font-weight: 600;
+        color: var(--text-primary);
+        display: flex;
+        align-items: center;
+        gap: 12px;
+    }
+
+    .section-header h2::before {
+        content: '⚡';
+        font-size: 28px;
+    }
+
+    .signals-table-card {
+        background: var(--card-bg);
+        backdrop-filter: blur(10px);
+        border: 2px solid var(--golden-accent);
+        border-radius: var(--border-radius-lg);
+        overflow: hidden;
+        box-shadow: var(--box-shadow);
+        margin-bottom: 32px;
+    }
+
+    .modern-table {
+        width: 100%;
+        border-collapse: collapse;
+        font-size: 14px;
+    }
+
+    .modern-table th {
+        background: linear-gradient(135deg, rgba(212, 175, 55, 0.08) 0%, rgba(212, 175, 55, 0.12) 100%);
+        padding: 16px 20px;
+        text-align: left;
+        font-weight: 700;
+        font-size: 13px;
+        color: var(--golden-primary);
+        text-transform: uppercase;
+        letter-spacing: 0.8px;
+        border-bottom: 2px solid var(--golden-accent);
+        position: relative;
+    }
+
+    .modern-table td {
+        padding: 16px 20px;
+        color: var(--text-primary);
+        font-weight: 500;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+        font-variant-numeric: tabular-nums;
+    }
+
+    .modern-table tbody tr {
+        transition: background-color 0.2s ease;
+    }
+
+    .modern-table tbody tr:hover {
+        background: linear-gradient(135deg, rgba(212, 175, 55, 0.05) 0%, rgba(212, 175, 55, 0.08) 100%);
+        transform: translateY(-1px);
+    }
+
+    .signal-type {
+        padding: 4px 8px;
+        border-radius: 12px;
+        font-size: 11px;
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+    }
+
+    .signal-type.buy {
+        background: rgba(0, 255, 136, 0.1);
+        color: var(--success-color);
+        border: 1px solid rgba(0, 255, 136, 0.2);
+    }
+
+    .signal-type.sell {
+        background: rgba(255, 71, 87, 0.1);
+        color: var(--danger-color);
+        border: 1px solid rgba(255, 71, 87, 0.2);
+    }
+
+
+        padding: 4px 12px;
+        border-radius: 12px;
+        font-size: 11px;
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        background: rgba(0, 255, 136, 0.1);
+        color: var(--success-color);
+        border: 1px solid rgba(0, 255, 136, 0.2);
+    }
+
+    /* Empty State */
+    .empty-state {
+        text-align: center;
+        padding: 60px 40px;
+        position: relative;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        min-height: 300px;
+    }
+
+    .empty-state-visual {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        margin-bottom: 32px;
+        position: relative;
+    }
+
+    .empty-state-chart {
+        width: 120px;
+        height: 80px;
+        position: relative;
+        opacity: 0.6;
+    }
+
+    .chart-bars {
+        display: flex;
+        align-items: end;
+        justify-content: center;
+        height: 100%;
+        gap: 8px;
+    }
+
+    .chart-bar {
+        background: linear-gradient(to top, rgba(212, 175, 55, 0.3), rgba(212, 175, 55, 0.7));
+        border-radius: 3px 3px 0 0;
+        animation: pulse 2s ease-in-out infinite;
+    }
+
+    .chart-bar:nth-child(1) { width: 12px; height: 30%; animation-delay: 0s; }
+    .chart-bar:nth-child(2) { width: 12px; height: 60%; animation-delay: 0.2s; }
+    .chart-bar:nth-child(3) { width: 12px; height: 45%; animation-delay: 0.4s; }
+    .chart-bar:nth-child(4) { width: 12px; height: 75%; animation-delay: 0.6s; }
+    .chart-bar:nth-child(5) { width: 12px; height: 40%; animation-delay: 0.8s; }
+
+    @keyframes pulse {
+        0%, 100% { opacity: 0.3; }
+        50% { opacity: 0.8; }
+    }
+
+    .empty-state h3 {
+        font-size: 28px;
+        margin-bottom: 12px;
+        color: var(--text-primary);
+        font-weight: 700;
+        background: linear-gradient(135deg, #ffffff, #e0e0e0);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        background-clip: text;
+        text-align: center;
+    }
+
+    .empty-state p {
+        font-size: 16px;
+        margin-bottom: 36px;
+        color: var(--text-muted);
+        line-height: 1.6;
+        max-width: 480px;
+        opacity: 0.9;
+        text-align: center;
+        margin-left: auto;
+        margin-right: auto;
+    }
+
+    .empty-state .btn {
+        padding: 20px 48px;
+        font-size: 16px;
+        font-weight: 700;
+        border-radius: 50px;
+        background: linear-gradient(135deg, var(--golden-primary), var(--golden-bright));
+        color: #000;
+        text-decoration: none;
+        display: inline-flex;
+        align-items: center;
+        gap: 10px;
+        transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+        box-shadow: 
+            0 8px 32px rgba(212, 175, 55, 0.3),
+            0 4px 16px rgba(0, 0, 0, 0.2);
+        position: relative;
+        overflow: hidden;
+        border: none;
+        cursor: pointer;
+        margin-top: 8px;
+    }
+
+    .empty-state .btn::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: -100%;
+        width: 100%;
+        height: 100%;
+        background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+        transition: left 0.5s;
+    }
+
+    .empty-state .btn:hover {
+        transform: translateY(-3px) scale(1.02);
+        box-shadow: 
+            0 12px 40px rgba(212, 175, 55, 0.4),
+            0 6px 20px rgba(0, 0, 0, 0.3);
+        text-decoration: none;
+        color: #000;
+    }
+
+    .empty-state .btn:hover::before {
+        left: 100%;
+    }
+
+    .empty-state .btn:active {
+        transform: translateY(-1px) scale(1.01);
+    }
+
+    /* Win Rate Breakdown */
+    .win-rate-breakdown {
+        display: flex;
+        gap: 8px;
+        margin-top: 16px;
+        flex-wrap: wrap;
+        justify-content: center;
+    }
+
+    .win-stat,
+    .loss-stat,
+    .breakeven-stat {
+        padding: 6px 12px;
+        border-radius: 12px;
+        font-size: 10px;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        backdrop-filter: blur(5px);
+        border: 1px solid transparent;
+        transition: all 0.2s ease;
+    }
+
+    .win-stat {
+        background: linear-gradient(135deg, rgba(0, 255, 136, 0.15), rgba(74, 222, 128, 0.1));
+        color: #00ff88;
+        border-color: rgba(0, 255, 136, 0.3);
+        box-shadow: 0 0 10px rgba(0, 255, 136, 0.1);
+    }
+
+    .loss-stat {
+        background: linear-gradient(135deg, rgba(255, 71, 87, 0.15), rgba(248, 113, 113, 0.1));
+        color: #ff4757;
+        border-color: rgba(255, 71, 87, 0.3);
+        box-shadow: 0 0 10px rgba(255, 71, 87, 0.1);
+    }
+
+    .breakeven-stat {
+        background: linear-gradient(135deg, rgba(255, 193, 7, 0.15), rgba(255, 235, 59, 0.1));
+        color: #ffc107;
+        border-color: rgba(255, 193, 7, 0.3);
+        box-shadow: 0 0 10px rgba(255, 193, 7, 0.1);
+    }
+
+    /* Refresh button animation */
+    @keyframes spin {
+        from { transform: rotate(0deg); }
+        to { transform: rotate(360deg); }
+    }
+
+    #refresh-market-data:disabled {
+        opacity: 0.7;
+        cursor: not-allowed;
+    }
+
+    /* Responsive Design */
+    @media (max-width: 768px) {
+        .market-cards {
+            grid-template-columns: 1fr;
+        }
+        
+        .stats-overview {
+            grid-template-columns: repeat(2, 1fr);
+        }
+        
+        
+        .section-header {
+            flex-direction: column;
+            gap: 16px;
+            align-items: flex-start;
+        }
+    }
+
+    @media (max-width: 480px) {
+        .stats-overview {
+            grid-template-columns: 1fr;
+        }
+        
+        .current-price {
+            font-size: 24px;
+        }
+        
+        .price-details {
+            grid-template-columns: 1fr;
+        }
+        
+        .modern-table th,
+        .modern-table td {
+            padding: 12px 16px;
+            font-size: 12px;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="dashboard-grid">
+    <!-- Market Overview Cards -->
+    <section class="market-overview">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px; padding: 0 4px;">
+            <h2 style="color: var(--golden-primary); font-weight: 700; font-size: 24px; margin: 0;">Live Market Data</h2>
+            <div style="display: flex; align-items: center; gap: 16px; flex-wrap: wrap;">
+                <small id="last-update" style="color: var(--text-muted); font-size: 12px;">
+                    Loading market data...
+                </small>
+                <div class="market-status" style="font-size: 12px; font-weight: 500; line-height: 1.2; text-align: center; min-width: 140px;">
+                    🔄 Checking market status...
+                </div>
+                <button id="refresh-market-data" class="btn btn-secondary" style="padding: 8px 16px; font-size: 14px;">
+                    <span id="refresh-icon">🔄</span> Refresh
+                </button>
+            </div>
+        </div>
+        <div class="market-cards">
+            <!-- NASDAQ Card -->
+            <div class="market-card nasdaq-card">
+                <div class="card-header">
+                    <div class="instrument-branding">
+                        <img src="{{ url_for('static', filename='nasdaq.svg') }}" alt="NASDAQ" class="instrument-logo">
+                        <h3>NASDAQ (NAS100)</h3>
+                    </div>
+                    {% if market_close_data.nasdaq.changePercent %}
+                        {% set change_num = market_close_data.nasdaq.rawChange or 0 %}
+                        <span class="change-indicator {{ 'positive' if change_num >= 0 else 'negative' }}">{{ market_close_data.nasdaq.changePercent }}</span>
+                    {% else %}
+                        <span class="change-indicator">--</span>
+                    {% endif %}
+                </div>
+                <div class="price-display">
+                    <span class="current-price">{{ market_close_data.nasdaq.price or '--' }}</span>
+                    {% if market_close_data.nasdaq.change %}
+                        {% set change_num = market_close_data.nasdaq.rawChange or 0 %}
+                        <span class="net-change {{ 'positive' if change_num >= 0 else 'negative' }}">{{ market_close_data.nasdaq.change }}</span>
+                    {% else %}
+                        <span class="net-change">--</span>
+                    {% endif %}
+                </div>
+                <div class="price-details">
+                    <div class="price-detail-item">
+                        <span class="price-detail-label">High</span>
+                        <span class="price-detail-value">{{ market_close_data.nasdaq.high or '--' }}</span>
+                    </div>
+                    <div class="price-detail-item">
+                        <span class="price-detail-label">Low</span>
+                        <span class="price-detail-value">{{ market_close_data.nasdaq.low or '--' }}</span>
+                    </div>
+                    <div class="price-detail-item">
+                        <span class="price-detail-label">Previous</span>
+                        <span class="price-detail-value">{{ market_close_data.nasdaq.previousClose or '--' }}</span>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- DOW Card -->
+            <div class="market-card dow-card">
+                <div class="card-header">
+                    <div class="instrument-branding">
+                        <img src="{{ url_for('static', filename='dow.png') }}" alt="DOW JONES" class="instrument-logo">
+                        <h3>DOW (US30)</h3>
+                    </div>
+                    {% if market_close_data.dow.changePercent %}
+                        {% set change_num = market_close_data.dow.rawChange or 0 %}
+                        <span class="change-indicator {{ 'positive' if change_num >= 0 else 'negative' }}">{{ market_close_data.dow.changePercent }}</span>
+                    {% else %}
+                        <span class="change-indicator">--</span>
+                    {% endif %}
+                </div>
+                <div class="price-display">
+                    <span class="current-price">{{ market_close_data.dow.price or '--' }}</span>
+                    {% if market_close_data.dow.change %}
+                        {% set change_num = market_close_data.dow.rawChange or 0 %}
+                        <span class="net-change {{ 'positive' if change_num >= 0 else 'negative' }}">{{ market_close_data.dow.change }}</span>
+                    {% else %}
+                        <span class="net-change">--</span>
+                    {% endif %}
+                </div>
+                <div class="price-details">
+                    <div class="price-detail-item">
+                        <span class="price-detail-label">High</span>
+                        <span class="price-detail-value">{{ market_close_data.dow.high or '--' }}</span>
+                    </div>
+                    <div class="price-detail-item">
+                        <span class="price-detail-label">Low</span>
+                        <span class="price-detail-value">{{ market_close_data.dow.low or '--' }}</span>
+                    </div>
+                    <div class="price-detail-item">
+                        <span class="price-detail-label">Previous</span>
+                        <span class="price-detail-value">{{ market_close_data.dow.previousClose or '--' }}</span>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- GOLD Card -->
+            <div class="market-card gold-card">
+                <div class="card-header">
+                    <div class="instrument-branding">
+                        <img src="{{ url_for('static', filename='gold.png') }}" alt="GOLD" class="instrument-logo">
+                        <h3>GOLD (XAUUSD)</h3>
+                    </div>
+                    {% if market_close_data.gold.changePercent %}
+                        {% set change_num = market_close_data.gold.rawChange or 0 %}
+                        <span class="change-indicator {{ 'positive' if change_num >= 0 else 'negative' }}">{{ market_close_data.gold.changePercent }}</span>
+                    {% else %}
+                        <span class="change-indicator">--</span>
+                    {% endif %}
+                </div>
+                <div class="price-display">
+                    <span class="current-price">{{ market_close_data.gold.price or '--' }}</span>
+                    {% if market_close_data.gold.change %}
+                        {% set change_num = market_close_data.gold.rawChange or 0 %}
+                        <span class="net-change {{ 'positive' if change_num >= 0 else 'negative' }}">{{ market_close_data.gold.change }}</span>
+                    {% else %}
+                        <span class="net-change">--</span>
+                    {% endif %}
+                </div>
+                <div class="price-details">
+                    <div class="price-detail-item">
+                        <span class="price-detail-label">High</span>
+                        <span class="price-detail-value">{{ market_close_data.gold.high or '--' }}</span>
+                    </div>
+                    <div class="price-detail-item">
+                        <span class="price-detail-label">Low</span>
+                        <span class="price-detail-value">{{ market_close_data.gold.low or '--' }}</span>
+                    </div>
+                    <div class="price-detail-item">
+                        <span class="price-detail-label">Previous</span>
+                        <span class="price-detail-value">{{ market_close_data.gold.previousClose or '--' }}</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+    
+    <!-- Quick Stats Row -->
+    <section class="stats-overview">
+        <div class="stat-card winrate-card">
+            <div class="stat-icon">📊</div>
+            <div class="stat-content">
+                <h3>Win Rate</h3>
+                <span class="stat-number success">{{ "%.1f"|format(win_rate_stats[4] if win_rate_stats else 0) }}%</span>
+                <small>Last 30 days</small>
+                {% if win_rate_stats %}
+                <div class="win-rate-breakdown">
+                    <span class="win-stat">✅ {{ win_rate_stats[1] }} Wins</span>
+                    <span class="loss-stat">❌ {{ win_rate_stats[2] }} Losses</span>
+                    <span class="breakeven-stat">⚖️ {{ win_rate_stats[3] }} Breakevens</span>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+        
+        <div class="stat-card signals-card">
+            <div class="stat-icon">🎯</div>
+            <div class="stat-content">
+                <h3>Active Signals</h3>
+                <span class="stat-number">{{ stats.total_signals if stats else 0 }}</span>
+                <small>Hybrid Math Generated</small>
+            </div>
+        </div>
+        
+        <div class="stat-card pnl-card">
+            <div class="stat-icon">💰</div>
+            <div class="stat-content">
+                <h3>Today's Signals</h3>
+                <span class="stat-number profit">{{ today_signals if today_signals else 0 }}</span>
+                <small>Signals executed today</small>
+            </div>
+        </div>
+        
+        <div class="stat-card discord-card">
+            <div class="stat-icon">💬</div>
+            <div class="stat-content">
+                <h3>Discord Sent</h3>
+                <span class="stat-number">{{ stats.total_signals if stats else 0 }}</span>
+                <small>Total signals posted</small>
+            </div>
+        </div>
+    </section>
+    
+    <!-- Recent Signals Table -->
+    <section class="recent-signals">
+        <div class="section-header" style="margin-bottom: 24px; padding: 0 4px;">
+            <h2 style="color: var(--golden-primary); font-weight: 700; font-size: 24px; margin: 0;">Recent Signals</h2>
+            <a href="/generate_signals" class="btn btn-primary" style="background: linear-gradient(135deg, var(--golden-primary), var(--golden-bright)); color: #000; font-weight: 600;">
+                🎯 Generate New Signal
+            </a>
+        </div>
+        <div class="signals-table-card">
+            {% if recent_signals %}
+            <table class="modern-table">
+                <thead>
+                    <tr>
+                        <th>Symbol</th>
+                        <th>Type</th>
+                        <th>Probability</th>
+                        <th>Risk Level</th>
+                        <th>Timestamp</th>
+                        <th>Outcome</th>
+                        <th>P&L</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for signal in recent_signals %}
+                    <tr>
+                        <td>
+                            <strong>{{ signal[0] }}</strong>
+                        </td>
+                        <td>
+                            <span class="signal-type {{ 'buy' if 'BUY' in signal[1].upper() else 'sell' }}">
+                                {{ signal[1] }}
+                            </span>
+                        </td>
+                        <td>
+                            <strong>{{ "%.1f"|format(signal[2] * 100) }}%</strong>
+                        </td>
+                        <td>
+                            {% if signal[3] == 'LOW' %}
+                                <span class="text-success">🟢 {{ signal[3] }}</span>
+                            {% elif signal[3] == 'MEDIUM' %}
+                                <span class="text-warning">🟡 {{ signal[3] }}</span>
+                            {% else %}
+                                <span class="text-danger">🔴 {{ signal[3] }}</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            <small>{{ signal[4] }}</small>
+                        </td>
+                        <td>
+                            {% if signal[5] is not none %}
+                                {% if signal[5] == 1 %}
+                                    <span class="text-success">✅ WIN</span>
+                                {% elif signal[5] == 0 %}
+                                    <span class="text-danger">❌ LOSS</span>
+                                {% else %}
+                                    <span class="text-warning">⚖️ BREAK</span>
+                                {% endif %}
+                            {% else %}
+                                <span class="text-muted">⏳ PENDING</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            {% if signal[6] is not none %}
+                                {% if signal[6] > 0 %}
+                                    <span class="text-success">+${{ "%.2f"|format(signal[6]) }}</span>
+                                {% elif signal[6] < 0 %}
+                                    <span class="text-danger">${{ "%.2f"|format(signal[6]) }}</span>
+                                {% else %}
+                                    <span class="text-muted">$0.00</span>
+                                {% endif %}
+                            {% else %}
+                                <span class="text-muted">-</span>
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+            {% else %}
+            <div class="empty-state">
+                <div class="empty-state-visual">
+                    <div class="empty-state-chart">
+                        <div class="chart-bars">
+                            <div class="chart-bar"></div>
+                            <div class="chart-bar"></div>
+                            <div class="chart-bar"></div>
+                            <div class="chart-bar"></div>
+                            <div class="chart-bar"></div>
+                        </div>
+                    </div>
+                </div>
+                <h3>No Recent Signals</h3>
+                <p>Ready to start your trading journey? Generate your first signal using our advanced Hybrid Math Strategy and AI-powered market analysis.</p>
+            </div>
+            {% endif %}
+        </div>
+    </section>
+    
+</div>
+
+{% if error %}
+<script>
+    showNotification('{{ error }}', 'danger');
+</script>
+{% endif %}
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    // Dashboard-specific JavaScript
+    document.addEventListener('DOMContentLoaded', function() {
+        console.log('🚀 Dashboard loading - initializing market data...');
+        
+        // Fetch initial market data on page load
+        updateMarketData();
+        
+        // Add manual refresh button functionality
+        const refreshButton = document.getElementById('refresh-market-data');
+        const refreshIcon = document.getElementById('refresh-icon');
+        
+        if (refreshButton) {
+            refreshButton.addEventListener('click', function() {
+                const isMarketOpen = isUSMarketOpen();
+                
+                if (isMarketOpen) {
+                    console.log('🔄 Manual refresh triggered - Markets OPEN');
+                } else {
+                    console.log('🕘 Manual refresh triggered - Markets CLOSED (forcing update)');
+                    showNotification('US Markets are closed. Refreshing with last available data.', 'warning');
+                }
+                
+                // Add spinning animation to refresh icon
+                refreshIcon.style.animation = 'spin 1s linear infinite';
+                refreshButton.disabled = true;
+                
+                // Call update function
+                updateMarketData();
+                
+                // Reset button after 3 seconds
+                setTimeout(() => {
+                    refreshIcon.style.animation = '';
+                    refreshButton.disabled = false;
+                }, 3000);
+            });
+        }
+        
+        // Auto-refresh dashboard data every 5 minutes, only during US market hours
+        setInterval(function() {
+            // Only refresh if user is active and US markets are open
+            if (document.hidden === false && isUSMarketOpen()) {
+                console.log('🏛️ US Markets OPEN - Refreshing market data...');
+                updateMarketData();
+            } else if (document.hidden === false) {
+                console.log('🕘 US Markets CLOSED - Skipping refresh');
+            }
+        }, 300000); // 5 minutes = 300,000ms
+        
+        // Function to check if US markets are open
+        function isUSMarketOpen() {
+            const now = new Date();
+            
+            // Convert to GMT+2 timezone
+            const gmt2Time = new Date(now.toLocaleString("en-US", {timeZone: "Africa/Johannesburg"}));
+            const day = gmt2Time.getDay(); // 0 = Sunday, 6 = Saturday
+            const hours = gmt2Time.getHours();
+            const minutes = gmt2Time.getMinutes();
+            const totalMinutes = hours * 60 + minutes;
+            
+            // Check if it's a weekday (Monday = 1, Friday = 5)
+            if (day < 1 || day > 5) {
+                return false; // Weekend
+            }
+            
+            // Market hours in GMT+2: 15:30 to 22:00 (9:30 AM - 4:00 PM ET)
+            const marketOpenGMT2 = 15 * 60 + 30;  // 15:30 GMT+2 = 930 minutes
+            const marketCloseGMT2 = 22 * 60;      // 22:00 GMT+2 = 1320 minutes
+            
+            return totalMinutes >= marketOpenGMT2 && totalMinutes <= marketCloseGMT2;
+        }
+        
+        // Display market status with countdown timer
+        function updateMarketStatus() {
+            const isOpen = isUSMarketOpen();
+            const statusElement = document.querySelector('.market-status');
+            
+            console.log(`🕐 Market status update: ${isOpen ? 'OPEN' : 'CLOSED'}`);
+            
+            if (statusElement) {
+                if (isOpen) {
+                    const timeToClose = getTimeToMarketClose();
+                    statusElement.innerHTML = `<span style="color: #4caf50;">🟢 US Markets OPEN</span><br><small style="color: #81c784;">Closes in ${timeToClose}</small>`;
+                    statusElement.title = 'Auto-refresh every 5 minutes';
+                } else {
+                    const timeToOpen = getTimeToMarketOpen();
+                    statusElement.innerHTML = `<span style="color: #f44336;">🔴 US Markets CLOSED</span><br><small style="color: #ffab91;">Opens ${timeToOpen}</small>`;
+                    statusElement.title = 'Auto-refresh paused until market opens';
+                }
+            } else {
+                console.warn('Market status element not found');
+            }
+        }
+        
+        // Get time until market closes (for open markets)
+        function getTimeToMarketClose() {
+            const now = new Date();
+            const gmt2Time = new Date(now.toLocaleString("en-US", {timeZone: "Africa/Johannesburg"}));
+            
+            // Market closes at 22:00 GMT+2 (4:00 PM ET)
+            const marketClose = new Date(gmt2Time);
+            marketClose.setHours(22, 0, 0, 0);
+            
+            const timeDiff = marketClose - gmt2Time;
+            if (timeDiff <= 0) return "Closing soon";
+            
+            const hours = Math.floor(timeDiff / (1000 * 60 * 60));
+            const minutes = Math.floor((timeDiff % (1000 * 60 * 60)) / (1000 * 60));
+            const seconds = Math.floor((timeDiff % (1000 * 60)) / 1000);
+            
+            if (hours > 0) {
+                return `${hours}h ${minutes}m ${seconds}s`;
+            } else if (minutes > 0) {
+                return `${minutes}m ${seconds}s`;
+            } else {
+                return `${seconds}s`;
+            }
+        }
+        
+        // Get time until market opens (for closed markets) with live countdown
+        function getTimeToMarketOpen() {
+            try {
+                const now = new Date();
+                
+                // Get current time in GMT+2 timezone
+                const gmt2Time = new Date(now.toLocaleString("en-US", {timeZone: "Africa/Johannesburg"}));
+                
+                // Calculate next market open time (9:30 AM ET = 15:30 GMT+2)
+                let nextOpenGMT2 = new Date(gmt2Time);
+                nextOpenGMT2.setHours(15, 30, 0, 0); // 15:30 GMT+2 = 9:30 AM ET
+                
+                // If market already opened today or it's a weekend, find next trading day
+                const currentDay = gmt2Time.getDay(); // 0 = Sunday, 6 = Saturday
+                const currentHour = gmt2Time.getHours();
+                const currentMinute = gmt2Time.getMinutes();
+                const currentTotalMinutes = currentHour * 60 + currentMinute;
+                const marketOpenMinutes = 15 * 60 + 30; // 15:30 = 930 minutes
+                const marketCloseMinutes = 22 * 60; // 22:00 GMT+2 = 4:00 PM ET
+                
+                // If it's past market close (22:00 GMT+2) or weekend, move to next trading day
+                if (currentTotalMinutes >= marketCloseMinutes || currentDay === 6 || currentDay === 0 || 
+                   (currentTotalMinutes >= marketOpenMinutes && currentDay >= 1 && currentDay <= 5)) {
+                    nextOpenGMT2.setDate(nextOpenGMT2.getDate() + 1);
+                }
+                
+                // Skip weekends - find next Monday if needed
+                while (nextOpenGMT2.getDay() === 0 || nextOpenGMT2.getDay() === 6) {
+                    nextOpenGMT2.setDate(nextOpenGMT2.getDate() + 1);
+                }
+                
+                // Reset to 15:30 GMT+2
+                nextOpenGMT2.setHours(15, 30, 0, 0);
+                
+                // Calculate time difference
+                const timeDiffMs = nextOpenGMT2.getTime() - gmt2Time.getTime();
+                
+                if (timeDiffMs <= 0) {
+                    return "Opening soon...";
+                }
+                
+                // Convert to days, hours, minutes, and seconds for live countdown
+                const totalSeconds = Math.floor(timeDiffMs / 1000);
+                const days = Math.floor(totalSeconds / (24 * 60 * 60));
+                const hours = Math.floor((totalSeconds % (24 * 60 * 60)) / (60 * 60));
+                const minutes = Math.floor((totalSeconds % (60 * 60)) / 60);
+                const seconds = totalSeconds % 60;
+                
+                // Format next open date and time
+                const openDateGMT2 = nextOpenGMT2.toLocaleDateString("en-US", {
+                    weekday: 'short',
+                    timeZone: "Africa/Johannesburg"
+                }); // Day of week
+                
+                // Create live countdown display
+                let countdownText = "";
+                if (days > 0) {
+                    countdownText = `${days}d ${hours}h ${minutes}m ${seconds}s`;
+                } else if (hours > 0) {
+                    countdownText = `${hours}h ${minutes}m ${seconds}s`;
+                } else if (minutes > 0) {
+                    countdownText = `${minutes}m ${seconds}s`;
+                } else {
+                    countdownText = `${seconds}s`;
+                }
+                
+                return `${openDateGMT2} 15:30 GMT+2 (${countdownText})`;
+                
+            } catch (error) {
+                console.error('Error calculating market open time:', error);
+                return "Calculating...";
+            }
+        }
+        
+        // Update market status immediately and every second for live countdown
+        updateMarketStatus();
+        setInterval(updateMarketStatus, 1000); // Update status every second for live timer
+
+        // Update market data function
+        function updateMarketData() {
+            console.log('🔄 Fetching live market data...');
+            
+            // Add loading state to market cards
+            document.querySelectorAll('.market-card').forEach(card => {
+                card.classList.add('loading');
+            });
+
+            // Fetch real market data from API
+            fetch('/api/live_prices')
+                .then(response => response.json())
+                .then(data => {
+                    console.log('📊 Market data received:', data);
+                    
+                    // Remove loading state
+                    document.querySelectorAll('.market-card').forEach(card => {
+                        card.classList.remove('loading');
+                    });
+                    
+                    if (data.success === true) {
+                        // API returns data directly with nasdaq, dow, gold properties
+                        updateMarketCards(data);
+                        updateLastUpdateTime('Market data updated');
+                        showNotification('Market data updated successfully', 'success');
+                    } else {
+                        updateLastUpdateTime('Update failed');
+                        showNotification('Failed to fetch market data', 'warning');
+                    }
+                })
+                .catch(error => {
+                    console.error('❌ Error fetching market data:', error);
+                    
+                    // Remove loading state on error
+                    document.querySelectorAll('.market-card').forEach(card => {
+                        card.classList.remove('loading');
+                    });
+                    
+                    updateLastUpdateTime('Network error');
+                    showNotification('Network error - using cached data', 'warning');
+                });
+        }
+
+        // Function to update market cards with fresh data
+        function updateMarketCards(marketData) {
+            console.log('🔄 Updating market cards with data:', marketData);
+            
+            // Update NASDAQ card
+            if (marketData.nasdaq) {
+                updateMarketCard('.nasdaq-card', marketData.nasdaq, 'NASDAQ (NAS100)');
+            }
+            
+            // Update DOW card
+            if (marketData.dow) {
+                updateMarketCard('.dow-card', marketData.dow, 'DOW (US30)');
+            }
+            
+            // Update GOLD card
+            if (marketData.gold) {
+                updateMarketCard('.gold-card', marketData.gold, 'GOLD (XAUUSD)');
+            }
+            
+            console.log('✅ Market cards updated successfully');
+        }
+
+        // Function to update individual market card
+        function updateMarketCard(cardSelector, data, displayName) {
+            const card = document.querySelector(cardSelector);
+            if (!card || !data) return;
+            
+            try {
+                // Update current price
+                const priceElement = card.querySelector('.current-price');
+                if (priceElement) {
+                    priceElement.textContent = data.price || '--';
+                }
+                
+                // Update net change
+                const changeElement = card.querySelector('.net-change');
+                if (changeElement) {
+                    if (data.rawChange !== null && data.rawChange !== undefined) {
+                        const netChange = parseFloat(data.rawChange);
+                        changeElement.textContent = netChange >= 0 ? `+${netChange.toFixed(2)}` : `${netChange.toFixed(2)}`;
+                        changeElement.className = netChange >= 0 ? 'net-change positive' : 'net-change negative';
+                    } else {
+                        changeElement.textContent = data.change || '--';
+                        changeElement.className = 'net-change';
+                    }
+                }
+                
+                // Update change indicator
+                const indicatorElement = card.querySelector('.change-indicator');
+                if (indicatorElement) {
+                    if (data.changePercent) {
+                        indicatorElement.textContent = data.changePercent;
+                        const isPositive = data.rawChange >= 0;
+                        indicatorElement.className = isPositive ? 'change-indicator positive' : 'change-indicator negative';
+                    } else {
+                        indicatorElement.textContent = '--';
+                        indicatorElement.className = 'change-indicator';
+                    }
+                }
+                
+                // Update price details
+                const detailsContainer = card.querySelector('.price-details');
+                if (detailsContainer) {
+                    detailsContainer.innerHTML = `
+                        <div class="price-detail-item">
+                            <span class="price-detail-label">High</span>
+                            <span class="price-detail-value">${data.high || '--'}</span>
+                        </div>
+                        <div class="price-detail-item">
+                            <span class="price-detail-label">Low</span>
+                            <span class="price-detail-value">${data.low || '--'}</span>
+                        </div>
+                        <div class="price-detail-item">
+                            <span class="price-detail-label">Previous</span>
+                            <span class="price-detail-value">${data.previousClose || '--'}</span>
+                        </div>
+                    `;
+                }
+                
+                console.log(`✅ Updated ${displayName} card`);
+                
+            } catch (error) {
+                console.error(`❌ Error updating ${displayName} card:`, error);
+            }
+        }
+
+        // Format price for display
+        function formatPrice(price) {
+            if (price === null || price === undefined || price === '') return '--';
+            if (typeof price === 'string') return price;
+            if (typeof price === 'number') return price.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+            return '--';
+        }
+
+        // Update last update time display
+        function updateLastUpdateTime(status) {
+            const lastUpdateElement = document.getElementById('last-update');
+            if (lastUpdateElement) {
+                const now = new Date();
+                const timeString = now.toLocaleTimeString('en-US', { 
+                    hour12: true, 
+                    hour: 'numeric', 
+                    minute: '2-digit' 
+                });
+                lastUpdateElement.textContent = `${status} at ${timeString}`;
+                lastUpdateElement.style.color = status.includes('failed') ? '#ff4757' : 'var(--text-muted)';
+            }
+        }
+
+        // Add click-to-copy functionality for prices
+        document.querySelectorAll('.current-price, .net-change').forEach(element => {
+            element.style.cursor = 'pointer';
+            element.title = 'Click to copy';
+            
+            element.addEventListener('click', function() {
+                const text = this.textContent.replace(/[^0-9.-]/g, '');
+                
+                // Use modern clipboard API if available to prevent highlighting
+                if (navigator.clipboard && window.isSecureContext) {
+                    navigator.clipboard.writeText(text).then(() => {
+                        showNotification('Price copied to clipboard', 'success');
+                    }).catch(() => {
+                        fallbackCopyTextToClipboard(text, this);
+                    });
+                } else {
+                    fallbackCopyTextToClipboard(text, this);
+                }
+            });
+        });
+
+        // Animate stats on load
+        document.querySelectorAll('.stat-number').forEach((element, index) => {
+            const finalValue = element.textContent;
+            const isNumber = !isNaN(finalValue.replace(/[^0-9.-]/g, ''));
+            
+            if (isNumber) {
+                element.textContent = '0';
+                setTimeout(() => {
+                    animateNumber(element, 0, parseFloat(finalValue.replace(/[^0-9.-]/g, '')), 1000, finalValue);
+                }, index * 200);
+            }
+        });
+
+        function animateNumber(element, start, end, duration, originalText) {
+            const startTime = Date.now();
+            const range = end - start;
+            
+            function update() {
+                const now = Date.now();
+                const elapsed = now - startTime;
+                const progress = Math.min(elapsed / duration, 1);
+                
+                const current = start + (range * easeOutCubic(progress));
+                
+                if (originalText.includes('%')) {
+                    element.textContent = current.toFixed(1) + '%';
+                } else if (originalText.includes('$')) {
+                    element.textContent = '$' + current.toFixed(0);
+                } else {
+                    element.textContent = Math.round(current);
+                }
+                
+                if (progress < 1) {
+                    requestAnimationFrame(update);
+                } else {
+                    element.textContent = originalText;
+                }
+            }
+            
+            update();
+        }
+
+        function easeOutCubic(t) {
+            return 1 - Math.pow(1 - t, 3);
+        }
+
+        // Add click-to-copy functionality for all market data values
+        function addCopyToClickFunctionality() {
+            // Select all elements that contain market data values
+            const copyableSelectors = [
+                '.current-price',         // Current price
+                '.net-change',            // Net change
+                '.change-indicator',      // Change percentage
+                '.price-detail-item'      // High, Low, Previous values (new structure)
+            ];
+
+            copyableSelectors.forEach(selector => {
+                const elements = document.querySelectorAll(selector);
+                elements.forEach(element => {
+                    // Add copy styling
+                    element.style.cursor = 'pointer';
+                    element.style.transition = 'all 0.2s ease';
+                    element.title = 'Click to copy';
+                    
+                    // Add click-to-copy functionality
+                    element.addEventListener('click', function() {
+                        let textToCopy;
+                        let cleanText;
+                        
+                        // Special handling for price-detail-items (High, Low, Previous)
+                        if (this.classList.contains('price-detail-item')) {
+                            // Get the value from the price-detail-value span
+                            const valueElement = this.querySelector('.price-detail-value');
+                            textToCopy = valueElement ? valueElement.textContent.trim() : this.textContent.trim();
+                            cleanText = textToCopy.replace(/[^\d.]/g, '');
+                        } else {
+                            // For other elements, clean up normally (remove symbols and commas, keep only numbers and basic formatting)
+                            textToCopy = this.textContent.trim();
+                            cleanText = textToCopy.replace(/[^\d.+\-]/g, '');
+                        }
+                        
+                        // Copy to clipboard
+                        if (navigator.clipboard && window.isSecureContext) {
+                            // Modern clipboard API
+                            navigator.clipboard.writeText(cleanText).then(() => {
+                                showCopyNotification(this, cleanText);
+                            }).catch(() => {
+                                fallbackCopyTextToClipboard(cleanText, this);
+                            });
+                        } else {
+                            // Fallback for older browsers
+                            fallbackCopyTextToClipboard(cleanText, this);
+                        }
+                    });
+                });
+            });
+        }
+
+        // Fallback copy method for older browsers
+        function fallbackCopyTextToClipboard(text, element) {
+            const textArea = document.createElement("textarea");
+            textArea.value = text;
+            textArea.style.position = "fixed";
+            textArea.style.opacity = "0";
+            textArea.style.pointerEvents = "none";
+            textArea.style.userSelect = "none";
+            textArea.style.left = "-9999px";
+            textArea.style.top = "-9999px";
+
+            document.body.appendChild(textArea);
+            
+            // Prevent text selection highlighting
+            const selection = window.getSelection();
+            const originalRange = selection.rangeCount > 0 ? selection.getRangeAt(0) : null;
+            
+            // Select and copy the text
+            textArea.select();
+            textArea.setSelectionRange(0, 99999);
+
+            try {
+                const successful = document.execCommand('copy');
+                
+                // Restore original selection to prevent highlighting
+                if (originalRange) {
+                    selection.removeAllRanges();
+                    selection.addRange(originalRange);
+                } else {
+                    selection.removeAllRanges();
+                }
+                
+                if (successful) {
+                    showCopyNotification(element, text);
+                }
+            } catch (err) {
+                console.error('Fallback: Could not copy text: ', err);
+                
+                // Restore original selection even on error
+                if (originalRange) {
+                    selection.removeAllRanges();
+                    selection.addRange(originalRange);
+                } else {
+                    selection.removeAllRanges();
+                }
+            }
+
+            document.body.removeChild(textArea);
+        }
+
+        // Show copy notification
+        function showCopyNotification(element, copiedText) {
+            // Create notification element
+            const notification = document.createElement('div');
+            notification.textContent = `Copied: ${copiedText}`;
+            notification.style.cssText = `
+                position: absolute;
+                background: linear-gradient(135deg, rgba(212, 175, 55, 0.95), rgba(244, 233, 113, 0.95));
+                color: #000;
+                padding: 6px 12px;
+                border-radius: 8px;
+                font-size: 12px;
+                font-weight: 700;
+                z-index: 10000;
+                pointer-events: none;
+                white-space: nowrap;
+                box-shadow: 0 4px 15px rgba(212, 175, 55, 0.4);
+                border: 1px solid rgba(212, 175, 55, 0.6);
+            `;
+            
+            // Position near the clicked element
+            const rect = element.getBoundingClientRect();
+            notification.style.left = (rect.left + window.scrollX) + 'px';
+            notification.style.top = (rect.top + window.scrollY - 35) + 'px';
+            
+            document.body.appendChild(notification);
+            
+            // Animate in
+            notification.style.opacity = '0';
+            notification.style.transform = 'translateY(10px) scale(0.8)';
+            notification.style.transition = 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)';
+            
+            setTimeout(() => {
+                notification.style.opacity = '1';
+                notification.style.transform = 'translateY(0) scale(1)';
+            }, 10);
+            
+            // Remove after 1.5 seconds
+            setTimeout(() => {
+                notification.style.opacity = '0';
+                notification.style.transform = 'translateY(-10px) scale(0.9)';
+                setTimeout(() => {
+                    if (notification.parentNode) {
+                        document.body.removeChild(notification);
+                    }
+                }, 300);
+            }, 1500);
+            
+            // Add subtle scale animation only (no background color change)
+            element.style.transform = 'scale(1.02)';
+            
+            setTimeout(() => {
+                element.style.transform = 'scale(1)';
+            }, 200);
+        }
+
+        // Initialize copy functionality after DOM is loaded and market data is updated
+        setTimeout(() => {
+            addCopyToClickFunctionality();
+            console.log('✅ Click-to-copy functionality added to all market data values');
+        }, 1000);
+
+        // Re-add copy functionality when market data is updated
+        const originalUpdateMarketCards = updateMarketCards;
+        updateMarketCards = function(marketData) {
+            originalUpdateMarketCards(marketData);
+            // Re-add copy functionality after update
+            setTimeout(() => {
+                addCopyToClickFunctionality();
+            }, 100);
+        };
+    });
+</script>
+{% endblock %}

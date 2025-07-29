@@ -2027,9 +2027,11 @@
                     tickerManager.loadCachedData();
                     tickerManager.displayCachedData();
                     
-                    // Update ticker only when needed
-                    tickerManager.updateIfNeeded();
+                    // Start the interval timer for 5-minute updates
                     setInterval(() => tickerManager.updateIfNeeded(), tickerManager.updateInterval);
+                    
+                    // Log the timer setup
+                    console.log('Ticker interval timer started - will update every 5 minutes');
         
         // Initialize market timer
         updateMarketTimerTop();
@@ -2042,7 +2044,7 @@
             constructor() {
                 this.data = null;
                 this.lastUpdate = 0;
-                this.updateInterval = 15000; // 15 seconds
+                this.updateInterval = 300000; // 5 minutes
                 this.isUpdating = false;
                 this.isInitialLoad = true;
                 this.navigationInProgress = false;
@@ -2066,6 +2068,14 @@
                     sessionStorage.removeItem('wasNavigating');
                     
                     console.log('Page load type:', this.isInitialLoad ? 'Initial Load' : 'Navigation');
+                    
+                    // Reset initial load flag after a delay to allow interval updates
+                    if (this.isInitialLoad) {
+                        setTimeout(() => {
+                            this.isInitialLoad = false;
+                            console.log('Initial load flag reset, allowing interval updates');
+                        }, 2000); // 2 second delay
+                    }
                 });
                 
                 // Detect programmatic navigation
@@ -2170,7 +2180,7 @@
                 }
                 
                 this.isUpdating = true;
-                console.log('Fetching new ticker data...');
+                console.log('🔄 Fetching new ticker data via 5-minute interval...');
                 
                 fetch('/api/live_prices')
                     .then(response => response.json())
@@ -2232,6 +2242,45 @@
         // Global debug functions for ticker management
         window.forceRefreshTicker = () => tickerManager.forceRefresh();
         window.clearTickerCache = () => tickerManager.clearCache();
+        window.testTickerAPI = () => {
+            console.log('🧪 Testing ticker API call...');
+            tickerManager.lastUpdate = 0; // Force immediate update
+            tickerManager.updateIfNeeded();
+        };
+        
+        window.debugTickerData = () => {
+            console.log('🔍 Debugging ticker data...');
+            fetch('/api/live_prices')
+                .then(response => response.json())
+                .then(data => {
+                    console.log('📊 Raw API Response:', data);
+                    console.log('📈 NASDAQ Data:', data.nasdaq);
+                    console.log('🥇 GOLD Data:', data.gold);
+                    console.log('📊 DOW Data:', data.dow);
+                    
+                    // Check if all data is the same
+                    if (data.nasdaq && data.gold && data.dow) {
+                        const nasdaqPrice = data.nasdaq.price;
+                        const goldPrice = data.gold.price;
+                        const dowPrice = data.dow.price;
+                        
+                        console.log('🔍 Price Comparison:');
+                        console.log('NASDAQ Price:', nasdaqPrice);
+                        console.log('GOLD Price:', goldPrice);
+                        console.log('DOW Price:', dowPrice);
+                        
+                        if (nasdaqPrice === goldPrice && goldPrice === dowPrice) {
+                            console.log('⚠️ WARNING: All tickers showing same price!');
+                        } else {
+                            console.log('✅ Prices are different - tickers should display correctly');
+                        }
+                    }
+                })
+                .catch(error => {
+                    console.error('❌ Error debugging ticker data:', error);
+                });
+        };
+        window.getTickerStatus = () => tickerManager.getCacheInfo();
         window.getTickerCacheInfo = () => tickerManager.getCacheInfo();
         window.tickerManager = tickerManager; // Expose for advanced debugging
 
@@ -2547,16 +2596,56 @@
             // Remove commas from the copied text
             textToCopy = textToCopy.replace(/,/g, '');
             
+            // Use modern clipboard API if available to prevent highlighting
+            if (navigator.clipboard && window.isSecureContext) {
+                navigator.clipboard.writeText(textToCopy).then(() => {
+                    // Add success animation
+                    element.classList.add('copy-success');
+                    
+                    // Show success message
+                    showAlert('Copied to clipboard!', 'success');
+                    
+                    // Remove animation class after animation completes
+                    setTimeout(() => {
+                        element.classList.remove('copy-success');
+                    }, 600);
+                }).catch(err => {
+                    console.error('Failed to copy: ', err);
+                    fallbackCopyBase(textToCopy, element);
+                });
+            } else {
+                // Fallback for older browsers
+                fallbackCopyBase(textToCopy, element);
+            }
+        }
+
+        function fallbackCopyBase(textToCopy, element) {
             // Create a temporary textarea to copy the text
             const textarea = document.createElement('textarea');
             textarea.value = textToCopy;
             textarea.style.position = 'fixed';
             textarea.style.opacity = '0';
+            textarea.style.pointerEvents = 'none';
+            textarea.style.userSelect = 'none';
+            textarea.style.left = '-9999px';
             document.body.appendChild(textarea);
+            
+            // Prevent text selection highlighting
+            const selection = window.getSelection();
+            const originalRange = selection.rangeCount > 0 ? selection.getRangeAt(0) : null;
             
             // Select and copy the text
             textarea.select();
+            textarea.setSelectionRange(0, 99999);
             document.execCommand('copy');
+            
+            // Restore original selection to prevent highlighting
+            if (originalRange) {
+                selection.removeAllRanges();
+                selection.addRange(originalRange);
+            } else {
+                selection.removeAllRanges();
+            }
             
             // Remove the temporary textarea
             document.body.removeChild(textarea);

@@ -1,0 +1,26 @@
+[build]
+  publish = "."
+  command = "echo 'No build step required for Flask app'"
+
+[build.environment]
+  PYTHON_VERSION = "3.9"
+
+[[redirects]]
+  from = "/*"
+  to = "/index.html"
+  status = 200
+
+[context.production.environment]
+  NODE_ENV = "production"
+
+# Flask app configuration
+[functions]
+  directory = "core/"
+  
+# Custom headers for API endpoints
+[[headers]]
+  for = "/api/*"
+  [headers.values]
+    Access-Control-Allow-Origin = "*"
+    Access-Control-Allow-Methods = "GET, POST, PUT, DELETE, OPTIONS"
+    Access-Control-Allow-Headers = "Content-Type, Authorization"
