@@ -1,0 +1,82 @@
+{
+  "date": "2025-07-30",
+  "signals": [
+    {
+      "signal_date": "2025-07-30",
+      "created_at": "2025-07-30T14:14:31.021552",
+      "signal": {
+        "symbol": "NASDAQ",
+        "display_name": "NAS100",
+        "bias": "SHORT",
+        "current_value": 23336.25,
+        "net_change": -20.02,
+        "take_profit": 23356.27,
+        "entry1": 23298.91,
+        "entry2": 23336.25,
+        "sl_tight": 23436.25,
+        "sl_wide": 23536.25,
+        "probability_percentage": 75,
+        "cv_position": 0.16,
+        "generated_at": "2025-07-30T14:14:31.021546"
+      }
+    },
+    {
+      "signal_date": "2025-07-30",
+      "created_at": "2025-07-30T14:15:18.356239",
+      "signal": {
+        "symbol": "NASDAQ",
+        "display_name": "NAS100",
+        "bias": "SHORT",
+        "current_value": 23336.25,
+        "net_change": -20.02,
+        "take_profit": 23356.27,
+        "entry1": 23298.91,
+        "entry2": 23336.25,
+        "sl_tight": 23436.25,
+        "sl_wide": 23536.25,
+        "probability_percentage": 75,
+        "cv_position": 0.16,
+        "generated_at": "2025-07-30T14:15:17.733335"
+      }
+    },
+    {
+      "signal_date": "2025-07-30",
+      "created_at": "2025-07-30T14:22:47.737551",
+      "signal": {
+        "symbol": "NASDAQ",
+        "display_name": "NAS100",
+        "bias": "SHORT",
+        "current_value": 23336.25,
+        "net_change": -20.02,
+        "take_profit": 23356.27,
+        "entry1": 23298.91,
+        "entry2": 23336.25,
+        "sl_tight": 23436.25,
+        "sl_wide": 23536.25,
+        "probability_percentage": 75,
+        "cv_position": 0.16,
+        "generated_at": "2025-07-30T14:22:47.465112"
+      }
+    },
+    {
+      "signal_date": "2025-07-30",
+      "created_at": "2025-07-30T14:23:53.636408",
+      "signal": {
+        "symbol": "NASDAQ",
+        "display_name": "NAS100",
+        "bias": "SHORT",
+        "current_value": 23336.25,
+        "net_change": -20.02,
+        "take_profit": 23356.27,
+        "entry1": 23298.91,
+        "entry2": 23336.25,
+        "sl_tight": 23436.25,
+        "sl_wide": 23536.25,
+        "probability_percentage": 75,
+        "cv_position": 0.16,
+        "generated_at": "2025-07-30T14:23:53.377083"
+      }
+    }
+  ],
+  "count": 4
+}

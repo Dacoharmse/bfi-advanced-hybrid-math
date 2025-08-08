@@ -1,0 +1,340 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Enhanced Trading Instrument Dropdown Demo</title>
+    <style>
+        :root {
+            --golden-primary: #ffd700;
+            --golden-bright: #ffed4e;
+            --text-primary: #ffffff;
+            --text-secondary: #cccccc;
+            --text-muted: #999999;
+        }
+        
+        body {
+            font-family: Arial, sans-serif;
+            background: #1a1a1a;
+            color: #fff;
+            margin: 0;
+            padding: 40px;
+            min-height: 100vh;
+        }
+        
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+            background: rgba(26, 26, 26, 0.9);
+            border-radius: 16px;
+            padding: 40px;
+            border: 1px solid rgba(255, 215, 0, 0.2);
+        }
+        
+        h1 {
+            color: #ffd700;
+            text-align: center;
+            margin-bottom: 40px;
+            font-size: 32px;
+        }
+        
+        .comparison {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 40px;
+            margin-bottom: 40px;
+        }
+        
+        .dropdown-section {
+            background: rgba(255, 255, 255, 0.02);
+            border: 1px solid rgba(255, 215, 0, 0.2);
+            border-radius: 12px;
+            padding: 30px;
+        }
+        
+        .dropdown-section h3 {
+            color: #ffd700;
+            margin: 0 0 20px 0;
+            text-align: center;
+        }
+        
+        .input-group {
+            margin-bottom: 20px;
+        }
+        
+        .input-group label {
+            display: block;
+            font-size: 14px;
+            font-weight: 600;
+            color: var(--text-primary);
+            margin-bottom: 8px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        
+        /* Basic dropdown styling (old) */
+        .instrument-select-old {
+            width: 100%;
+            padding: 12px 16px;
+            background: rgba(255, 255, 255, 0.02);
+            border: 1px solid rgba(255, 215, 0, 0.3);
+            border-radius: 8px;
+            color: var(--text-primary);
+            font-size: 14px;
+            transition: all 0.3s ease;
+            backdrop-filter: blur(5px);
+        }
+        
+        /* Enhanced Trading Instrument Dropdown Styling (new) */
+        .instrument-select {
+            width: 100%;
+            background: linear-gradient(145deg, rgba(26, 26, 26, 0.95) 0%, rgba(20, 20, 20, 0.95) 100%);
+            border: 1px solid rgba(255, 215, 0, 0.4);
+            border-radius: 8px;
+            color: var(--golden-primary);
+            font-weight: 600;
+            font-size: 14px;
+            padding: 12px 16px;
+            cursor: pointer;
+            appearance: none;
+            background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3e%3cpath stroke='%23ffd700' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='M6 8l4 4 4-4'/%3e%3c/svg%3e");
+            background-position: right 12px center;
+            background-repeat: no-repeat;
+            background-size: 16px;
+            padding-right: 40px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+            transition: all 0.3s ease;
+        }
+        
+        .instrument-select:hover {
+            border-color: var(--golden-bright);
+            background: linear-gradient(145deg, rgba(30, 30, 30, 0.95) 0%, rgba(24, 24, 24, 0.95) 100%);
+            box-shadow: 0 4px 12px rgba(255, 215, 0, 0.2);
+            transform: translateY(-1px);
+        }
+        
+        .instrument-select:focus {
+            outline: none;
+            border-color: var(--golden-bright);
+            background: linear-gradient(145deg, rgba(34, 34, 34, 0.95) 0%, rgba(28, 28, 28, 0.95) 100%);
+            box-shadow: 0 0 0 3px rgba(255, 215, 0, 0.3);
+        }
+        
+        /* Enhanced instrument dropdown options */
+        .instrument-select option {
+            background: rgba(26, 26, 26, 0.98);
+            color: var(--text-primary);
+            padding: 12px 16px;
+            border: none;
+            font-weight: 500;
+        }
+        
+        .instrument-select option:hover {
+            background: rgba(255, 215, 0, 0.1);
+            color: var(--golden-primary);
+        }
+        
+        .instrument-select option[value="NASDAQ"] {
+            color: #00bfff;
+        }
+        
+        .instrument-select option[value="DOW"] {
+            color: #ffa726;
+        }
+        
+        .instrument-select option[value="GOLD"] {
+            color: #ffed4e;
+        }
+        
+        .features {
+            background: rgba(0, 255, 136, 0.1);
+            border: 1px solid rgba(0, 255, 136, 0.3);
+            border-radius: 8px;
+            padding: 20px;
+            margin-top: 30px;
+        }
+        
+        .features h3 {
+            color: #00ff88;
+            margin: 0 0 15px 0;
+        }
+        
+        .features ul {
+            margin: 0;
+            padding-left: 20px;
+        }
+        
+        .features li {
+            margin-bottom: 8px;
+            color: #e0e0e0;
+        }
+        
+        .demo-note {
+            background: rgba(255, 215, 0, 0.1);
+            border: 1px solid rgba(255, 215, 0, 0.3);
+            border-radius: 8px;
+            padding: 15px;
+            margin-top: 20px;
+            text-align: center;
+            color: #ffd700;
+        }
+
+        .highlight-box {
+            background: rgba(255, 215, 0, 0.05);
+            border: 1px solid rgba(255, 215, 0, 0.3);
+            border-radius: 8px;
+            padding: 20px;
+            margin-top: 20px;
+        }
+
+        .highlight-box h4 {
+            color: var(--golden-primary);
+            margin: 0 0 15px 0;
+        }
+
+        .code-block {
+            background: rgba(0, 0, 0, 0.5);
+            border: 1px solid rgba(255, 215, 0, 0.2);
+            border-radius: 4px;
+            padding: 10px;
+            font-family: monospace;
+            font-size: 12px;
+            color: #e0e0e0;
+            margin-top: 10px;
+            overflow-x: auto;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🎨 Enhanced Trading Instrument Dropdown</h1>
+        
+        <div class="comparison">
+            <div class="dropdown-section">
+                <h3>❌ Before (Basic)</h3>
+                <div class="input-group">
+                    <label>Trading Instrument</label>
+                    <select class="instrument-select-old">
+                        <option value="NASDAQ">NASDAQ (NAS100)</option>
+                        <option value="DOW">DOW JONES (US30)</option>
+                        <option value="GOLD">GOLD (XAUUSD)</option>
+                    </select>
+                </div>
+            </div>
+            
+            <div class="dropdown-section">
+                <h3>✅ After (Enhanced)</h3>
+                <div class="input-group">
+                    <label>Trading Instrument</label>
+                    <select class="instrument-select">
+                        <option value="NASDAQ">NASDAQ (NAS100)</option>
+                        <option value="DOW">DOW JONES (US30)</option>
+                        <option value="GOLD">GOLD (XAUUSD)</option>
+                    </select>
+                </div>
+            </div>
+        </div>
+        
+        <div class="features">
+            <h3>✨ Enhanced Features</h3>
+            <ul>
+                <li><strong>Premium Gradient Background:</strong> Modern dark gradient with depth and sophistication</li>
+                <li><strong>Golden Border & Accents:</strong> Consistent with the app's golden theme</li>
+                <li><strong>Custom Dropdown Arrow:</strong> Golden SVG arrow replacing default browser styling</li>
+                <li><strong>Color-Coded Options:</strong> Blue (NASDAQ), Orange (DOW), Yellow (GOLD)</li>
+                <li><strong>Enhanced Interactions:</strong> Smooth hover animations and focus states</li>
+                <li><strong>Professional Shadow:</strong> Subtle depth with shadow effects</li>
+                <li><strong>Typography Improvements:</strong> Bold golden text for better contrast</li>
+                <li><strong>Visual Feedback:</strong> Hover effects with slight upward movement</li>
+            </ul>
+        </div>
+
+        <div class="highlight-box">
+            <h4>🔧 Implementation Details</h4>
+            <p>The enhanced dropdown includes:</p>
+            <ul>
+                <li><strong>Gradient Background:</strong> Creates visual depth</li>
+                <li><strong>Custom Arrow:</strong> SVG-based golden dropdown indicator</li>
+                <li><strong>Hover Effects:</strong> Interactive feedback with transform animations</li>
+                <li><strong>Focus States:</strong> Clear visual indication when selected</li>
+                <li><strong>Color Coordination:</strong> Each instrument has its own color identity</li>
+            </ul>
+            
+            <div class="code-block">
+/* Key CSS Features */
+.instrument-select {
+    background: linear-gradient(145deg, rgba(26, 26, 26, 0.95) 0%, rgba(20, 20, 20, 0.95) 100%);
+    border: 1px solid rgba(255, 215, 0, 0.4);
+    color: var(--golden-primary);
+    font-weight: 600;
+    appearance: none;
+    background-image: url("data:image/svg+xml,...golden-arrow...");
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+}
+
+.instrument-select:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(255, 215, 0, 0.2);
+}
+            </div>
+        </div>
+        
+        <div class="demo-note">
+            <strong>💡 Demo:</strong> Try hovering over and clicking the enhanced dropdown to experience all the improvements! The enhanced version provides better visual feedback and matches the premium aesthetic of your trading application.
+        </div>
+    </div>
+
+    <script>
+        // Add interactive feedback for enhanced dropdown
+        document.querySelector('.instrument-select').addEventListener('change', function() {
+            const value = this.value;
+            const colors = {
+                'NASDAQ': '#00bfff',
+                'DOW': '#ffa726', 
+                'GOLD': '#ffed4e'
+            };
+            const color = colors[value] || '#ffd700';
+            
+            // Visual feedback
+            this.style.borderColor = color;
+            this.style.boxShadow = `0 0 0 3px ${color}33`;
+            
+            // Show selection notification
+            const notification = document.createElement('div');
+            notification.innerHTML = `📊 Selected: ${value}`;
+            notification.style.cssText = `
+                position: fixed;
+                top: 20px;
+                right: 20px;
+                background: rgba(26, 26, 26, 0.95);
+                color: ${color};
+                padding: 12px 20px;
+                border-radius: 8px;
+                border: 1px solid ${color};
+                z-index: 1000;
+                backdrop-filter: blur(10px);
+                font-weight: bold;
+                animation: slideIn 0.3s ease;
+            `;
+            
+            document.body.appendChild(notification);
+            
+            setTimeout(() => {
+                notification.remove();
+                this.style.borderColor = '';
+                this.style.boxShadow = '';
+            }, 2500);
+        });
+
+        // Add CSS animation for notification
+        const style = document.createElement('style');
+        style.textContent = `
+            @keyframes slideIn {
+                from { transform: translateX(100%); opacity: 0; }
+                to { transform: translateX(0); opacity: 1; }
+            }
+        `;
+        document.head.appendChild(style);
+    </script>
+</body>
+</html>

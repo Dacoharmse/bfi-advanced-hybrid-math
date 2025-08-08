@@ -1,0 +1,874 @@
+{% extends "base_modern.html" %}
+
+{% block title %}New Trade Entry - BFI Signals{% endblock %}
+
+{% block page_title %}Add New Trade{% endblock %}
+
+{% block extra_css %}
+<style>
+    /* Trade Entry Form Specific Styles */
+    .trade-form-container {
+        max-width: 900px;
+        margin: 0 auto;
+    }
+
+    .form-section {
+        background: var(--card-bg);
+        backdrop-filter: blur(10px);
+        border: 1px solid var(--golden-accent);
+        border-radius: var(--border-radius);
+        padding: 24px;
+        margin-bottom: 24px;
+        position: relative;
+        overflow: hidden;
+    }
+
+    .form-section::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        height: 2px;
+        background: linear-gradient(90deg, var(--golden-primary), var(--golden-bright));
+    }
+
+    .section-title {
+        font-size: 16px;
+        font-weight: 600;
+        color: var(--golden-primary);
+        margin-bottom: 16px;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+    }
+
+    .form-label {
+        font-size: 12px;
+        color: var(--text-secondary);
+        margin-bottom: 6px;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        font-weight: 500;
+        display: block;
+    }
+
+    .form-control, .form-select {
+        background: rgba(255, 255, 255, 0.02);
+        border: 1px solid var(--golden-accent);
+        border-radius: 6px;
+        color: var(--text-primary);
+        font-size: 14px;
+        padding: 10px 12px;
+        transition: all 0.3s ease;
+        width: 100%;
+    }
+
+    .form-control:focus, .form-select:focus {
+        outline: none;
+        border-color: var(--golden-secondary);
+        box-shadow: 0 0 0 2px rgba(212, 175, 55, 0.1);
+        background: rgba(255, 255, 255, 0.05);
+    }
+
+    /* Drag and Drop Upload Area */
+    .upload-area {
+        border: 2px dashed var(--golden-accent);
+        border-radius: 8px;
+        padding: 40px 20px;
+        text-align: center;
+        background: rgba(255, 255, 255, 0.02);
+        transition: all 0.3s ease;
+        cursor: pointer;
+        position: relative;
+    }
+
+    .upload-area:hover {
+        border-color: var(--golden-secondary);
+        background: rgba(212, 175, 55, 0.05);
+    }
+
+    .upload-area.dragover {
+        border-color: var(--golden-bright);
+        background: rgba(212, 175, 55, 0.1);
+        transform: scale(1.02);
+    }
+
+    .upload-icon {
+        font-size: 48px;
+        color: var(--golden-primary);
+        margin-bottom: 16px;
+        display: block;
+    }
+
+    .upload-text {
+        color: var(--text-primary);
+        font-size: 16px;
+        font-weight: 600;
+        margin-bottom: 8px;
+    }
+
+    .upload-subtext {
+        color: var(--text-secondary);
+        font-size: 13px;
+    }
+
+    .upload-input {
+        display: none;
+    }
+
+    /* Image Preview */
+    .image-preview {
+        margin-top: 16px;
+        display: none;
+    }
+
+    .preview-container {
+        position: relative;
+        display: inline-block;
+        border-radius: 8px;
+        overflow: hidden;
+        border: 1px solid var(--golden-accent);
+    }
+
+    .preview-image {
+        max-width: 300px;
+        max-height: 200px;
+        display: block;
+    }
+
+    .remove-image {
+        position: absolute;
+        top: 8px;
+        right: 8px;
+        background: rgba(255, 71, 87, 0.9);
+        color: white;
+        border: none;
+        border-radius: 50%;
+        width: 24px;
+        height: 24px;
+        font-size: 12px;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        transition: all 0.2s ease;
+    }
+
+    .remove-image:hover {
+        background: var(--danger-color);
+    }
+
+    /* Profit/Loss Calculator */
+    .pnl-calculator {
+        background: rgba(212, 175, 55, 0.05);
+        border: 1px solid var(--golden-accent);
+        border-radius: 6px;
+        padding: 16px;
+        margin-top: 16px;
+    }
+
+    .calculated-pnl {
+        font-size: 18px;
+        font-weight: 700;
+        text-align: center;
+        padding: 12px;
+        border-radius: 6px;
+        margin-top: 8px;
+    }
+
+    .calculated-pnl.positive {
+        color: var(--success-color);
+        background: rgba(0, 255, 136, 0.1);
+    }
+
+    .calculated-pnl.negative {
+        color: var(--danger-color);
+        background: rgba(255, 71, 87, 0.1);
+    }
+
+    .calculated-pnl.neutral {
+        color: var(--text-muted);
+        background: rgba(255, 255, 255, 0.05);
+    }
+
+    /* Form Validation */
+    .field-error {
+        color: var(--danger-color);
+        font-size: 12px;
+        margin-top: 4px;
+        display: none;
+    }
+
+    .form-control.error, .form-select.error {
+        border-color: var(--danger-color);
+        box-shadow: 0 0 0 2px rgba(255, 71, 87, 0.1);
+    }
+
+    /* Submit Button */
+    .submit-section {
+        text-align: center;
+        margin-top: 32px;
+    }
+
+    .btn-submit {
+        background: var(--golden-primary);
+        color: var(--primary-bg);
+        border: none;
+        border-radius: 8px;
+        padding: 12px 32px;
+        font-size: 16px;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        min-width: 150px;
+        justify-content: center;
+    }
+
+    .btn-submit:hover {
+        background: var(--golden-bright);
+        transform: translateY(-2px);
+        box-shadow: var(--golden-glow);
+    }
+
+    .btn-submit:disabled {
+        opacity: 0.6;
+        cursor: not-allowed;
+        transform: none;
+    }
+
+    .btn-cancel {
+        background: transparent;
+        color: var(--text-secondary);
+        border: 1px solid var(--golden-accent);
+        border-radius: 6px;
+        padding: 8px 16px;
+        font-size: 14px;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        margin-right: 12px;
+    }
+
+    .btn-cancel:hover {
+        background: var(--golden-accent);
+        color: var(--text-primary);
+    }
+
+    /* Loading States */
+    .loading-spinner {
+        display: inline-block;
+        width: 16px;
+        height: 16px;
+        border: 2px solid transparent;
+        border-top: 2px solid currentColor;
+        border-radius: 50%;
+        animation: spin 1s linear infinite;
+    }
+
+    @keyframes spin {
+        to { transform: rotate(360deg); }
+    }
+
+    /* Toast Notifications */
+    .toast-container {
+        position: fixed;
+        top: 20px;
+        right: 20px;
+        z-index: 10000;
+    }
+
+    .toast {
+        background: var(--card-bg);
+        border: 1px solid var(--golden-accent);
+        border-radius: 8px;
+        padding: 16px 20px;
+        margin-bottom: 12px;
+        backdrop-filter: blur(10px);
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        min-width: 300px;
+        transform: translateX(100%);
+        transition: all 0.3s ease;
+    }
+
+    .toast.show {
+        transform: translateX(0);
+    }
+
+    .toast.success {
+        border-left: 4px solid var(--success-color);
+    }
+
+    .toast.error {
+        border-left: 4px solid var(--danger-color);
+    }
+
+    .toast.warning {
+        border-left: 4px solid var(--warning-color);
+    }
+
+    /* Responsive Design */
+    @media (max-width: 768px) {
+        .trade-form-container {
+            margin: 0 16px;
+        }
+        
+        .form-section {
+            padding: 16px;
+        }
+        
+        .upload-area {
+            padding: 24px 16px;
+        }
+        
+        .upload-icon {
+            font-size: 36px;
+        }
+        
+        .preview-image {
+            max-width: 100%;
+            max-height: 150px;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="trade-form-container">
+    <!-- Header -->
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1 style="color: var(--golden-primary); font-size: 28px; font-weight: 700; margin: 0;">
+            ➕ Add New Trade
+        </h1>
+        <a href="/journal" class="btn-cancel" style="text-decoration: none;">
+            ← Back to Journal
+        </a>
+    </div>
+
+    <form id="journalEntryForm" enctype="multipart/form-data">
+        <!-- Trade Basic Information -->
+        <div class="form-section">
+            <div class="section-title">
+                📊 Trade Information
+            </div>
+            <div class="row">
+                <div class="col-md-6 mb-3">
+                    <label for="symbol" class="form-label">Symbol *</label>
+                    <select class="form-select" id="symbol" name="symbol" required>
+                        <option value="">Select Symbol</option>
+                        <option value="NASDAQ">NASDAQ</option>
+                        <option value="US30">US30</option>
+                        <option value="GOLD">GOLD</option>
+                        <option value="EUR/USD">EUR/USD</option>
+                        <option value="GBP/USD">GBP/USD</option>
+                        <option value="USD/JPY">USD/JPY</option>
+                        <option value="BTC/USD">BTC/USD</option>
+                        <option value="ETH/USD">ETH/USD</option>
+                    </select>
+                    <div class="field-error" id="symbol-error">Please select a symbol</div>
+                </div>
+                <div class="col-md-6 mb-3">
+                    <label for="trade_type" class="form-label">Trade Type *</label>
+                    <select class="form-select" id="trade_type" name="trade_type" required>
+                        <option value="">Select Type</option>
+                        <option value="CALL">CALL (Bullish)</option>
+                        <option value="PUT">PUT (Bearish)</option>
+                        <option value="LONG">LONG (Buy)</option>
+                        <option value="SHORT">SHORT (Sell)</option>
+                    </select>
+                    <div class="field-error" id="trade_type-error">Please select a trade type</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Pricing Information -->
+        <div class="form-section">
+            <div class="section-title">
+                💰 Pricing & Position
+            </div>
+            <div class="row">
+                <div class="col-md-4 mb-3">
+                    <label for="entry_price" class="form-label">Entry Price *</label>
+                    <input type="number" class="form-control" id="entry_price" name="entry_price" 
+                           step="0.01" placeholder="0.00" required>
+                    <div class="field-error" id="entry_price-error">Please enter an entry price</div>
+                </div>
+                <div class="col-md-4 mb-3">
+                    <label for="exit_price" class="form-label">Exit Price</label>
+                    <input type="number" class="form-control" id="exit_price" name="exit_price" 
+                           step="0.01" placeholder="0.00">
+                    <div class="field-error" id="exit_price-error"></div>
+                </div>
+                <div class="col-md-4 mb-3">
+                    <label for="quantity" class="form-label">Quantity</label>
+                    <input type="number" class="form-control" id="quantity" name="quantity" 
+                           min="1" value="1">
+                    <div class="field-error" id="quantity-error">Quantity must be at least 1</div>
+                </div>
+            </div>
+            
+            <!-- Real-time P&L Calculator -->
+            <div class="pnl-calculator" style="display: none;" id="pnlCalculator">
+                <div style="font-size: 14px; color: var(--text-secondary); margin-bottom: 8px; text-align: center;">
+                    💡 Calculated Profit/Loss:
+                </div>
+                <div class="calculated-pnl" id="calculatedPnl">
+                    $0.00
+                </div>
+            </div>
+        </div>
+
+        <!-- Trade Outcome -->
+        <div class="form-section">
+            <div class="section-title">
+                📈 Trade Outcome
+            </div>
+            <div class="row">
+                <div class="col-md-6 mb-3">
+                    <label for="outcome" class="form-label">Outcome</label>
+                    <select class="form-select" id="outcome" name="outcome">
+                        <option value="PENDING">⏳ Pending</option>
+                        <option value="WIN">✅ Win</option>
+                        <option value="LOSS">❌ Loss</option>
+                        <option value="BREAKEVEN">⚖️ Breakeven</option>
+                    </select>
+                </div>
+                <div class="col-md-6 mb-3">
+                    <label for="profit_loss" class="form-label">Final Profit/Loss</label>
+                    <input type="number" class="form-control" id="profit_loss" name="profit_loss" 
+                           step="0.01" placeholder="Auto-calculated" readonly>
+                    <small style="color: var(--text-muted); font-size: 11px;">Automatically calculated from prices</small>
+                </div>
+            </div>
+        </div>
+
+        <!-- Trade Timing -->
+        <div class="form-section">
+            <div class="section-title">
+                ⏰ Trade Timing
+            </div>
+            <div class="row">
+                <div class="col-md-4 mb-3">
+                    <label for="trade_date" class="form-label">Trade Date *</label>
+                    <input type="date" class="form-control" id="trade_date" name="trade_date" required>
+                    <div class="field-error" id="trade_date-error">Please select a trade date</div>
+                </div>
+                <div class="col-md-4 mb-3">
+                    <label for="entry_time" class="form-label">Entry Time</label>
+                    <input type="time" class="form-control" id="entry_time" name="entry_time">
+                </div>
+                <div class="col-md-4 mb-3">
+                    <label for="exit_time" class="form-label">Exit Time</label>
+                    <input type="time" class="form-control" id="exit_time" name="exit_time">
+                </div>
+            </div>
+        </div>
+
+        <!-- Chart Upload with Drag & Drop -->
+        <div class="form-section">
+            <div class="section-title">
+                🖼️ TradingView Chart
+            </div>
+            <div class="upload-area" onclick="document.getElementById('chart_image').click()">
+                <span class="upload-icon">📸</span>
+                <div class="upload-text">Drag & Drop Chart Image Here</div>
+                <div class="upload-subtext">or click to browse (PNG, JPG up to 10MB)</div>
+                <input type="file" class="upload-input" id="chart_image" name="chart_image" 
+                       accept="image/png,image/jpeg,image/jpg">
+            </div>
+            <div class="image-preview" id="imagePreview">
+                <div class="preview-container">
+                    <img class="preview-image" id="previewImage" alt="Chart Preview">
+                    <button type="button" class="remove-image" onclick="removeImage()">
+                        ✕
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Trade Notes -->
+        <div class="form-section">
+            <div class="section-title">
+                📝 Trade Notes
+            </div>
+            <div class="mb-3">
+                <label for="notes" class="form-label">Analysis & Notes</label>
+                <textarea class="form-control" id="notes" name="notes" rows="4" 
+                          placeholder="Trade setup analysis, reasons for entry/exit, market conditions, lessons learned..."
+                          style="min-height: 100px; resize: vertical;"></textarea>
+            </div>
+        </div>
+
+        <!-- Submit Section -->
+        <div class="submit-section">
+            <button type="button" class="btn-cancel" onclick="window.history.back()">
+                Cancel
+            </button>
+            <button type="submit" class="btn-submit" id="submitBtn">
+                <span id="submitText">💾 Save Trade</span>
+                <span class="loading-spinner" id="loadingSpinner" style="display: none;"></span>
+            </button>
+        </div>
+    </form>
+</div>
+
+<!-- Toast Container for Notifications -->
+<div class="toast-container" id="toastContainer"></div>
+
+<!-- Success/Error Modals -->
+<div class="modal fade" id="responseModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Trade Entry</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <div id="responseMessage"></div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                <button type="button" class="btn btn-primary" id="redirectBtn" style="display: none;">
+                    Go to Journal
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Initialize form
+    initializeForm();
+    setupDragDrop();
+    setupFormValidation();
+    setupRealTimePnL();
+});
+
+function initializeForm() {
+    // Set today's date as default
+    const today = new Date().toISOString().split('T')[0];
+    document.getElementById('trade_date').value = today;
+    
+    // Set current time as default entry time
+    const now = new Date();
+    const currentTime = now.getHours().toString().padStart(2, '0') + ':' + 
+                       now.getMinutes().toString().padStart(2, '0');
+    document.getElementById('entry_time').value = currentTime;
+}
+
+function setupDragDrop() {
+    const uploadArea = document.querySelector('.upload-area');
+    const fileInput = document.getElementById('chart_image');
+    const imagePreview = document.getElementById('imagePreview');
+    const previewImage = document.getElementById('previewImage');
+
+    // Prevent default drag behaviors
+    ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
+        uploadArea.addEventListener(eventName, preventDefaults, false);
+        document.body.addEventListener(eventName, preventDefaults, false);
+    });
+
+    // Highlight drop area when item is dragged over it
+    ['dragenter', 'dragover'].forEach(eventName => {
+        uploadArea.addEventListener(eventName, highlight, false);
+    });
+
+    ['dragleave', 'drop'].forEach(eventName => {
+        uploadArea.addEventListener(eventName, unhighlight, false);
+    });
+
+    // Handle dropped files
+    uploadArea.addEventListener('drop', handleDrop, false);
+    
+    // Handle file input change
+    fileInput.addEventListener('change', handleFileSelect, false);
+
+    function preventDefaults(e) {
+        e.preventDefault();
+        e.stopPropagation();
+    }
+
+    function highlight(e) {
+        uploadArea.classList.add('dragover');
+    }
+
+    function unhighlight(e) {
+        uploadArea.classList.remove('dragover');
+    }
+
+    function handleDrop(e) {
+        const dt = e.dataTransfer;
+        const files = dt.files;
+        handleFiles(files);
+    }
+
+    function handleFileSelect(e) {
+        const files = e.target.files;
+        handleFiles(files);
+    }
+
+    function handleFiles(files) {
+        if (files.length > 0) {
+            const file = files[0];
+            
+            // Validate file type
+            if (!file.type.startsWith('image/')) {
+                showToast('Please upload an image file (PNG, JPG)', 'error');
+                return;
+            }
+            
+            // Validate file size (10MB)
+            if (file.size > 10 * 1024 * 1024) {
+                showToast('File size must be less than 10MB', 'error');
+                return;
+            }
+            
+            // Show preview
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                previewImage.src = e.target.result;
+                imagePreview.style.display = 'block';
+                uploadArea.style.display = 'none';
+            };
+            reader.readAsDataURL(file);
+            
+            // Set file input
+            const dataTransfer = new DataTransfer();
+            dataTransfer.items.add(file);
+            fileInput.files = dataTransfer.files;
+            
+            showToast('Chart image uploaded successfully', 'success');
+        }
+    }
+}
+
+function removeImage() {
+    const uploadArea = document.querySelector('.upload-area');
+    const imagePreview = document.getElementById('imagePreview');
+    const fileInput = document.getElementById('chart_image');
+    
+    imagePreview.style.display = 'none';
+    uploadArea.style.display = 'block';
+    fileInput.value = '';
+    
+    showToast('Chart image removed', 'warning');
+}
+
+function setupFormValidation() {
+    const form = document.getElementById('journalEntryForm');
+    const requiredFields = ['symbol', 'trade_type', 'entry_price', 'trade_date'];
+    
+    // Real-time validation
+    requiredFields.forEach(fieldName => {
+        const field = document.getElementById(fieldName);
+        const errorDiv = document.getElementById(fieldName + '-error');
+        
+        field.addEventListener('blur', function() {
+            validateField(field, errorDiv);
+        });
+        
+        field.addEventListener('input', function() {
+            if (field.classList.contains('error')) {
+                validateField(field, errorDiv);
+            }
+        });
+    });
+    
+    // Form submission validation
+    form.addEventListener('submit', function(e) {
+        e.preventDefault();
+        
+        let isValid = true;
+        requiredFields.forEach(fieldName => {
+            const field = document.getElementById(fieldName);
+            const errorDiv = document.getElementById(fieldName + '-error');
+            
+            if (!validateField(field, errorDiv)) {
+                isValid = false;
+            }
+        });
+        
+        if (isValid) {
+            submitForm();
+        } else {
+            showToast('Please fill in all required fields', 'error');
+        }
+    });
+}
+
+function validateField(field, errorDiv) {
+    const value = field.value.trim();
+    let isValid = true;
+    let errorMessage = '';
+    
+    if (field.hasAttribute('required') && !value) {
+        isValid = false;
+        errorMessage = 'This field is required';
+    } else if (field.type === 'number' && value && (isNaN(value) || parseFloat(value) <= 0)) {
+        isValid = false;
+        errorMessage = 'Please enter a valid positive number';
+    }
+    
+    if (isValid) {
+        field.classList.remove('error');
+        errorDiv.style.display = 'none';
+    } else {
+        field.classList.add('error');
+        errorDiv.textContent = errorMessage;
+        errorDiv.style.display = 'block';
+    }
+    
+    return isValid;
+}
+
+function setupRealTimePnL() {
+    const entryPrice = document.getElementById('entry_price');
+    const exitPrice = document.getElementById('exit_price');
+    const tradeType = document.getElementById('trade_type');
+    const quantity = document.getElementById('quantity');
+    const outcome = document.getElementById('outcome');
+    const profitLoss = document.getElementById('profit_loss');
+    const pnlCalculator = document.getElementById('pnlCalculator');
+    const calculatedPnl = document.getElementById('calculatedPnl');
+    
+    function calculatePnL() {
+        const entry = parseFloat(entryPrice.value) || 0;
+        const exit = parseFloat(exitPrice.value) || 0;
+        const type = tradeType.value;
+        const qty = parseInt(quantity.value) || 1;
+        const result = outcome.value;
+        
+        if (entry > 0 && exit > 0 && type) {
+            let pnl = 0;
+            
+            if (type === 'LONG' || type === 'CALL') {
+                pnl = (exit - entry) * qty;
+            } else if (type === 'SHORT' || type === 'PUT') {
+                pnl = (entry - exit) * qty;
+            }
+            
+            // Apply outcome logic
+            if (result === 'LOSS') {
+                pnl = Math.abs(pnl) * -1;
+            } else if (result === 'BREAKEVEN') {
+                pnl = 0;
+            }
+            
+            // Update displays
+            calculatedPnl.textContent = `$${pnl.toFixed(2)}`;
+            profitLoss.value = pnl.toFixed(2);
+            
+            // Style based on profit/loss
+            calculatedPnl.className = 'calculated-pnl ' + 
+                (pnl > 0 ? 'positive' : pnl < 0 ? 'negative' : 'neutral');
+            
+            pnlCalculator.style.display = 'block';
+        } else {
+            pnlCalculator.style.display = 'none';
+            profitLoss.value = '';
+        }
+    }
+    
+    // Add event listeners
+    [entryPrice, exitPrice, tradeType, quantity, outcome].forEach(element => {
+        element.addEventListener('input', calculatePnL);
+        element.addEventListener('change', calculatePnL);
+    });
+}
+
+function submitForm() {
+    const form = document.getElementById('journalEntryForm');
+    const submitBtn = document.getElementById('submitBtn');
+    const submitText = document.getElementById('submitText');
+    const loadingSpinner = document.getElementById('loadingSpinner');
+    
+    // Show loading state
+    submitBtn.disabled = true;
+    submitText.style.display = 'none';
+    loadingSpinner.style.display = 'inline-block';
+    
+    // Create FormData
+    const formData = new FormData(form);
+    
+    // Submit via AJAX
+    fetch('/journal/api/create', {
+        method: 'POST',
+        body: formData
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            showToast('Trade saved successfully!', 'success');
+            
+            // Reset form after delay
+            setTimeout(() => {
+                form.reset();
+                initializeForm();
+                removeImage();
+                document.getElementById('pnlCalculator').style.display = 'none';
+            }, 1000);
+            
+            // Show redirect option
+            setTimeout(() => {
+                if (confirm('Trade saved! Would you like to return to the journal?')) {
+                    window.location.href = '/journal';
+                }
+            }, 1500);
+        } else {
+            showToast(`Error: ${data.error}`, 'error');
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        showToast('Network error. Please try again.', 'error');
+    })
+    .finally(() => {
+        // Reset button state
+        submitBtn.disabled = false;
+        submitText.style.display = 'inline';
+        loadingSpinner.style.display = 'none';
+    });
+}
+
+function showToast(message, type = 'info') {
+    const toastContainer = document.getElementById('toastContainer');
+    const toast = document.createElement('div');
+    
+    toast.className = `toast ${type}`;
+    toast.innerHTML = `
+        <div style="font-weight: 600;">
+            ${type === 'success' ? '✅' : type === 'error' ? '❌' : type === 'warning' ? '⚠️' : 'ℹ️'} 
+            ${message}
+        </div>
+    `;
+    
+    toastContainer.appendChild(toast);
+    
+    // Show toast
+    setTimeout(() => toast.classList.add('show'), 100);
+    
+    // Remove toast after 4 seconds
+    setTimeout(() => {
+        toast.classList.remove('show');
+        setTimeout(() => {
+            if (toast.parentNode) {
+                toast.parentNode.removeChild(toast);
+            }
+        }, 300);
+    }, 4000);
+}
+
+// Utility function for number formatting
+function formatCurrency(value) {
+    return new Intl.NumberFormat('en-US', {
+        style: 'currency',
+        currency: 'USD'
+    }).format(value);
+}
+</script>
+{% endblock %}

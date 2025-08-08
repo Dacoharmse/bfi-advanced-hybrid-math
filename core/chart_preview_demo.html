@@ -1,0 +1,534 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TradingView Chart Preview Demo</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            max-width: 900px;
+            margin: 40px auto;
+            padding: 20px;
+            background: #f8f9fa;
+            line-height: 1.6;
+        }
+        
+        .demo-section {
+            background: white;
+            padding: 25px;
+            margin: 20px 0;
+            border-radius: 12px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            border: 1px solid #e9ecef;
+        }
+        
+        .demo-header {
+            color: #2c3e50;
+            margin-bottom: 20px;
+            padding-bottom: 10px;
+            border-bottom: 2px solid #3498db;
+        }
+        
+        .url-input {
+            width: 100%;
+            padding: 12px;
+            margin: 10px 0;
+            border: 2px solid #e9ecef;
+            border-radius: 8px;
+            font-size: 14px;
+            transition: border-color 0.3s ease;
+        }
+        
+        .url-input:focus {
+            outline: none;
+            border-color: #3498db;
+            box-shadow: 0 0 0 3px rgba(52, 152, 219, 0.1);
+        }
+        
+        .test-button {
+            background: #3498db;
+            color: white;
+            border: none;
+            padding: 12px 20px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 600;
+            margin: 5px;
+            transition: all 0.3s ease;
+        }
+        
+        .test-button:hover {
+            background: #2980b9;
+            transform: translateY(-1px);
+        }
+        
+        .sample-button {
+            background: #e74c3c;
+            color: white;
+            border: none;
+            padding: 8px 15px;
+            border-radius: 6px;
+            cursor: pointer;
+            margin: 5px;
+            font-size: 12px;
+            transition: all 0.3s ease;
+        }
+        
+        .sample-button:hover {
+            background: #c0392b;
+        }
+        
+        .result-container {
+            margin: 20px 0;
+            padding: 15px;
+            border-radius: 8px;
+            border: 1px solid #dee2e6;
+        }
+        
+        .result-success {
+            background: #d4edda;
+            border-color: #c3e6cb;
+            color: #155724;
+        }
+        
+        .result-error {
+            background: #f8d7da;
+            border-color: #f5c6cb;
+            color: #721c24;
+        }
+        
+        .result-info {
+            background: #d1ecf1;
+            border-color: #bee5eb;
+            color: #0c5460;
+        }
+        
+        .preview-container {
+            margin: 20px 0;
+            border: 1px solid #dee2e6;
+            border-radius: 8px;
+            overflow: hidden;
+        }
+        
+        .preview-header {
+            background: #f8f9fa;
+            padding: 10px 15px;
+            border-bottom: 1px solid #dee2e6;
+            font-weight: 600;
+            color: #495057;
+        }
+        
+        .chart-preview {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            min-height: 200px;
+            background: #f8f9fa;
+        }
+        
+        .chart-image {
+            max-width: 100%;
+            max-height: 400px;
+            border-radius: 4px;
+        }
+        
+        .chart-placeholder {
+            text-align: center;
+            color: #6c757d;
+        }
+        
+        .chart-placeholder span {
+            font-size: 48px;
+            display: block;
+            margin-bottom: 10px;
+        }
+        
+        .test-samples {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 15px;
+            margin: 20px 0;
+        }
+        
+        .sample-item {
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 8px;
+            border: 1px solid #e9ecef;
+        }
+        
+        .sample-title {
+            font-weight: 600;
+            color: #495057;
+            margin-bottom: 8px;
+        }
+        
+        .sample-url {
+            font-family: 'Monaco', 'Menlo', monospace;
+            font-size: 12px;
+            color: #6f42c1;
+            word-break: break-all;
+            margin-bottom: 10px;
+        }
+        
+        .status-indicator {
+            display: inline-block;
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            margin-right: 8px;
+        }
+        
+        .status-loading {
+            background: #ffc107;
+            animation: pulse 1.5s infinite;
+        }
+        
+        .status-success {
+            background: #28a745;
+        }
+        
+        .status-error {
+            background: #dc3545;
+        }
+        
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+        
+        .features-list {
+            background: #e8f5e8;
+            border: 1px solid #c3e6cb;
+            border-radius: 8px;
+            padding: 20px;
+            margin: 20px 0;
+        }
+        
+        .features-list h4 {
+            color: #155724;
+            margin-bottom: 15px;
+        }
+        
+        .features-list ul {
+            list-style: none;
+            padding: 0;
+        }
+        
+        .features-list li {
+            padding: 5px 0;
+            color: #155724;
+        }
+        
+        .features-list li:before {
+            content: "✅ ";
+            margin-right: 8px;
+        }
+    </style>
+</head>
+<body>
+    <h1>TradingView Chart Preview - Fixed Implementation</h1>
+    
+    <div class="features-list">
+        <h4>🔧 Fixes Implemented</h4>
+        <ul>
+            <li>Correct URL conversion from TradingView chart links to S3 image URLs</li>
+            <li>Support for multiple TradingView URL formats (/x/, /chart/, direct images)</li>
+            <li>Proper error handling with timeout and fallback display</li>
+            <li>Loading states and user feedback</li>
+            <li>Console logging for debugging</li>
+            <li>Better placeholder text and user guidance</li>
+        </ul>
+    </div>
+    
+    <div class="demo-section">
+        <h2 class="demo-header">🧪 Test Chart URL Conversion</h2>
+        <input type="text" id="testUrl" class="url-input" 
+               placeholder="Enter TradingView chart URL or direct image URL">
+        <button onclick="testConversion()" class="test-button">Test Conversion</button>
+        <button onclick="clearTest()" class="test-button" style="background: #6c757d;">Clear</button>
+        
+        <div id="result" class="result-container" style="display: none;"></div>
+        
+        <div class="preview-container" id="previewContainer" style="display: none;">
+            <div class="preview-header">
+                <span id="previewStatus">Chart Preview</span>
+            </div>
+            <div class="chart-preview" id="chartPreview">
+                <div class="chart-placeholder" id="chartPlaceholder">
+                    <span>📊</span>
+                    <p>Chart will appear here</p>
+                </div>
+                <img id="chartImage" class="chart-image" style="display: none;">
+            </div>
+        </div>
+    </div>
+    
+    <div class="demo-section">
+        <h2 class="demo-header">📝 Sample URLs to Test</h2>
+        <div class="test-samples">
+            <div class="sample-item">
+                <div class="sample-title">Snapshot URL (/x/)</div>
+                <div class="sample-url">https://tradingview.com/x/m7azfyek/</div>
+                <button onclick="testSampleUrl('https://tradingview.com/x/m7azfyek/')" class="sample-button">Test</button>
+            </div>
+            
+            <div class="sample-item">
+                <div class="sample-title">Chart URL with Symbol</div>
+                <div class="sample-url">https://tradingview.com/chart/BTCUSD/xyz789/</div>
+                <button onclick="testSampleUrl('https://tradingview.com/chart/BTCUSD/xyz789/')" class="sample-button">Test</button>
+            </div>
+            
+            <div class="sample-item">
+                <div class="sample-title">Layout ID URL</div>
+                <div class="sample-url">https://tradingview.com/chart/def456/</div>
+                <button onclick="testSampleUrl('https://tradingview.com/chart/def456/')" class="sample-button">Test</button>
+            </div>
+            
+            <div class="sample-item">
+                <div class="sample-title">Direct S3 URL</div>
+                <div class="sample-url">https://s3.tradingview.com/snapshots/a/abc123.png</div>
+                <button onclick="testSampleUrl('https://s3.tradingview.com/snapshots/a/abc123.png')" class="sample-button">Test</button>
+            </div>
+            
+            <div class="sample-item">
+                <div class="sample-title">Direct Image URL</div>
+                <div class="sample-url">https://example.com/chart.png</div>
+                <button onclick="testSampleUrl('https://example.com/chart.png')" class="sample-button">Test</button>
+            </div>
+            
+            <div class="sample-item">
+                <div class="sample-title">Invalid URL</div>
+                <div class="sample-url">https://invalid-chart-url.com</div>
+                <button onclick="testSampleUrl('https://invalid-chart-url.com')" class="sample-button">Test</button>
+            </div>
+        </div>
+    </div>
+    
+    <div class="demo-section">
+        <h2 class="demo-header">📋 URL Conversion Patterns</h2>
+        <table style="width: 100%; border-collapse: collapse;">
+            <thead>
+                <tr style="background: #f8f9fa;">
+                    <th style="padding: 12px; text-align: left; border: 1px solid #dee2e6;">Input Pattern</th>
+                    <th style="padding: 12px; text-align: left; border: 1px solid #dee2e6;">Output Pattern</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td style="padding: 10px; border: 1px solid #dee2e6; font-family: monospace; font-size: 12px;">
+                        tradingview.com/x/<strong>[ID]</strong>
+                    </td>
+                    <td style="padding: 10px; border: 1px solid #dee2e6; font-family: monospace; font-size: 12px;">
+                        s3.tradingview.com/snapshots/<strong>[first_letter]</strong>/<strong>[ID]</strong>.png
+                    </td>
+                </tr>
+                <tr>
+                    <td style="padding: 10px; border: 1px solid #dee2e6; font-family: monospace; font-size: 12px;">
+                        tradingview.com/chart/[symbol]/<strong>[ID]</strong>
+                    </td>
+                    <td style="padding: 10px; border: 1px solid #dee2e6; font-family: monospace; font-size: 12px;">
+                        s3.tradingview.com/snapshots/<strong>[first_letter]</strong>/<strong>[ID]</strong>.png
+                    </td>
+                </tr>
+                <tr>
+                    <td style="padding: 10px; border: 1px solid #dee2e6; font-family: monospace; font-size: 12px;">
+                        tradingview.com/chart/<strong>[ID]</strong>
+                    </td>
+                    <td style="padding: 10px; border: 1px solid #dee2e6; font-family: monospace; font-size: 12px;">
+                        s3.tradingview.com/snapshots/<strong>[first_letter]</strong>/<strong>[ID]</strong>.png
+                    </td>
+                </tr>
+                <tr>
+                    <td style="padding: 10px; border: 1px solid #dee2e6; font-family: monospace; font-size: 12px;">
+                        s3.tradingview.com/snapshots/...
+                    </td>
+                    <td style="padding: 10px; border: 1px solid #dee2e6; font-family: monospace; font-size: 12px;">
+                        <em>No conversion (direct URL)</em>
+                    </td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+    
+    <script>
+        // Implement the same conversion logic as in the trading journal modal
+        function convertTradingViewUrl(url) {
+            try {
+                console.log('🔄 Converting TradingView URL:', url);
+                
+                // Handle TradingView snapshot URLs: tradingview.com/x/[ID]
+                const snapshotMatch = url.match(/tradingview\.com\/x\/([a-zA-Z0-9]+)/);
+                if (snapshotMatch) {
+                    const chartId = snapshotMatch[1];
+                    const firstLetter = chartId.charAt(0).toLowerCase();
+                    const convertedUrl = `https://s3.tradingview.com/snapshots/${firstLetter}/${chartId}.png`;
+                    console.log('📊 Snapshot URL converted:', convertedUrl);
+                    return convertedUrl;
+                }
+                
+                // Handle TradingView chart URLs: tradingview.com/chart/[symbol]/[ID]
+                const chartMatch = url.match(/tradingview\.com\/chart\/[^\/]+\/([a-zA-Z0-9]+)/);
+                if (chartMatch) {
+                    const chartId = chartMatch[1];
+                    const firstLetter = chartId.charAt(0).toLowerCase();
+                    const convertedUrl = `https://s3.tradingview.com/snapshots/${firstLetter}/${chartId}.png`;
+                    console.log('📈 Chart URL converted:', convertedUrl);
+                    return convertedUrl;
+                }
+                
+                // Handle TradingView share URLs with layout IDs
+                const layoutMatch = url.match(/tradingview\.com\/chart\/([a-zA-Z0-9]+)/);
+                if (layoutMatch) {
+                    const chartId = layoutMatch[1];
+                    const firstLetter = chartId.charAt(0).toLowerCase();
+                    const convertedUrl = `https://s3.tradingview.com/snapshots/${firstLetter}/${chartId}.png`;
+                    console.log('🔗 Layout URL converted:', convertedUrl);
+                    return convertedUrl;
+                }
+                
+                // Handle direct S3 TradingView URLs
+                if (url.includes('s3.tradingview.com/snapshots/')) {
+                    console.log('🎯 Direct S3 URL detected:', url);
+                    return url;
+                }
+                
+                // Handle other TradingView image URLs
+                if (url.includes('tradingview.com') && url.includes('.png')) {
+                    console.log('🖼️ Direct TradingView image URL detected:', url);
+                    return url;
+                }
+                
+                console.warn('❓ Unable to convert TradingView URL - no matching pattern:', url);
+                return null;
+            } catch (error) {
+                console.error('❌ Error converting TradingView URL:', error);
+                return null;
+            }
+        }
+        
+        function testConversion() {
+            const url = document.getElementById('testUrl').value.trim();
+            const resultDiv = document.getElementById('result');
+            const previewContainer = document.getElementById('previewContainer');
+            const previewStatus = document.getElementById('previewStatus');
+            const chartImage = document.getElementById('chartImage');
+            const chartPlaceholder = document.getElementById('chartPlaceholder');
+            
+            if (!url) {
+                showResult('Please enter a URL to test', 'error');
+                return;
+            }
+            
+            // Show loading state
+            showResult('Testing URL conversion...', 'info');
+            previewContainer.style.display = 'block';
+            chartImage.style.display = 'none';
+            chartPlaceholder.style.display = 'block';
+            chartPlaceholder.innerHTML = `
+                <span class="status-indicator status-loading"></span>
+                <span>⏳</span>
+                <p>Loading chart preview...</p>
+            `;
+            previewStatus.innerHTML = '<span class="status-indicator status-loading"></span>Loading...';
+            
+            // Test conversion
+            let imageUrl = url;
+            let conversionResult = '';
+            
+            if (url.match(/\.(jpg|jpeg|png|gif|webp)(\?.*)?$/i)) {
+                conversionResult = `Direct image URL detected: ${url}`;
+                testImageLoad(imageUrl, 'Direct Image');
+            } else if (url.includes('tradingview.com')) {
+                const convertedUrl = convertTradingViewUrl(url);
+                if (convertedUrl) {
+                    imageUrl = convertedUrl;
+                    conversionResult = `TradingView URL converted:<br>
+                                      <strong>Original:</strong> <code>${url}</code><br>
+                                      <strong>Converted:</strong> <code>${convertedUrl}</code>`;
+                    testImageLoad(imageUrl, 'Converted URL');
+                } else {
+                    conversionResult = `Unable to convert TradingView URL: ${url}`;
+                    showResult(conversionResult, 'error');
+                    showChartAsLink();
+                    return;
+                }
+            } else {
+                conversionResult = `URL does not appear to be a TradingView chart: ${url}`;
+                showResult(conversionResult, 'error');
+                showChartAsLink();
+                return;
+            }
+            
+            showResult(conversionResult, 'success');
+        }
+        
+        function testImageLoad(imageUrl, type) {
+            const previewStatus = document.getElementById('previewStatus');
+            const chartImage = document.getElementById('chartImage');
+            const chartPlaceholder = document.getElementById('chartPlaceholder');
+            
+            const testImage = new Image();
+            testImage.onload = () => {
+                chartImage.src = imageUrl;
+                chartImage.style.display = 'block';
+                chartPlaceholder.style.display = 'none';
+                previewStatus.innerHTML = `<span class="status-indicator status-success"></span>${type} - Image loaded successfully`;
+                appendResult('<br><strong>✅ Image loaded successfully!</strong>', 'success');
+            };
+            
+            testImage.onerror = () => {
+                previewStatus.innerHTML = `<span class="status-indicator status-error"></span>${type} - Failed to load`;
+                showChartAsLink();
+                appendResult('<br><strong>❌ Failed to load image</strong>', 'error');
+            };
+            
+            setTimeout(() => {
+                if (chartPlaceholder.innerHTML.includes('Loading')) {
+                    previewStatus.innerHTML = `<span class="status-indicator status-error"></span>${type} - Timeout`;
+                    showChartAsLink();
+                    appendResult('<br><strong>⏰ Image loading timeout (10s)</strong>', 'error');
+                }
+            }, 10000);
+            
+            testImage.src = imageUrl;
+        }
+        
+        function showChartAsLink() {
+            const chartImage = document.getElementById('chartImage');
+            const chartPlaceholder = document.getElementById('chartPlaceholder');
+            
+            chartImage.style.display = 'none';
+            chartPlaceholder.style.display = 'block';
+            chartPlaceholder.innerHTML = `
+                <span>🔗</span>
+                <p>Chart link saved<br><small>Preview not available - Link will open in trading journal</small></p>
+            `;
+        }
+        
+        function testSampleUrl(url) {
+            document.getElementById('testUrl').value = url;
+            testConversion();
+        }
+        
+        function clearTest() {
+            document.getElementById('testUrl').value = '';
+            document.getElementById('result').style.display = 'none';
+            document.getElementById('previewContainer').style.display = 'none';
+        }
+        
+        function showResult(message, type) {
+            const resultDiv = document.getElementById('result');
+            resultDiv.innerHTML = message;
+            resultDiv.className = `result-container result-${type}`;
+            resultDiv.style.display = 'block';
+        }
+        
+        function appendResult(message, type) {
+            const resultDiv = document.getElementById('result');
+            resultDiv.innerHTML += message;
+        }
+    </script>
+</body>
+</html>

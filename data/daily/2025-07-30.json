@@ -1,0 +1,40 @@
+{
+  "capture_date": "2025-07-30",
+  "captured_at": "2025-07-30T23:23:59.291580",
+  "symbols": {
+    "nasdaq": {
+      "price": "23,345.41",
+      "change": "+37.11",
+      "changePercent": "+0.16%",
+      "rawChange": 37.11,
+      "previousClose": "23,308.30",
+      "high": "23,447.15",
+      "low": "23,226.92",
+      "timestamp": "2025-07-30T23:23:59.291591"
+    },
+    "dow": {
+      "price": "44,461.28",
+      "change": "-171.71",
+      "changePercent": "-0.38%",
+      "rawChange": -171.71,
+      "previousClose": "44,632.99",
+      "high": "44,739.53",
+      "low": "44,261.71",
+      "timestamp": "2025-07-30T23:23:59.291594"
+    },
+    "gold": {
+      "price": "3270.90",
+      "change": "-53.10",
+      "changePercent": "-1.60%",
+      "rawChange": -53.1,
+      "previousClose": "3324.00",
+      "high": "3331.80",
+      "low": "3263.90",
+      "timestamp": "2025-07-30T23:23:59.291596"
+    }
+  },
+  "metadata": {
+    "source": "bfi_signals_local",
+    "symbols_count": 3
+  }
+}

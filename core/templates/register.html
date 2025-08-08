@@ -1,0 +1,429 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Register - BFI Signals AI</title>
+    <link rel="icon" type="image/x-icon" href="{{ url_for('static', filename='favicon.ico') }}">
+    <style>
+        :root {
+            --primary-bg: #0a0a0a;
+            --card-bg: rgba(15, 15, 15, 0.95);
+            --golden-primary: #d4af37;
+            --golden-bright: #f4d03f;
+            --golden-accent: rgba(212, 175, 55, 0.3);
+            --text-primary: #ffffff;
+            --text-secondary: #cccccc;
+            --text-muted: #888888;
+            --success-color: #00ff88;
+            --danger-color: #ff4757;
+            --border-radius: 8px;
+            --box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+            --golden-glow: 0 0 20px rgba(212, 175, 55, 0.3);
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: var(--primary-bg);
+            color: var(--text-primary);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background-image: 
+                radial-gradient(circle at 20% 80%, rgba(212, 175, 55, 0.1) 0%, transparent 50%),
+                radial-gradient(circle at 80% 20%, rgba(212, 175, 55, 0.1) 0%, transparent 50%),
+                radial-gradient(circle at 40% 40%, rgba(212, 175, 55, 0.05) 0%, transparent 50%);
+        }
+
+        .register-container {
+            background: var(--card-bg);
+            backdrop-filter: blur(20px);
+            border: 1px solid var(--golden-accent);
+            border-radius: 16px;
+            padding: 40px;
+            width: 100%;
+            max-width: 420px;
+            box-shadow: var(--box-shadow);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .register-container::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 3px;
+            background: linear-gradient(90deg, var(--golden-primary), var(--golden-bright));
+        }
+
+        .register-header {
+            text-align: center;
+            margin-bottom: 32px;
+        }
+
+        .logo {
+            width: 60px;
+            height: 60px;
+            margin: 0 auto 16px;
+            background: linear-gradient(135deg, var(--golden-primary), var(--golden-bright));
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 24px;
+            font-weight: bold;
+            color: var(--primary-bg);
+        }
+
+        .register-title {
+            font-size: 28px;
+            font-weight: 700;
+            color: var(--text-primary);
+            margin-bottom: 8px;
+        }
+
+        .register-subtitle {
+            color: var(--text-secondary);
+            font-size: 14px;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        .form-group label {
+            display: block;
+            color: var(--text-secondary);
+            font-size: 12px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-bottom: 6px;
+            font-weight: 500;
+        }
+
+        .form-input {
+            width: 100%;
+            padding: 14px 16px;
+            background: rgba(255, 255, 255, 0.02);
+            border: 1px solid var(--golden-accent);
+            border-radius: var(--border-radius);
+            color: var(--text-primary);
+            font-size: 14px;
+            transition: all 0.3s ease;
+            font-family: inherit;
+        }
+
+        .form-input:focus {
+            outline: none;
+            border-color: var(--golden-bright);
+            box-shadow: 0 0 0 2px rgba(212, 175, 55, 0.2);
+            background: rgba(255, 255, 255, 0.05);
+        }
+
+        .form-input::placeholder {
+            color: var(--text-muted);
+        }
+
+        .password-strength {
+            margin-top: 4px;
+            font-size: 11px;
+            display: none;
+        }
+
+        .password-strength.weak {
+            color: var(--danger-color);
+        }
+
+        .password-strength.medium {
+            color: #ffa502;
+        }
+
+        .password-strength.strong {
+            color: var(--success-color);
+        }
+
+        .btn-register {
+            width: 100%;
+            padding: 14px;
+            background: linear-gradient(135deg, var(--golden-primary), var(--golden-bright));
+            color: var(--primary-bg);
+            border: none;
+            border-radius: var(--border-radius);
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-top: 8px;
+        }
+
+        .btn-register:hover {
+            transform: translateY(-1px);
+            box-shadow: var(--golden-glow);
+        }
+
+        .btn-register:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .alert {
+            padding: 12px 16px;
+            border-radius: var(--border-radius);
+            margin-bottom: 20px;
+            font-size: 14px;
+            display: none;
+        }
+
+        .alert-error {
+            background: rgba(255, 71, 87, 0.1);
+            border: 1px solid rgba(255, 71, 87, 0.3);
+            color: var(--danger-color);
+        }
+
+        .alert-success {
+            background: rgba(0, 255, 136, 0.1);
+            border: 1px solid rgba(0, 255, 136, 0.3);
+            color: var(--success-color);
+        }
+
+        .register-footer {
+            text-align: center;
+            margin-top: 24px;
+            padding-top: 20px;
+            border-top: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .register-footer a {
+            color: var(--golden-primary);
+            text-decoration: none;
+            font-size: 14px;
+            font-weight: 500;
+            transition: color 0.3s ease;
+        }
+
+        .register-footer a:hover {
+            color: var(--golden-bright);
+        }
+
+        .loading-spinner {
+            display: none;
+            width: 20px;
+            height: 20px;
+            border: 2px solid transparent;
+            border-top: 2px solid var(--primary-bg);
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin-right: 8px;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        /* Responsive */
+        @media (max-width: 480px) {
+            .register-container {
+                margin: 20px;
+                padding: 32px 24px;
+                max-width: none;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="register-container">
+        <div class="register-header">
+            <div class="logo">BFI</div>
+            <h1 class="register-title">Join BFI Signals</h1>
+            <p class="register-subtitle">Create your account to get started</p>
+        </div>
+
+        <div id="alertContainer" class="alert alert-error">
+            <span id="alertMessage"></span>
+        </div>
+
+        <form id="registerForm">
+            <div class="form-group">
+                <label for="username">Username</label>
+                <input type="text" id="username" name="username" class="form-input" 
+                       placeholder="Choose a username" required minlength="3" maxlength="30">
+            </div>
+
+            <div class="form-group">
+                <label for="email">Email Address</label>
+                <input type="email" id="email" name="email" class="form-input" 
+                       placeholder="Enter your email address" required>
+            </div>
+
+            <div class="form-group">
+                <label for="password">Password</label>
+                <input type="password" id="password" name="password" class="form-input" 
+                       placeholder="Create a strong password" required minlength="6">
+                <div id="passwordStrength" class="password-strength"></div>
+            </div>
+
+            <div class="form-group">
+                <label for="confirmPassword">Confirm Password</label>
+                <input type="password" id="confirmPassword" name="confirmPassword" class="form-input" 
+                       placeholder="Confirm your password" required>
+            </div>
+
+            <button type="submit" class="btn-register" id="registerBtn">
+                <span class="loading-spinner" id="loadingSpinner"></span>
+                <span id="registerBtnText">Create Account</span>
+            </button>
+        </form>
+
+        <div class="register-footer">
+            <p>Already have an account? <a href="{{ url_for('login') }}">Sign in here</a></p>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const registerForm = document.getElementById('registerForm');
+            const registerBtn = document.getElementById('registerBtn');
+            const registerBtnText = document.getElementById('registerBtnText');
+            const loadingSpinner = document.getElementById('loadingSpinner');
+            const alertContainer = document.getElementById('alertContainer');
+            const alertMessage = document.getElementById('alertMessage');
+            const passwordInput = document.getElementById('password');
+            const passwordStrength = document.getElementById('passwordStrength');
+            const confirmPasswordInput = document.getElementById('confirmPassword');
+
+            function showAlert(message, type = 'error') {
+                alertMessage.textContent = message;
+                alertContainer.className = `alert alert-${type}`;
+                alertContainer.style.display = 'block';
+                
+                setTimeout(() => {
+                    alertContainer.style.display = 'none';
+                }, 5000);
+            }
+
+            function setLoading(loading) {
+                registerBtn.disabled = loading;
+                loadingSpinner.style.display = loading ? 'inline-block' : 'none';
+                registerBtnText.textContent = loading ? 'Creating Account...' : 'Create Account';
+            }
+
+            function checkPasswordStrength(password) {
+                const strength = {
+                    score: 0,
+                    feedback: ''
+                };
+
+                if (password.length >= 8) strength.score++;
+                if (/[a-z]/.test(password)) strength.score++;
+                if (/[A-Z]/.test(password)) strength.score++;
+                if (/[0-9]/.test(password)) strength.score++;
+                if (/[^A-Za-z0-9]/.test(password)) strength.score++;
+
+                if (strength.score < 2) {
+                    strength.feedback = 'Weak password';
+                    strength.class = 'weak';
+                } else if (strength.score < 4) {
+                    strength.feedback = 'Medium strength';
+                    strength.class = 'medium';
+                } else {
+                    strength.feedback = 'Strong password';
+                    strength.class = 'strong';
+                }
+
+                return strength;
+            }
+
+            passwordInput.addEventListener('input', function() {
+                const password = passwordInput.value;
+                
+                if (password.length > 0) {
+                    const strength = checkPasswordStrength(password);
+                    passwordStrength.textContent = strength.feedback;
+                    passwordStrength.className = `password-strength ${strength.class}`;
+                    passwordStrength.style.display = 'block';
+                } else {
+                    passwordStrength.style.display = 'none';
+                }
+            });
+
+            registerForm.addEventListener('submit', async function(e) {
+                e.preventDefault();
+                
+                const formData = new FormData(registerForm);
+                const registerData = {
+                    username: formData.get('username'),
+                    email: formData.get('email'),
+                    password: formData.get('password'),
+                    confirmPassword: formData.get('confirmPassword')
+                };
+
+                // Validation
+                if (!registerData.username || !registerData.email || !registerData.password || !registerData.confirmPassword) {
+                    showAlert('Please fill in all fields');
+                    return;
+                }
+
+                if (registerData.username.length < 3) {
+                    showAlert('Username must be at least 3 characters long');
+                    return;
+                }
+
+                if (registerData.password.length < 6) {
+                    showAlert('Password must be at least 6 characters long');
+                    return;
+                }
+
+                if (registerData.password !== registerData.confirmPassword) {
+                    showAlert('Passwords do not match');
+                    return;
+                }
+
+                setLoading(true);
+
+                try {
+                    const response = await fetch('/api/register', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                        },
+                        body: JSON.stringify(registerData)
+                    });
+
+                    const result = await response.json();
+
+                    if (result.success) {
+                        showAlert('Account created successfully! Your account is pending admin approval. You will be notified once approved.', 'success');
+                        
+                        setTimeout(() => {
+                            window.location.href = '/login';
+                        }, 3000);
+                    } else {
+                        showAlert(result.error || 'Registration failed');
+                    }
+                } catch (error) {
+                    console.error('Registration error:', error);
+                    showAlert('Network error. Please try again.');
+                } finally {
+                    setLoading(false);
+                }
+            });
+
+            // Auto-focus username field
+            document.getElementById('username').focus();
+        });
+    </script>
+</body>
+</html>

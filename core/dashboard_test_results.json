@@ -1,0 +1,114 @@
+[
+  {
+    "test": "Endpoint /api/status",
+    "status": "PASS",
+    "timestamp": "2025-08-05T16:56:25.673242",
+    "message": "Response received successfully",
+    "data": null
+  },
+  {
+    "test": "Endpoint /api/dashboard_data",
+    "status": "PASS",
+    "timestamp": "2025-08-05T16:56:25.675103",
+    "message": "Response received successfully",
+    "data": null
+  },
+  {
+    "test": "Endpoint /api/live_market_data",
+    "status": "PASS",
+    "timestamp": "2025-08-05T16:56:25.676741",
+    "message": "Response received successfully",
+    "data": null
+  },
+  {
+    "test": "Endpoint /api/market_data",
+    "status": "PASS",
+    "timestamp": "2025-08-05T16:56:25.678278",
+    "message": "Response received successfully",
+    "data": null
+  },
+  {
+    "test": "Endpoint /api/live_prices",
+    "status": "PASS",
+    "timestamp": "2025-08-05T16:56:33.902625",
+    "message": "Response received successfully",
+    "data": null
+  },
+  {
+    "test": "Endpoint /api/auto_generation_status",
+    "status": "PASS",
+    "timestamp": "2025-08-05T16:56:33.904986",
+    "message": "Response received successfully",
+    "data": null
+  },
+  {
+    "test": "Endpoint /api/market_timer",
+    "status": "PASS",
+    "timestamp": "2025-08-05T16:56:33.906285",
+    "message": "Response received successfully",
+    "data": null
+  },
+  {
+    "test": "Journal /journal/api/statistics",
+    "status": "PASS",
+    "timestamp": "2025-08-05T16:56:33.908136",
+    "message": "Journal endpoint working",
+    "data": null
+  },
+  {
+    "test": "Journal /journal/api/entries",
+    "status": "PASS",
+    "timestamp": "2025-08-05T16:56:33.909959",
+    "message": "Journal endpoint working",
+    "data": null
+  },
+  {
+    "test": "Discord Integration",
+    "status": "PASS",
+    "timestamp": "2025-08-05T16:56:34.368337",
+    "message": "Discord connection successful",
+    "data": null
+  },
+  {
+    "test": "Auth Protection /api/signals/today",
+    "status": "WARN",
+    "timestamp": "2025-08-05T16:56:34.372744",
+    "message": "Endpoint accessible without auth",
+    "data": null
+  },
+  {
+    "test": "Auth Protection /api/signals/stats",
+    "status": "WARN",
+    "timestamp": "2025-08-05T16:56:34.375762",
+    "message": "Endpoint accessible without auth",
+    "data": null
+  },
+  {
+    "test": "Auth Protection /api/signals/week",
+    "status": "WARN",
+    "timestamp": "2025-08-05T16:56:34.378099",
+    "message": "Endpoint accessible without auth",
+    "data": null
+  },
+  {
+    "test": "Market Data Freshness",
+    "status": "PASS",
+    "timestamp": "2025-08-05T16:56:44.292620",
+    "message": "Market data has timestamp",
+    "data": null
+  },
+  {
+    "test": "Market Data Completeness",
+    "status": "PASS",
+    "timestamp": "2025-08-05T16:56:44.292629",
+    "message": "All expected symbols present",
+    "data": null
+  },
+  {
+    "test": "Dashboard Performance",
+    "status": "PASS",
+    "timestamp": "2025-08-05T16:56:44.294954",
+    "message": "Response time: 0.00s",
+    "data": null
+  }
+]

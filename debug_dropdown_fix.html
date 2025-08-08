@@ -1,0 +1,385 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dropdown Debug Fix</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background: #1a1a1a;
+            color: #fff;
+            margin: 0;
+            padding: 20px;
+        }
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            background: rgba(26, 26, 26, 0.9);
+            border-radius: 16px;
+            padding: 20px;
+            border: 1px solid rgba(255, 215, 0, 0.2);
+        }
+        h1 {
+            color: #ffd700;
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        .debug-section {
+            background: rgba(0, 255, 136, 0.1);
+            border: 1px solid rgba(0, 255, 136, 0.3);
+            border-radius: 8px;
+            padding: 16px;
+            margin-bottom: 20px;
+        }
+        .debug-section h3 {
+            color: #00ff88;
+            margin: 0 0 10px 0;
+        }
+        .price-input-container {
+            position: relative;
+            display: flex;
+            align-items: stretch;
+            gap: 0;
+            margin-bottom: 20px;
+        }
+        .price-input-with-dropdown {
+            flex: 1;
+            padding: 12px;
+            background: rgba(255, 255, 255, 0.1);
+            border: 1px solid rgba(255, 215, 0, 0.3);
+            border-top-left-radius: 8px;
+            border-bottom-left-radius: 8px;
+            border-right: none;
+            color: #fff;
+            font-size: 14px;
+        }
+        .price-dropdown-btn {
+            background: rgba(255, 215, 0, 0.1);
+            border: 1px solid rgba(255, 215, 0, 0.3);
+            border-left: none;
+            border-top-right-radius: 8px;
+            border-bottom-right-radius: 8px;
+            color: #ffd700;
+            padding: 12px;
+            cursor: pointer;
+            font-size: 12px;
+            font-weight: bold;
+            min-width: 40px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.3s ease;
+        }
+        .price-dropdown-btn:hover {
+            background: rgba(255, 215, 0, 0.2);
+            border-color: #ffd700;
+        }
+        .price-dropdown {
+            position: absolute;
+            top: 100%;
+            right: 0;
+            background: rgba(26, 26, 26, 0.95);
+            border: 1px solid rgba(255, 215, 0, 0.4);
+            border-radius: 8px;
+            backdrop-filter: blur(10px);
+            z-index: 1000;
+            min-width: 250px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+            display: none;
+            margin-top: 4px;
+        }
+        .price-dropdown.show {
+            display: block;
+            animation: dropdownFadeIn 0.2s ease;
+        }
+        @keyframes dropdownFadeIn {
+            from { opacity: 0; transform: translateY(-10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .price-option {
+            padding: 12px 16px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            border-bottom: 1px solid rgba(255, 215, 0, 0.1);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .price-option:last-child {
+            border-bottom: none;
+        }
+        .price-option:hover {
+            background: rgba(255, 215, 0, 0.1);
+        }
+        .price-option-label {
+            font-weight: 600;
+            color: #fff;
+        }
+        .price-option-value {
+            font-family: monospace;
+            color: #ffd700;
+            font-weight: bold;
+        }
+        .price-option-desc {
+            font-size: 11px;
+            color: #999;
+            margin-top: 2px;
+        }
+        button {
+            background: #ffd700;
+            color: #000;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 8px;
+            cursor: pointer;
+            margin: 10px;
+            font-weight: bold;
+        }
+        button:hover {
+            background: #ffed4e;
+        }
+        .log {
+            background: rgba(0, 0, 0, 0.5);
+            padding: 10px;
+            border-radius: 4px;
+            font-family: monospace;
+            font-size: 12px;
+            max-height: 200px;
+            overflow-y: auto;
+            margin-top: 10px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔧 Dropdown Debug & Fix</h1>
+        
+        <div class="debug-section">
+            <h3>Issue Diagnosis</h3>
+            <p>The dropdown shows "Current Value" correctly but "Previous Close", "Daily High", and "Daily Low" show "--"</p>
+            <p><strong>Root Cause:</strong> Market data missing high/low values, or calculation errors</p>
+        </div>
+        
+        <h3>Test Entry Price Dropdown</h3>
+        <div class="price-input-container">
+            <input type="number" class="price-input-with-dropdown" id="entry-price" placeholder="23,345.41" value="23345.41">
+            <button type="button" class="price-dropdown-btn" data-field="entry">▼</button>
+            <div class="price-dropdown" id="entry-dropdown">
+                <div class="price-option" data-type="cv">
+                    <div>
+                        <div class="price-option-label">Current Value</div>
+                        <div class="price-option-desc">Real-time market price</div>
+                    </div>
+                    <div class="price-option-value" id="entry-cv-value">23345.41</div>
+                </div>
+                <div class="price-option" data-type="prev-close">
+                    <div>
+                        <div class="price-option-label">Previous Close</div>
+                        <div class="price-option-desc">Yesterday's closing price</div>
+                    </div>
+                    <div class="price-option-value" id="entry-prev-value">--</div>
+                </div>
+                <div class="price-option" data-type="daily-high">
+                    <div>
+                        <div class="price-option-label">Daily High</div>
+                        <div class="price-option-desc">Today's highest price</div>
+                    </div>
+                    <div class="price-option-value" id="entry-high-value">--</div>
+                </div>
+                <div class="price-option" data-type="daily-low">
+                    <div>
+                        <div class="price-option-label">Daily Low</div>
+                        <div class="price-option-desc">Today's lowest price</div>
+                    </div>
+                    <div class="price-option-value" id="entry-low-value">--</div>
+                </div>
+            </div>
+        </div>
+        
+        <button onclick="simulateMarketData()">🔄 Simulate Market Data</button>
+        <button onclick="updateDropdownValuesFixed()">🛠️ Fix Dropdown Values</button>
+        <button onclick="debugValues()">🔍 Debug Current Values</button>
+        
+        <div id="log" class="log"></div>
+    </div>
+
+    <script>
+        // Simulate market data similar to your app
+        let marketData = {
+            'NASDAQ': {
+                currentValue: '23,345.41',
+                netChange: '+45.20',
+                changeClass: 'positive',
+                previousClose: '23,300.21', // This should populate Previous Close
+                high: null, // This is likely missing
+                low: null,  // This is likely missing
+                confidence: '85%'
+            }
+        };
+
+        let semiAutoSelectedInstrument = 'NASDAQ';
+
+        function log(message) {
+            const logDiv = document.getElementById('log');
+            logDiv.innerHTML += message + '<br>';
+            logDiv.scrollTop = logDiv.scrollHeight;
+            console.log(message);
+        }
+
+        function simulateMarketData() {
+            log('🎯 Simulating market data...');
+            
+            // Simulate what your backend might return
+            const currentPrice = 23345.41;
+            const netChange = 45.20;
+            const previousClose = currentPrice - netChange; // Calculate from net change
+            
+            marketData.NASDAQ = {
+                currentValue: currentPrice.toLocaleString('en-US', {minimumFractionDigits: 2}),
+                netChange: (netChange >= 0 ? '+' : '') + netChange.toFixed(2),
+                changeClass: netChange >= 0 ? 'positive' : 'negative',
+                previousClose: previousClose.toLocaleString('en-US', {minimumFractionDigits: 2}),
+                high: (currentPrice + Math.abs(netChange) * 1.5).toLocaleString('en-US', {minimumFractionDigits: 2}),
+                low: (currentPrice - Math.abs(netChange) * 1.5).toLocaleString('en-US', {minimumFractionDigits: 2}),
+                confidence: '85%'
+            };
+            
+            log(`✅ Market data simulated: CV=${currentPrice}, NetChange=${netChange}, PrevClose=${previousClose}`);
+            log(`✅ High=${currentPrice + Math.abs(netChange) * 1.5}, Low=${currentPrice - Math.abs(netChange) * 1.5}`);
+        }
+
+        function updateDropdownValuesFixed() {
+            log('🛠️ Fixing dropdown values...');
+            
+            const instrument = 'NASDAQ';
+            const data = marketData[instrument];
+            
+            if (!data) {
+                log('❌ No market data available');
+                return;
+            }
+            
+            // Extract values with proper error handling
+            const currentPrice = parseFloat(data.currentValue.replace(/,/g, ''));
+            const netChange = parseFloat(data.netChange);
+            
+            log(`📊 Current Price: ${currentPrice}, Net Change: ${netChange}`);
+            
+            // Calculate previous close
+            let previousClose = currentPrice - netChange;
+            if (data.previousClose) {
+                const prevCloseStr = data.previousClose.toString().replace(/,/g, '');
+                const prevCloseNum = parseFloat(prevCloseStr);
+                if (!isNaN(prevCloseNum) && prevCloseNum > 0) {
+                    previousClose = prevCloseNum;
+                }
+            }
+            
+            // Calculate or extract high/low
+            let dailyHigh = currentPrice + Math.abs(netChange) * 1.2;
+            let dailyLow = currentPrice - Math.abs(netChange) * 1.2;
+            
+            if (data.high) {
+                const highStr = data.high.toString().replace(/,/g, '');
+                const highNum = parseFloat(highStr);
+                if (!isNaN(highNum) && highNum > 0) {
+                    dailyHigh = highNum;
+                }
+            }
+            if (data.low) {
+                const lowStr = data.low.toString().replace(/,/g, '');
+                const lowNum = parseFloat(lowStr);
+                if (!isNaN(lowNum) && lowNum > 0) {
+                    dailyLow = lowNum;
+                }
+            }
+            
+            log(`📈 Calculated values: PrevClose=${previousClose}, High=${dailyHigh}, Low=${dailyLow}`);
+            
+            // Update dropdown values
+            const updates = {
+                'entry-cv-value': currentPrice,
+                'entry-prev-value': previousClose,
+                'entry-high-value': dailyHigh,
+                'entry-low-value': dailyLow
+            };
+            
+            Object.entries(updates).forEach(([id, value]) => {
+                const element = document.getElementById(id);
+                if (element) {
+                    if (value && !isNaN(value) && value > 0) {
+                        element.textContent = value.toFixed(2);
+                        log(`✅ Updated ${id}: ${value.toFixed(2)}`);
+                    } else {
+                        element.textContent = '--';
+                        log(`⚠️ Invalid value for ${id}: ${value}`);
+                    }
+                } else {
+                    log(`❌ Element not found: ${id}`);
+                }
+            });
+        }
+
+        function debugValues() {
+            log('🔍 Debugging current values...');
+            log('Market Data: ' + JSON.stringify(marketData, null, 2));
+            
+            const dropdownElements = ['entry-cv-value', 'entry-prev-value', 'entry-high-value', 'entry-low-value'];
+            dropdownElements.forEach(id => {
+                const element = document.getElementById(id);
+                if (element) {
+                    log(`${id}: "${element.textContent}"`);
+                } else {
+                    log(`${id}: Element not found`);
+                }
+            });
+        }
+
+        // Setup dropdown functionality
+        document.querySelector('.price-dropdown-btn').addEventListener('click', function(e) {
+            e.preventDefault();
+            e.stopPropagation();
+            const dropdown = document.getElementById('entry-dropdown');
+            dropdown.classList.toggle('show');
+        });
+
+        // Add click handlers for dropdown options
+        document.querySelectorAll('.price-option').forEach(option => {
+            option.addEventListener('click', function(e) {
+                e.preventDefault();
+                e.stopPropagation();
+                
+                const input = document.getElementById('entry-price');
+                const valueElement = this.querySelector('.price-option-value');
+                const labelElement = this.querySelector('.price-option-label');
+                
+                if (input && valueElement) {
+                    const value = valueElement.textContent;
+                    const label = labelElement.textContent;
+                    
+                    if (value !== '--') {
+                        input.value = parseFloat(value).toFixed(2);
+                        log(`Selected ${label}: ${value}`);
+                    } else {
+                        log(`Cannot select ${label}: No valid value`);
+                    }
+                }
+                
+                document.getElementById('entry-dropdown').classList.remove('show');
+            });
+        });
+
+        // Close dropdown when clicking outside
+        document.addEventListener('click', function(e) {
+            if (!e.target.closest('.price-input-container')) {
+                document.getElementById('entry-dropdown').classList.remove('show');
+            }
+        });
+
+        // Initialize
+        log('🚀 Dropdown debug tool initialized');
+        log('ℹ️ Click "Simulate Market Data" then "Fix Dropdown Values" to test the fix');
+    </script>
+</body>
+</html>

@@ -1,0 +1,72 @@
+MANUAL TRADE JOURNAL - COMPREHENSIVE TEST REPORT
+============================================================
+Test Execution Time: 2025-08-02 20:24:46
+Flask Server: http://localhost:5000
+Database: ai_learning.db
+
+BACKEND API TESTS:
+----------------------------------------
+✅ journal_page_load: Journal page loaded successfully (size: 99666 bytes)
+   Timestamp: 2025-08-02 20:24:46
+❌ create_entry: HTTP 404
+   Timestamp: 2025-08-02 20:24:46
+❌ get_entries: HTTP 404
+   Timestamp: 2025-08-02 20:24:46
+❌ get_statistics: HTTP 404
+   Timestamp: 2025-08-02 20:24:46
+
+DATABASE TESTS:
+----------------------------------------
+✅ table_exists: manual_journal_entries table exists
+   Timestamp: 2025-08-02 20:24:46
+✅ table_schema: All 15 expected columns present
+   Timestamp: 2025-08-02 20:24:46
+✅ entry_count: Database contains 3 entries
+   Timestamp: 2025-08-02 20:24:46
+✅ direct_insert: Direct insert successful, ID: 6
+   Timestamp: 2025-08-02 20:24:46
+✅ direct_select: Direct select successful, symbol: DB_TEST
+   Timestamp: 2025-08-02 20:24:46
+✅ direct_update: Updated 1 record(s)
+   Timestamp: 2025-08-02 20:24:46
+✅ direct_delete: Deleted 1 record(s)
+   Timestamp: 2025-08-02 20:24:46
+
+IMAGE UPLOAD TESTS:
+----------------------------------------
+✅ create_test_png: Created PNG test image (284 bytes)
+   Timestamp: 2025-08-02 20:24:46
+✅ create_test_jpeg: Created JPEG test image (1305 bytes)
+   Timestamp: 2025-08-02 20:24:46
+❌ upload_small_test.png: HTTP 404
+   Timestamp: 2025-08-02 20:24:46
+❌ upload_test_chart.jpg: HTTP 404
+   Timestamp: 2025-08-02 20:24:46
+
+SECURITY TESTS:
+----------------------------------------
+✅ malicious_file_upload: Malicious file upload rejected with HTTP error
+   Timestamp: 2025-08-02 20:24:46
+✅ sql_injection_protection: SQL injection attempt blocked, table still exists
+   Timestamp: 2025-08-02 20:24:46
+⚠️ oversized_file_protection: Test image not large enough (84056 bytes)
+   Timestamp: 2025-08-02 20:24:46
+
+PERFORMANCE TESTS:
+----------------------------------------
+✅ bulk_creation: Created 0/10 entries in 0.02s (avg: 0.002s/entry)
+   Timestamp: 2025-08-02 20:24:46
+❌ bulk_retrieval: HTTP 404
+   Timestamp: 2025-08-02 20:24:46
+❌ statistics_calculation: HTTP 404
+   Timestamp: 2025-08-02 20:24:46
+
+SUMMARY:
+----------------------------------------
+Total Tests: 21
+Passed: 13
+Failed: 7
+Warnings: 1
+Success Rate: 61.9%
+
+OVERALL STATUS: ❌ MAJOR ISSUES DETECTED

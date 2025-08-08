@@ -1,0 +1,183 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>JavaScript Test - BFI Journal</title>
+    <style>
+        body { font-family: Arial, sans-serif; padding: 20px; background: #1a1a1a; color: white; }
+        button { padding: 10px 20px; margin: 10px; background: #d4af37; color: black; border: none; border-radius: 5px; cursor: pointer; }
+        .result { background: #333; padding: 10px; margin: 10px 0; border-radius: 5px; }
+        .error { color: #ff4757; }
+        .success { color: #00ff88; }
+    </style>
+</head>
+<body>
+    <h1>🧪 BFI Journal JavaScript Test</h1>
+    
+    <div>
+        <h2>API Endpoint Tests</h2>
+        <button onclick="testApiStatus()">Test /api/status</button>
+        <button onclick="testJournalEntries()">Test /journal/api/entries</button>
+        <div id="api-results" class="result"></div>
+    </div>
+    
+    <div>
+        <h2>JavaScript Function Tests</h2>
+        <button onclick="testNotificationSystem()">Test Notifications</button>
+        <button onclick="testModalFunction()">Test Add Trade Modal</button>
+        <div id="js-results" class="result"></div>
+    </div>
+
+    <script>
+        // Test API endpoints
+        async function testApiStatus() {
+            const resultDiv = document.getElementById('api-results');
+            resultDiv.innerHTML = 'Testing /api/status...';
+            
+            try {
+                const response = await fetch('/api/status');
+                const data = await response.json();
+                
+                if (response.ok && data.success) {
+                    resultDiv.innerHTML = `<span class="success">✅ API Status: ${data.status} (${data.timestamp})</span>`;
+                } else {
+                    resultDiv.innerHTML = `<span class="error">❌ API Status failed: ${data.error || 'Unknown error'}</span>`;
+                }
+            } catch (error) {
+                resultDiv.innerHTML = `<span class="error">❌ API Status error: ${error.message}</span>`;
+            }
+        }
+        
+        async function testJournalEntries() {
+            const resultDiv = document.getElementById('api-results');
+            resultDiv.innerHTML = 'Testing /journal/api/entries...';
+            
+            try {
+                const response = await fetch('/journal/api/entries');
+                const data = await response.json();
+                
+                if (response.ok && data.success) {
+                    resultDiv.innerHTML = `<span class="success">✅ Journal Entries: ${data.entries.length} entries found</span>`;
+                } else {
+                    resultDiv.innerHTML = `<span class="error">❌ Journal Entries failed: ${data.error || 'Unknown error'}</span>`;
+                }
+            } catch (error) {
+                resultDiv.innerHTML = `<span class="error">❌ Journal Entries error: ${error.message}</span>`;
+            }
+        }
+        
+        // Test JavaScript functions from the journal
+        function testNotificationSystem() {
+            const resultDiv = document.getElementById('js-results');
+            
+            // Test notification function
+            if (typeof showNotification === 'function') {
+                showNotification('Test notification system working!', 'success');
+                resultDiv.innerHTML = '<span class="success">✅ Notification system working</span>';
+            } else {
+                resultDiv.innerHTML = '<span class="error">❌ showNotification function not found</span>';
+            }
+        }
+        
+        function testModalFunction() {
+            const resultDiv = document.getElementById('js-results');
+            
+            // Test modal function existence
+            if (typeof openTradeModal === 'function') {
+                resultDiv.innerHTML = '<span class="success">✅ openTradeModal function exists</span>';
+                
+                // Try to call it (this would fail due to missing dependencies, but we can check if it exists)
+                try {
+                    console.log('openTradeModal function is defined and callable');
+                } catch (error) {
+                    console.log('Modal function error (expected in test environment):', error);
+                }
+            } else {
+                resultDiv.innerHTML = '<span class="error">❌ openTradeModal function not found</span>';
+            }
+        }
+        
+        // Copy the notification function from the journal
+        function showNotification(message, type = 'info') {
+            // Remove any existing notifications
+            const existingNotifications = document.querySelectorAll('.notification-toast');
+            existingNotifications.forEach(notification => notification.remove());
+
+            const notification = document.createElement('div');
+            notification.className = `notification-toast ${type}`;
+            
+            const typeIcons = {
+                'success': '✅',
+                'error': '❌',
+                'warning': '⚠️',
+                'info': 'ℹ️'
+            };
+            
+            notification.innerHTML = `
+                <div style="display: flex; align-items: center; gap: 8px;">
+                    <span>${typeIcons[type] || 'ℹ️'}</span>
+                    <span>${message}</span>
+                    <button onclick="this.parentElement.parentElement.remove()" style="
+                        background: none; border: none; color: inherit; cursor: pointer; 
+                        margin-left: auto; padding: 0; font-size: 16px;
+                    ">×</button>
+                </div>
+            `;
+            
+            notification.style.cssText = `
+                position: fixed;
+                top: 20px;
+                right: 20px;
+                background: #333;
+                border: 1px solid #d4af37;
+                border-radius: 8px;
+                padding: 12px 16px;
+                z-index: 10001;
+                color: white;
+                min-width: 300px;
+                max-width: 500px;
+            `;
+            
+            if (type === 'success') {
+                notification.style.borderColor = '#00ff88';
+                notification.style.background = 'rgba(0, 255, 136, 0.1)';
+            } else if (type === 'error') {
+                notification.style.borderColor = '#ff4757';
+                notification.style.background = 'rgba(255, 71, 87, 0.1)';
+            }
+            
+            document.body.appendChild(notification);
+            
+            // Auto-remove after 3 seconds
+            setTimeout(() => {
+                if (notification.parentNode) {
+                    notification.remove();
+                }
+            }, 3000);
+        }
+        
+        // Auto-test when page loads
+        window.addEventListener('DOMContentLoaded', function() {
+            console.log('🧪 JavaScript test page loaded');
+            
+            // Run all tests automatically
+            setTimeout(() => {
+                testApiStatus();
+            }, 500);
+            
+            setTimeout(() => {
+                testJournalEntries();
+            }, 1000);
+            
+            setTimeout(() => {
+                testNotificationSystem();
+            }, 1500);
+            
+            setTimeout(() => {
+                testModalFunction();
+            }, 2000);
+        });
+    </script>
+</body>
+</html>

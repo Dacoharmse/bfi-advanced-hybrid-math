@@ -1,0 +1,678 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Semi-Auto with Price Dropdowns Demo</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background: #1a1a1a;
+            color: #fff;
+            margin: 0;
+            padding: 20px;
+        }
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: rgba(26, 26, 26, 0.9);
+            border-radius: 16px;
+            padding: 20px;
+            border: 1px solid rgba(255, 215, 0, 0.2);
+        }
+        h1 {
+            color: #ffd700;
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        .instrument-cards {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 16px;
+            margin-bottom: 30px;
+        }
+        .instrument-card {
+            background: rgba(26, 26, 26, 0.9);
+            border: 2px solid rgba(255, 215, 0, 0.2);
+            border-radius: 12px;
+            padding: 20px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-align: center;
+        }
+        .instrument-card:hover {
+            border-color: rgba(255, 215, 0, 0.4);
+            transform: translateY(-2px);
+        }
+        .instrument-card.selected {
+            border-color: rgba(255, 215, 0, 0.6);
+            box-shadow: 0 0 0 1px rgba(255, 215, 0, 0.3);
+        }
+        .instrument-card h4 {
+            color: #ffd700;
+            margin: 0 0 10px 0;
+        }
+        .form-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+        .input-group {
+            margin-bottom: 20px;
+        }
+        .input-group label {
+            display: block;
+            color: #ffd700;
+            margin-bottom: 8px;
+            font-weight: bold;
+        }
+        
+        /* Price input with dropdown styles */
+        .price-input-container {
+            position: relative;
+            display: flex;
+            align-items: stretch;
+            gap: 0;
+        }
+        
+        .price-input-with-dropdown {
+            flex: 1;
+            padding: 12px;
+            background: rgba(255, 255, 255, 0.1);
+            border: 1px solid rgba(255, 215, 0, 0.3);
+            border-top-left-radius: 8px;
+            border-bottom-left-radius: 8px;
+            border-right: none;
+            color: #fff;
+            font-size: 14px;
+        }
+        
+        .price-dropdown-btn {
+            background: rgba(255, 215, 0, 0.1);
+            border: 1px solid rgba(255, 215, 0, 0.3);
+            border-left: none;
+            border-top-right-radius: 8px;
+            border-bottom-right-radius: 8px;
+            color: #ffd700;
+            padding: 12px;
+            cursor: pointer;
+            font-size: 12px;
+            font-weight: bold;
+            min-width: 40px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.3s ease;
+        }
+        
+        .price-dropdown-btn:hover {
+            background: rgba(255, 215, 0, 0.2);
+            border-color: #ffd700;
+        }
+        
+        .price-dropdown {
+            position: absolute;
+            top: 100%;
+            right: 0;
+            background: rgba(26, 26, 26, 0.95);
+            border: 1px solid rgba(255, 215, 0, 0.4);
+            border-radius: 8px;
+            backdrop-filter: blur(10px);
+            z-index: 1000;
+            min-width: 200px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+            display: none;
+            margin-top: 4px;
+        }
+        
+        .price-dropdown.show {
+            display: block;
+            animation: dropdownFadeIn 0.2s ease;
+        }
+        
+        @keyframes dropdownFadeIn {
+            from { opacity: 0; transform: translateY(-10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        
+        .price-option {
+            padding: 12px 16px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            border-bottom: 1px solid rgba(255, 215, 0, 0.1);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .price-option:last-child {
+            border-bottom: none;
+            border-bottom-left-radius: 8px;
+            border-bottom-right-radius: 8px;
+        }
+        
+        .price-option:first-child {
+            border-top-left-radius: 8px;
+            border-top-right-radius: 8px;
+        }
+        
+        .price-option:hover {
+            background: rgba(255, 215, 0, 0.1);
+            color: #ffed4e;
+        }
+        
+        .price-option-label {
+            font-weight: 600;
+            color: #fff;
+        }
+        
+        .price-option-value {
+            font-family: monospace;
+            color: #ffd700;
+            font-weight: bold;
+        }
+        
+        .price-option-desc {
+            font-size: 11px;
+            color: #999;
+            margin-top: 2px;
+        }
+        
+        .price-input, .risk-select, .comment-input {
+            width: 100%;
+            padding: 12px;
+            background: rgba(255, 255, 255, 0.1);
+            border: 1px solid rgba(255, 215, 0, 0.3);
+            border-radius: 8px;
+            color: #fff;
+            font-size: 14px;
+        }
+        .price-input:focus, .risk-select:focus, .comment-input:focus {
+            outline: none;
+            border-color: #ffd700;
+            background: rgba(255, 255, 255, 0.15);
+        }
+        .comment-input {
+            height: 80px;
+            resize: vertical;
+        }
+        .generate-btn {
+            background: linear-gradient(135deg, #ffd700, #ffed4e);
+            color: #0a0a0a;
+            border: none;
+            padding: 16px 32px;
+            border-radius: 12px;
+            font-size: 16px;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: block;
+            margin: 0 auto;
+        }
+        .generate-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(255, 215, 0, 0.4);
+        }
+        .notification {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            padding: 16px 20px;
+            border-radius: 8px;
+            background: rgba(26, 26, 26, 0.95);
+            border: 1px solid #ffd700;
+            color: #fff;
+            z-index: 1000;
+            backdrop-filter: blur(10px);
+        }
+        .demo-info {
+            background: rgba(0, 255, 136, 0.1);
+            border: 1px solid rgba(0, 255, 136, 0.3);
+            border-radius: 8px;
+            padding: 16px;
+            margin-bottom: 20px;
+        }
+        .demo-info h3 {
+            color: #00ff88;
+            margin: 0 0 10px 0;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>⚡ Semi-Auto Signal Generation with Price Dropdowns</h1>
+        
+        <div class="demo-info">
+            <h3>✅ New Features Added:</h3>
+            <ul>
+                <li><strong>Price Dropdowns:</strong> Quick selection for CV, Previous Close, Daily High/Low</li>
+                <li><strong>Mathematical TP:</strong> CV +/- Net Change calculations</li>
+                <li><strong>Point-based Levels:</strong> CV ± 30, 50, 75, 100, 150, 200 points</li>
+                <li><strong>Smart Calculations:</strong> Auto-updated based on selected instrument</li>
+                <li><strong>Easy Selection:</strong> Click dropdown arrows to see all available options</li>
+            </ul>
+        </div>
+        
+        <h3>Select Trading Instrument</h3>
+        <div class="instrument-cards">
+            <div class="instrument-card" data-instrument="NASDAQ">
+                <h4>NASDAQ</h4>
+                <span>(NAS100)</span>
+                <div>Price: $20,150.00</div>
+                <div>Net Change: +45.20</div>
+            </div>
+            
+            <div class="instrument-card" data-instrument="US30">
+                <h4>US30</h4>
+                <span>(DOW JONES)</span>
+                <div>Price: $43,250.00</div>
+                <div>Net Change: -28.50</div>
+            </div>
+            
+            <div class="instrument-card" data-instrument="GOLD">
+                <h4>GOLD</h4>
+                <span>(XAUUSD)</span>
+                <div>Price: $2,650.00</div>
+                <div>Net Change: +12.30</div>
+            </div>
+        </div>
+        
+        <h3>Manual Parameters with Price Dropdowns</h3>
+        <div class="form-grid">
+            <div class="input-group">
+                <label>Entry Price</label>
+                <div class="price-input-container">
+                    <input type="number" class="price-input-with-dropdown" id="entry-price" placeholder="20,150.00" step="0.01">
+                    <button type="button" class="price-dropdown-btn" data-field="entry">▼</button>
+                    <div class="price-dropdown" id="entry-dropdown">
+                        <div class="price-option" data-type="cv">
+                            <div>
+                                <div class="price-option-label">Current Value</div>
+                                <div class="price-option-desc">Real-time market price</div>
+                            </div>
+                            <div class="price-option-value" id="entry-cv-value">20,150.00</div>
+                        </div>
+                        <div class="price-option" data-type="prev-close">
+                            <div>
+                                <div class="price-option-label">Previous Close</div>
+                                <div class="price-option-desc">Yesterday's closing price</div>
+                            </div>
+                            <div class="price-option-value" id="entry-prev-value">20,104.80</div>
+                        </div>
+                        <div class="price-option" data-type="daily-high">
+                            <div>
+                                <div class="price-option-label">Daily High</div>
+                                <div class="price-option-desc">Today's highest price</div>
+                            </div>
+                            <div class="price-option-value" id="entry-high-value">20,172.60</div>
+                        </div>
+                        <div class="price-option" data-type="daily-low">
+                            <div>
+                                <div class="price-option-label">Daily Low</div>
+                                <div class="price-option-desc">Today's lowest price</div>
+                            </div>
+                            <div class="price-option-value" id="entry-low-value">20,127.40</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="input-group">
+                <label>TP1</label>
+                <div class="price-input-container">
+                    <input type="number" class="price-input-with-dropdown" id="tp1" placeholder="20,250.00" step="0.01">
+                    <button type="button" class="price-dropdown-btn" data-field="tp1">▼</button>
+                    <div class="price-dropdown" id="tp1-dropdown">
+                        <div class="price-option" data-type="cv">
+                            <div>
+                                <div class="price-option-label">Current Value</div>
+                            </div>
+                            <div class="price-option-value">20,150.00</div>
+                        </div>
+                        <div class="price-option" data-type="daily-high">
+                            <div>
+                                <div class="price-option-label">Daily High</div>
+                            </div>
+                            <div class="price-option-value">20,172.60</div>
+                        </div>
+                        <div class="price-option" data-type="math-tp">
+                            <div>
+                                <div class="price-option-label">Math TP (CV + Net Change)</div>
+                                <div class="price-option-desc">20,150 + 45.20</div>
+                            </div>
+                            <div class="price-option-value">20,195.20</div>
+                        </div>
+                        <div class="price-option" data-type="cv-plus-50">
+                            <div>
+                                <div class="price-option-label">CV + 50 points</div>
+                            </div>
+                            <div class="price-option-value">20,200.00</div>
+                        </div>
+                        <div class="price-option" data-type="cv-plus-100">
+                            <div>
+                                <div class="price-option-label">CV + 100 points</div>
+                            </div>
+                            <div class="price-option-value">20,250.00</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="input-group">
+                <label>TP2 (Optional)</label>
+                <div class="price-input-container">
+                    <input type="number" class="price-input-with-dropdown" id="tp2" placeholder="20,350.00" step="0.01">
+                    <button type="button" class="price-dropdown-btn" data-field="tp2">▼</button>
+                    <div class="price-dropdown" id="tp2-dropdown">
+                        <div class="price-option" data-type="math-tp-double">
+                            <div>
+                                <div class="price-option-label">Math TP x2</div>
+                                <div class="price-option-desc">CV + (Net Change x 2)</div>
+                            </div>
+                            <div class="price-option-value">20,240.40</div>
+                        </div>
+                        <div class="price-option" data-type="cv-plus-100">
+                            <div>
+                                <div class="price-option-label">CV + 100 points</div>
+                            </div>
+                            <div class="price-option-value">20,250.00</div>
+                        </div>
+                        <div class="price-option" data-type="cv-plus-150">
+                            <div>
+                                <div class="price-option-label">CV + 150 points</div>
+                            </div>
+                            <div class="price-option-value">20,300.00</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="input-group">
+                <label>SL Tight</label>
+                <div class="price-input-container">
+                    <input type="number" class="price-input-with-dropdown" id="sl-tight" placeholder="20,050.00" step="0.01">
+                    <button type="button" class="price-dropdown-btn" data-field="sl-tight">▼</button>
+                    <div class="price-dropdown" id="sl-tight-dropdown">
+                        <div class="price-option" data-type="prev-close">
+                            <div>
+                                <div class="price-option-label">Previous Close</div>
+                            </div>
+                            <div class="price-option-value">20,104.80</div>
+                        </div>
+                        <div class="price-option" data-type="daily-low">
+                            <div>
+                                <div class="price-option-label">Daily Low</div>
+                            </div>
+                            <div class="price-option-value">20,127.40</div>
+                        </div>
+                        <div class="price-option" data-type="cv-minus-30">
+                            <div>
+                                <div class="price-option-label">CV - 30 points</div>
+                            </div>
+                            <div class="price-option-value">20,120.00</div>
+                        </div>
+                        <div class="price-option" data-type="cv-minus-50">
+                            <div>
+                                <div class="price-option-label">CV - 50 points</div>
+                            </div>
+                            <div class="price-option-value">20,100.00</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="input-group">
+                <label>SL Extended</label>
+                <div class="price-input-container">
+                    <input type="number" class="price-input-with-dropdown" id="sl-extended" placeholder="19,950.00" step="0.01">
+                    <button type="button" class="price-dropdown-btn" data-field="sl-extended">▼</button>
+                    <div class="price-dropdown" id="sl-extended-dropdown">
+                        <div class="price-option" data-type="daily-low">
+                            <div>
+                                <div class="price-option-label">Daily Low</div>
+                            </div>
+                            <div class="price-option-value">20,127.40</div>
+                        </div>
+                        <div class="price-option" data-type="cv-minus-75">
+                            <div>
+                                <div class="price-option-label">CV - 75 points</div>
+                            </div>
+                            <div class="price-option-value">20,075.00</div>
+                        </div>
+                        <div class="price-option" data-type="cv-minus-100">
+                            <div>
+                                <div class="price-option-label">CV - 100 points</div>
+                            </div>
+                            <div class="price-option-value">20,050.00</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="input-group">
+                <label>Risk Level</label>
+                <select class="risk-select" id="risk-level">
+                    <option value="low">Low Risk</option>
+                    <option value="medium" selected>Medium Risk</option>
+                    <option value="high">High Risk</option>
+                </select>
+            </div>
+        </div>
+        
+        <div class="input-group">
+            <label>Signal Comment</label>
+            <textarea class="comment-input" id="comment" placeholder="Add your analysis or notes for this signal..."></textarea>
+        </div>
+        
+        <button class="generate-btn" onclick="generateDemo()">⚡ Create Semi-Auto Signal with Dropdowns</button>
+    </div>
+
+    <script>
+        let selectedInstrument = 'NASDAQ';
+        let marketData = {
+            'NASDAQ': { price: 20150.00, netChange: 45.20, prevClose: 20104.80, dailyHigh: 20172.60, dailyLow: 20127.40 },
+            'US30': { price: 43250.00, netChange: -28.50, prevClose: 43278.50, dailyHigh: 43265.25, dailyLow: 43235.75 },
+            'GOLD': { price: 2650.00, netChange: 12.30, prevClose: 2637.70, dailyHigh: 2656.15, dailyLow: 2643.85 }
+        };
+        
+        // Instrument selection
+        document.querySelectorAll('.instrument-card').forEach(card => {
+            card.addEventListener('click', function() {
+                document.querySelectorAll('.instrument-card').forEach(c => c.classList.remove('selected'));
+                this.classList.add('selected');
+                selectedInstrument = this.dataset.instrument;
+                
+                showNotification(`Selected ${selectedInstrument} - Dropdowns Updated!`, 'success');
+                updateDropdownValues();
+            });
+        });
+        
+        // Setup dropdown functionality
+        document.querySelectorAll('.price-dropdown-btn').forEach(btn => {
+            btn.addEventListener('click', function(e) {
+                e.preventDefault();
+                e.stopPropagation();
+                
+                const field = this.dataset.field;
+                const dropdown = document.getElementById(`${field}-dropdown`);
+                
+                // Close all other dropdowns
+                document.querySelectorAll('.price-dropdown').forEach(dd => {
+                    if (dd !== dropdown) dd.classList.remove('show');
+                });
+                
+                // Toggle this dropdown
+                dropdown.classList.toggle('show');
+            });
+        });
+        
+        // Add click handlers for dropdown options
+        document.querySelectorAll('.price-option').forEach(option => {
+            option.addEventListener('click', function(e) {
+                e.preventDefault();
+                e.stopPropagation();
+                
+                const dropdown = this.closest('.price-dropdown');
+                const field = dropdown.id.replace('-dropdown', '');
+                const input = document.getElementById(field);
+                const valueElement = this.querySelector('.price-option-value');
+                const labelElement = this.querySelector('.price-option-label');
+                
+                if (input && valueElement) {
+                    const value = valueElement.textContent;
+                    const label = labelElement.textContent;
+                        
+                    input.value = parseFloat(value).toFixed(2);
+                    showNotification(`Set ${field.toUpperCase()} to ${label}: ${value}`, 'success');
+                }
+                
+                dropdown.classList.remove('show');
+            });
+        });
+        
+        // Close dropdowns when clicking outside
+        document.addEventListener('click', function(e) {
+            if (!e.target.closest('.price-input-container')) {
+                document.querySelectorAll('.price-dropdown').forEach(dropdown => {
+                    dropdown.classList.remove('show');
+                });
+            }
+        });
+        
+        // Update dropdown values based on selected instrument
+        function updateDropdownValues() {
+            const data = marketData[selectedInstrument];
+            if (!data) return;
+            
+            const cv = data.price;
+            const netChange = data.netChange;
+            const mathTP = cv + Math.abs(netChange);
+            const mathTPDouble = cv + (Math.abs(netChange) * 2);
+            
+            // Update entry dropdown
+            document.getElementById('entry-cv-value').textContent = cv.toFixed(2);
+            document.getElementById('entry-prev-value').textContent = data.prevClose.toFixed(2);
+            document.getElementById('entry-high-value').textContent = data.dailyHigh.toFixed(2);
+            document.getElementById('entry-low-value').textContent = data.dailyLow.toFixed(2);
+            
+            // Update TP1 dropdown
+            document.querySelector('#tp1-dropdown .price-option[data-type="cv"] .price-option-value').textContent = cv.toFixed(2);
+            document.querySelector('#tp1-dropdown .price-option[data-type="daily-high"] .price-option-value').textContent = data.dailyHigh.toFixed(2);
+            document.querySelector('#tp1-dropdown .price-option[data-type="math-tp"] .price-option-value').textContent = mathTP.toFixed(2);
+            document.querySelector('#tp1-dropdown .price-option[data-type="cv-plus-50"] .price-option-value').textContent = (cv + 50).toFixed(2);
+            document.querySelector('#tp1-dropdown .price-option[data-type="cv-plus-100"] .price-option-value').textContent = (cv + 100).toFixed(2);
+            
+            // Update math TP description
+            document.querySelector('#tp1-dropdown .price-option[data-type="math-tp"] .price-option-desc').textContent = `${cv.toFixed(0)} + ${Math.abs(netChange).toFixed(2)}`;
+            
+            // Update TP2 dropdown
+            document.querySelector('#tp2-dropdown .price-option[data-type="math-tp-double"] .price-option-value').textContent = mathTPDouble.toFixed(2);
+            document.querySelector('#tp2-dropdown .price-option[data-type="cv-plus-100"] .price-option-value').textContent = (cv + 100).toFixed(2);
+            document.querySelector('#tp2-dropdown .price-option[data-type="cv-plus-150"] .price-option-value').textContent = (cv + 150).toFixed(2);
+            
+            // Update SL dropdowns
+            document.querySelector('#sl-tight-dropdown .price-option[data-type="prev-close"] .price-option-value').textContent = data.prevClose.toFixed(2);
+            document.querySelector('#sl-tight-dropdown .price-option[data-type="daily-low"] .price-option-value').textContent = data.dailyLow.toFixed(2);
+            document.querySelector('#sl-tight-dropdown .price-option[data-type="cv-minus-30"] .price-option-value').textContent = (cv - 30).toFixed(2);
+            document.querySelector('#sl-tight-dropdown .price-option[data-type="cv-minus-50"] .price-option-value').textContent = (cv - 50).toFixed(2);
+            
+            document.querySelector('#sl-extended-dropdown .price-option[data-type="daily-low"] .price-option-value').textContent = data.dailyLow.toFixed(2);
+            document.querySelector('#sl-extended-dropdown .price-option[data-type="cv-minus-75"] .price-option-value').textContent = (cv - 75).toFixed(2);
+            document.querySelector('#sl-extended-dropdown .price-option[data-type="cv-minus-100"] .price-option-value').textContent = (cv - 100).toFixed(2);
+        }
+        
+        // Demo signal generation
+        function generateDemo() {
+            if (!selectedInstrument) {
+                showNotification('Please select a trading instrument first!', 'error');
+                return;
+            }
+            
+            const entryPrice = document.getElementById('entry-price').value;
+            const tp1 = document.getElementById('tp1').value;
+            const slTight = document.getElementById('sl-tight').value;
+            
+            if (!entryPrice || !tp1 || !slTight) {
+                showNotification('Please fill in Entry Price, TP1, and SL Tight fields!', 'error');
+                return;
+            }
+            
+            const btn = document.querySelector('.generate-btn');
+            btn.textContent = '⏳ Generating...';
+            btn.disabled = true;
+            
+            setTimeout(() => {
+                const tp2 = document.getElementById('tp2').value;
+                const slExtended = document.getElementById('sl-extended').value;
+                const comment = document.getElementById('comment').value;
+                
+                showNotification('✅ Semi-Auto Signal with Dropdowns Generated!', 'success');
+                
+                showSignalResult({
+                    instrument: selectedInstrument,
+                    entry: entryPrice,
+                    tp1: tp1,
+                    tp2: tp2 || null,
+                    slTight: slTight,
+                    slExtended: slExtended || null,
+                    comment: comment
+                });
+                
+                btn.textContent = '⚡ Create Semi-Auto Signal with Dropdowns';
+                btn.disabled = false;
+            }, 2000);
+        }
+        
+        // Show signal result
+        function showSignalResult(signal) {
+            const direction = parseFloat(signal.entry) < parseFloat(signal.tp1) ? 'BUY' : 'SELL';
+            const emoji = direction === 'BUY' ? '📈' : '📉';
+            
+            const popup = document.createElement('div');
+            popup.style.cssText = `
+                position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%);
+                background: rgba(26, 26, 26, 0.95); border: 2px solid #ffd700; border-radius: 12px;
+                padding: 20px; z-index: 10000; backdrop-filter: blur(10px); max-width: 400px; color: white;
+            `;
+            
+            popup.innerHTML = `
+                <h3>${emoji} ${direction} ${signal.instrument}</h3>
+                <p><strong>Entry:</strong> ${signal.entry}</p>
+                <p><strong>TP1:</strong> ${signal.tp1}</p>
+                ${signal.tp2 ? `<p><strong>TP2:</strong> ${signal.tp2}</p>` : ''}
+                <p><strong>SL Tight:</strong> ${signal.slTight}</p>
+                ${signal.slExtended ? `<p><strong>SL Extended:</strong> ${signal.slExtended}</p>` : ''}
+                ${signal.comment ? `<p><strong>Comment:</strong> ${signal.comment}</p>` : ''}
+                <p style="color: #00ff88; font-weight: bold;">✅ Created using Price Dropdowns!</p>
+                <button onclick="this.parentElement.remove()" style="
+                    background: #ffd700; color: #000; border: none; padding: 8px 16px;
+                    border-radius: 4px; cursor: pointer; margin-top: 10px;
+                ">Close</button>
+            `;
+            
+            document.body.appendChild(popup);
+            setTimeout(() => { if (popup.parentNode) popup.parentNode.removeChild(popup); }, 8000);
+        }
+        
+        // Show notification
+        function showNotification(message, type) {
+            const notification = document.createElement('div');
+            notification.className = 'notification';
+            notification.innerHTML = `
+                <div style="display: flex; align-items: center; gap: 8px;">
+                    <span>${type === 'success' ? '✅' : '❌'}</span>
+                    <span>${message}</span>
+                </div>
+            `;
+            
+            notification.style.borderColor = type === 'success' ? '#22c55e' : '#ef4444';
+            document.body.appendChild(notification);
+            setTimeout(() => notification.remove(), 3000);
+        }
+        
+        // Initialize with NASDAQ selected
+        document.querySelector('[data-instrument="NASDAQ"]').click();
+    </script>
+</body>
+</html>

@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Market Countdown Test</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            padding: 20px;
+            background: #1a1a1a;
+            color: #fff;
+        }
+        .countdown-container {
+            background: #2a2a2a;
+            padding: 20px;
+            border-radius: 10px;
+            margin: 20px 0;
+        }
+        .status-text {
+            font-size: 18px;
+            margin-bottom: 10px;
+        }
+        .countdown-text {
+            font-size: 24px;
+            color: #ffd700;
+            font-weight: bold;
+            font-family: 'Courier New', monospace;
+        }
+    </style>
+</head>
+<body>
+    <h1>Market Countdown Timer Test</h1>
+    
+    <div class="countdown-container">
+        <div class="status-text" id="market-status">Checking market status...</div>
+        <div class="countdown-text" id="countdown">Loading...</div>
+    </div>
+
+    <script>
+        class MarketCountdown {
+            constructor() {
+                this.initialize();
+            }
+            
+            initialize() {
+                console.log('🕒 Initializing Market Countdown Test...');
+                this.updateMarketStatus();
+                setInterval(() => {
+                    this.updateMarketStatus();
+                }, 1000);
+            }
+            
+            updateMarketStatus() {
+                const now = new Date();
+                const marketStatus = this.calculateMarketStatus(now);
+                
+                const statusText = document.getElementById('market-status');
+                const countdownText = document.getElementById('countdown');
+                
+                if (statusText && countdownText) {
+                    if (marketStatus.isOpen) {
+                        statusText.textContent = '🟢 US Markets OPEN';
+                        statusText.style.color = '#4caf50';
+                    } else {
+                        statusText.textContent = '🔴 US Markets CLOSED';
+                        statusText.style.color = '#f44336';
+                    }
+                    
+                    if (marketStatus.countdown) {
+                        countdownText.textContent = marketStatus.countdown;
+                    }
+                }
+            }
+            
+            calculateMarketStatus(now) {
+                // Convert to EST/EDT for US market hours
+                const usTime = new Date(now.toLocaleString("en-US", {timeZone: "America/New_York"}));
+                const usHour = usTime.getHours();
+                const usMinutes = usTime.getMinutes();
+                const dayOfWeek = usTime.getDay(); // 0 = Sunday, 6 = Saturday
+                
+                console.log(`Current US Time: ${usTime.toLocaleString()}, Day: ${dayOfWeek}, Hour: ${usHour}, Minutes: ${usMinutes}`);
+                
+                // Market closed on weekends
+                if (dayOfWeek === 0 || dayOfWeek === 6) {
+                    const nextMonday = new Date(usTime);
+                    nextMonday.setDate(usTime.getDate() + (1 + 7 - usTime.getDay()) % 7);
+                    nextMonday.setHours(9, 30, 0, 0);
+                    
+                    return {
+                        isOpen: false,
+                        countdown: `Opens ${this.getTimeUntil(nextMonday)}`
+                    };
+                }
+                
+                // Market hours: 9:30 AM - 4:00 PM EST/EDT
+                const marketOpen = usHour > 9 || (usHour === 9 && usMinutes >= 30);
+                const marketClosed = usHour >= 16;
+                
+                if (marketOpen && !marketClosed) {
+                    // Market is open - show time until close
+                    const closeTime = new Date(usTime);
+                    closeTime.setHours(16, 0, 0, 0);
+                    
+                    return {
+                        isOpen: true,
+                        countdown: `Closes ${this.getTimeUntil(closeTime)}`
+                    };
+                } else {
+                    // Market is closed - show time until open
+                    const openTime = new Date(usTime);
+                    if (usHour >= 16) {
+                        // After hours - next day
+                        openTime.setDate(usTime.getDate() + 1);
+                    }
+                    openTime.setHours(9, 30, 0, 0);
+                    
+                    return {
+                        isOpen: false,
+                        countdown: `Opens ${this.getTimeUntil(openTime)}`
+                    };
+                }
+            }
+            
+            getTimeUntil(targetTime) {
+                const now = new Date();
+                const diff = targetTime - now;
+                
+                if (diff <= 0) return 'in 0:00';
+                
+                const hours = Math.floor(diff / (1000 * 60 * 60));
+                const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
+                const seconds = Math.floor((diff % (1000 * 60)) / 1000);
+                
+                if (hours > 0) {
+                    return `in ${hours}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+                } else if (minutes > 0) {
+                    return `in ${minutes}:${seconds.toString().padStart(2, '0')}`;
+                } else if (seconds > 0) {
+                    return `in 0:${seconds.toString().padStart(2, '0')}`;
+                } else {
+                    return 'in 0:00';
+                }
+            }
+        }
+
+        // Initialize when page loads
+        document.addEventListener('DOMContentLoaded', function() {
+            new MarketCountdown();
+        });
+    </script>
+</body>
+</html>

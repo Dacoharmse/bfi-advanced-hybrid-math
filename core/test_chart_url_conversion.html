@@ -1,0 +1,202 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TradingView Chart URL Conversion Test</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 40px auto;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+        
+        .test-section {
+            background: white;
+            padding: 20px;
+            margin: 20px 0;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        
+        .test-input {
+            width: 100%;
+            padding: 10px;
+            margin: 10px 0;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+        }
+        
+        .result {
+            margin: 10px 0;
+            padding: 10px;
+            background: #f8f9fa;
+            border: 1px solid #dee2e6;
+            border-radius: 4px;
+        }
+        
+        .success {
+            background: #d4edda;
+            border-color: #c3e6cb;
+            color: #155724;
+        }
+        
+        .error {
+            background: #f8d7da;
+            border-color: #f5c6cb;
+            color: #721c24;
+        }
+        
+        .preview-image {
+            max-width: 100%;
+            max-height: 300px;
+            margin: 10px 0;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+        }
+        
+        button {
+            background: #007bff;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+        
+        button:hover {
+            background: #0056b3;
+        }
+    </style>
+</head>
+<body>
+    <h1>TradingView Chart URL Conversion Test</h1>
+    
+    <div class="test-section">
+        <h3>Test Chart URL Conversion</h3>
+        <input type="text" id="testUrl" class="test-input" 
+               placeholder="Enter TradingView chart URL (e.g., https://tradingview.com/x/abc123)">
+        <button onclick="testConversion()">Test Conversion</button>
+        
+        <div id="result" class="result" style="display: none;"></div>
+        <img id="previewImage" class="preview-image" style="display: none;">
+    </div>
+    
+    <div class="test-section">
+        <h3>Sample URLs to Test</h3>
+        <ul>
+            <li><button onclick="testSampleUrl('https://tradingview.com/x/m7azfyek/')">Test: /x/m7azfyek/</button></li>
+            <li><button onclick="testSampleUrl('https://www.tradingview.com/x/abc123')">Test: /x/abc123</button></li>
+            <li><button onclick="testSampleUrl('https://tradingview.com/chart/BTCUSD/xyz789/')">Test: /chart/BTCUSD/xyz789/</button></li>
+            <li><button onclick="testSampleUrl('https://s3.tradingview.com/snapshots/a/abc123.png')">Test: Direct S3 URL</button></li>
+            <li><button onclick="testSampleUrl('https://example.com/chart.png')">Test: Direct Image URL</button></li>
+        </ul>
+    </div>
+    
+    <script>
+        // Import the conversion logic from the trading journal modal
+        function convertTradingViewUrl(url) {
+            try {
+                // Handle TradingView snapshot URLs: tradingview.com/x/[ID]
+                const snapshotMatch = url.match(/tradingview\.com\/x\/([a-zA-Z0-9]+)/);
+                if (snapshotMatch) {
+                    const chartId = snapshotMatch[1];
+                    const firstLetter = chartId.charAt(0).toLowerCase();
+                    return `https://s3.tradingview.com/snapshots/${firstLetter}/${chartId}.png`;
+                }
+                
+                // Handle TradingView chart URLs: tradingview.com/chart/[symbol]/[ID]
+                const chartMatch = url.match(/tradingview\.com\/chart\/[^\/]+\/([a-zA-Z0-9]+)/);
+                if (chartMatch) {
+                    const chartId = chartMatch[1];
+                    const firstLetter = chartId.charAt(0).toLowerCase();
+                    return `https://s3.tradingview.com/snapshots/${firstLetter}/${chartId}.png`;
+                }
+                
+                // Handle other TradingView image URLs
+                if (url.includes('s3.tradingview.com') || (url.includes('tradingview.com') && url.includes('.png'))) {
+                    return url;
+                }
+                
+                return null;
+            } catch (error) {
+                console.error('Error converting TradingView URL:', error);
+                return null;
+            }
+        }
+        
+        function testConversion() {
+            const url = document.getElementById('testUrl').value.trim();
+            const resultDiv = document.getElementById('result');
+            const previewImage = document.getElementById('previewImage');
+            
+            if (!url) {
+                showResult('Please enter a URL to test', 'error');
+                return;
+            }
+            
+            showResult('Testing URL conversion...', 'info');
+            previewImage.style.display = 'none';
+            
+            if (url.match(/\.(jpg|jpeg|png|gif|webp)(\?.*)?$/i)) {
+                showResult(`Direct image URL detected: ${url}`, 'success');
+                testImageLoad(url);
+            } else if (url.includes('tradingview.com')) {
+                const convertedUrl = convertTradingViewUrl(url);
+                if (convertedUrl) {
+                    showResult(`Converted TradingView URL:<br>
+                              Original: <code>${url}</code><br>
+                              Converted: <code>${convertedUrl}</code>`, 'success');
+                    testImageLoad(convertedUrl);
+                } else {
+                    showResult(`Unable to convert TradingView URL: ${url}`, 'error');
+                }
+            } else {
+                showResult(`URL does not appear to be a TradingView chart: ${url}`, 'error');
+            }
+        }
+        
+        function testImageLoad(imageUrl) {
+            const previewImage = document.getElementById('previewImage');
+            
+            const testImage = new Image();
+            testImage.onload = () => {
+                previewImage.src = imageUrl;
+                previewImage.style.display = 'block';
+                appendResult('<br><strong>✅ Image loaded successfully!</strong>', 'success');
+            };
+            
+            testImage.onerror = () => {
+                appendResult('<br><strong>❌ Failed to load image</strong>', 'error');
+            };
+            
+            setTimeout(() => {
+                if (!previewImage.src || previewImage.style.display === 'none') {
+                    appendResult('<br><strong>⏰ Image loading timeout (10s)</strong>', 'error');
+                }
+            }, 10000);
+            
+            testImage.src = imageUrl;
+        }
+        
+        function testSampleUrl(url) {
+            document.getElementById('testUrl').value = url;
+            testConversion();
+        }
+        
+        function showResult(message, type) {
+            const resultDiv = document.getElementById('result');
+            resultDiv.innerHTML = message;
+            resultDiv.className = `result ${type}`;
+            resultDiv.style.display = 'block';
+        }
+        
+        function appendResult(message, type) {
+            const resultDiv = document.getElementById('result');
+            resultDiv.innerHTML += message;
+        }
+    </script>
+</body>
+</html>

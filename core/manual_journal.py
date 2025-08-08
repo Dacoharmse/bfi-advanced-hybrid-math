@@ -32,6 +32,28 @@ class ManualJournalManager:
         
         # Ensure upload folder exists
         os.makedirs(self.upload_folder, exist_ok=True)
+        
+        # Add user_id column if it doesn't exist (migration)
+        self._add_user_id_column()
+    
+    def _add_user_id_column(self):
+        """Add user_id column to manual_journal_entries table if it doesn't exist"""
+        try:
+            conn = sqlite3.connect(self.db_path)
+            cursor = conn.cursor()
+            
+            # Check if user_id column exists
+            cursor.execute("PRAGMA table_info(manual_journal_entries)")
+            columns = [column[1] for column in cursor.fetchall()]
+            
+            if 'user_id' not in columns:
+                cursor.execute('ALTER TABLE manual_journal_entries ADD COLUMN user_id INTEGER DEFAULT 1')
+                conn.commit()
+                print("✅ Added user_id column to manual_journal_entries")
+            
+            conn.close()
+        except Exception as e:
+            print(f"❌ Error adding user_id column: {e}")
     
     def allowed_file(self, filename):
         """Check if file extension is allowed"""
@@ -109,27 +131,38 @@ class ManualJournalManager:
     def create_journal_entry(self, entry_data):
         """Create a new manual journal entry"""
         try:
+            import json
+            
             conn = sqlite3.connect(self.db_path)
             cursor = conn.cursor()
+            
+            # Serialize array fields to JSON
+            entry_prices_json = json.dumps(entry_data.get('entry_prices', [])) if entry_data.get('entry_prices') else None
+            position_sizes_json = json.dumps(entry_data.get('position_sizes', [])) if entry_data.get('position_sizes') else None
             
             cursor.execute('''
                 INSERT INTO manual_journal_entries 
                 (symbol, trade_type, entry_price, exit_price, quantity, outcome, 
-                 profit_loss, trade_date, entry_time, exit_time, notes, chart_image_path)
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                 profit_loss, trade_date, entry_time, exit_time, notes, chart_image_path, 
+                 chart_link, entry_prices, position_sizes, user_id)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
             ''', (
                 entry_data.get('symbol', '').upper(),
                 entry_data.get('trade_type', '').upper(),
                 float(entry_data.get('entry_price', 0)),
                 float(entry_data.get('exit_price', 0)) if entry_data.get('exit_price') else None,
-                int(entry_data.get('quantity', 1)),
+                int(float(entry_data.get('quantity', 1))),
                 entry_data.get('outcome', 'PENDING').upper(),
                 float(entry_data.get('profit_loss', 0)),
                 entry_data.get('trade_date'),
                 entry_data.get('entry_time'),
                 entry_data.get('exit_time'),
                 entry_data.get('notes', ''),
-                entry_data.get('chart_image_path')
+                entry_data.get('chart_image_path'),
+                entry_data.get('chart_link', ''),
+                entry_prices_json,
+                position_sizes_json,
+                entry_data.get('user_id', 1)  # Default to user_id 1 if not provided
             ))
             
             entry_id = cursor.lastrowid
@@ -145,7 +178,7 @@ class ManualJournalManager:
             if conn:
                 conn.close()
     
-    def get_journal_entries(self, limit=50, offset=0, symbol=None, outcome=None):
+    def get_journal_entries(self, limit=50, offset=0, symbol=None, outcome=None, user_id=None):
         """Retrieve manual journal entries with optional filtering"""
         try:
             conn = sqlite3.connect(self.db_path)
@@ -155,11 +188,17 @@ class ManualJournalManager:
             query = '''
                 SELECT id, symbol, trade_type, entry_price, exit_price, quantity, 
                        outcome, profit_loss, trade_date, entry_time, exit_time, 
-                       notes, chart_image_path, created_at, updated_at
+                       notes, chart_image_path, chart_link, entry_prices, position_sizes,
+                       created_at, updated_at
                 FROM manual_journal_entries
                 WHERE 1=1
             '''
             params = []
+            
+            # IMPORTANT: Always filter by user_id for security
+            if user_id:
+                query += ' AND user_id = ?'
+                params.append(user_id)
             
             if symbol:
                 query += ' AND symbol = ?'
@@ -177,7 +216,30 @@ class ManualJournalManager:
             
             # Convert to list of dictionaries
             columns = [desc[0] for desc in cursor.description]
-            entries_list = [dict(zip(columns, entry)) for entry in entries]
+            entries_list = []
+            
+            for entry in entries:
+                entry_dict = dict(zip(columns, entry))
+                
+                # Deserialize JSON fields
+                import json
+                if entry_dict.get('entry_prices'):
+                    try:
+                        entry_dict['entry_prices'] = json.loads(entry_dict['entry_prices'])
+                    except (json.JSONDecodeError, TypeError):
+                        entry_dict['entry_prices'] = []
+                else:
+                    entry_dict['entry_prices'] = []
+                
+                if entry_dict.get('position_sizes'):
+                    try:
+                        entry_dict['position_sizes'] = json.loads(entry_dict['position_sizes'])
+                    except (json.JSONDecodeError, TypeError):
+                        entry_dict['position_sizes'] = []
+                else:
+                    entry_dict['position_sizes'] = []
+                
+                entries_list.append(entry_dict)
             
             return entries_list, "Entries retrieved successfully"
             
@@ -189,25 +251,55 @@ class ManualJournalManager:
             if conn:
                 conn.close()
     
-    def get_journal_entry(self, entry_id):
-        """Get a single journal entry by ID"""
+    def get_journal_entry(self, entry_id, user_id=None):
+        """Get a single journal entry by ID, optionally filtered by user_id for security"""
         try:
             conn = sqlite3.connect(self.db_path)
             cursor = conn.cursor()
             
-            cursor.execute('''
+            # Build query with optional user_id filter for security
+            query = '''
                 SELECT id, symbol, trade_type, entry_price, exit_price, quantity, 
                        outcome, profit_loss, trade_date, entry_time, exit_time, 
-                       notes, chart_image_path, created_at, updated_at
+                       notes, chart_image_path, chart_link, entry_prices, position_sizes,
+                       created_at, updated_at
                 FROM manual_journal_entries
                 WHERE id = ?
-            ''', (entry_id,))
+            '''
+            params = [entry_id]
+            
+            # IMPORTANT: Filter by user_id for security if provided
+            if user_id:
+                query += ' AND user_id = ?'
+                params.append(user_id)
+            
+            cursor.execute(query, params)
             
             entry = cursor.fetchone()
             
             if entry:
                 columns = [desc[0] for desc in cursor.description]
-                return dict(zip(columns, entry)), "Entry found"
+                entry_dict = dict(zip(columns, entry))
+                
+                # Deserialize JSON fields
+                import json
+                if entry_dict.get('entry_prices'):
+                    try:
+                        entry_dict['entry_prices'] = json.loads(entry_dict['entry_prices'])
+                    except (json.JSONDecodeError, TypeError):
+                        entry_dict['entry_prices'] = []
+                else:
+                    entry_dict['entry_prices'] = []
+                
+                if entry_dict.get('position_sizes'):
+                    try:
+                        entry_dict['position_sizes'] = json.loads(entry_dict['position_sizes'])
+                    except (json.JSONDecodeError, TypeError):
+                        entry_dict['position_sizes'] = []
+                else:
+                    entry_dict['position_sizes'] = []
+                
+                return entry_dict, "Entry found"
             else:
                 return None, "Entry not found"
                 
@@ -219,30 +311,44 @@ class ManualJournalManager:
             if conn:
                 conn.close()
     
-    def update_journal_entry(self, entry_id, entry_data):
-        """Update an existing journal entry"""
+    def update_journal_entry(self, entry_id, entry_data, user_id=None):
+        """Update an existing journal entry, optionally filtered by user_id for security"""
         try:
             conn = sqlite3.connect(self.db_path)
             cursor = conn.cursor()
             
-            # Check if entry exists
-            cursor.execute('SELECT id FROM manual_journal_entries WHERE id = ?', (entry_id,))
+            # Check if entry exists and user has access
+            check_query = 'SELECT id FROM manual_journal_entries WHERE id = ?'
+            check_params = [entry_id]
+            
+            # IMPORTANT: Filter by user_id for security if provided
+            if user_id:
+                check_query += ' AND user_id = ?'
+                check_params.append(user_id)
+            
+            cursor.execute(check_query, check_params)
             if not cursor.fetchone():
-                return False, "Entry not found"
+                return False, "Entry not found or access denied"
+            
+            # Serialize array fields to JSON
+            import json
+            entry_prices_json = json.dumps(entry_data.get('entry_prices', [])) if entry_data.get('entry_prices') else None
+            position_sizes_json = json.dumps(entry_data.get('position_sizes', [])) if entry_data.get('position_sizes') else None
             
             # Update entry
             cursor.execute('''
                 UPDATE manual_journal_entries SET
                 symbol = ?, trade_type = ?, entry_price = ?, exit_price = ?, 
                 quantity = ?, outcome = ?, profit_loss = ?, trade_date = ?, 
-                entry_time = ?, exit_time = ?, notes = ?, chart_image_path = ?
+                entry_time = ?, exit_time = ?, notes = ?, chart_image_path = ?,
+                chart_link = ?, entry_prices = ?, position_sizes = ?
                 WHERE id = ?
             ''', (
                 entry_data.get('symbol', '').upper(),
                 entry_data.get('trade_type', '').upper(),
                 float(entry_data.get('entry_price', 0)),
                 float(entry_data.get('exit_price', 0)) if entry_data.get('exit_price') else None,
-                int(entry_data.get('quantity', 1)),
+                int(float(entry_data.get('quantity', 1))),
                 entry_data.get('outcome', 'PENDING').upper(),
                 float(entry_data.get('profit_loss', 0)),
                 entry_data.get('trade_date'),
@@ -250,6 +356,9 @@ class ManualJournalManager:
                 entry_data.get('exit_time'),
                 entry_data.get('notes', ''),
                 entry_data.get('chart_image_path'),
+                entry_data.get('chart_link', ''),
+                entry_prices_json,
+                position_sizes_json,
                 entry_id
             ))
             
@@ -264,23 +373,39 @@ class ManualJournalManager:
             if conn:
                 conn.close()
     
-    def delete_journal_entry(self, entry_id):
-        """Delete a journal entry and its associated image"""
+    def delete_journal_entry(self, entry_id, user_id=None):
+        """Delete a journal entry and its associated image, optionally filtered by user_id for security"""
         try:
             conn = sqlite3.connect(self.db_path)
             cursor = conn.cursor()
             
-            # Get entry to check for image file
-            cursor.execute('SELECT chart_image_path FROM manual_journal_entries WHERE id = ?', (entry_id,))
+            # Get entry to check for image file and user access
+            check_query = 'SELECT chart_image_path FROM manual_journal_entries WHERE id = ?'
+            check_params = [entry_id]
+            
+            # IMPORTANT: Filter by user_id for security if provided
+            if user_id:
+                check_query += ' AND user_id = ?'
+                check_params.append(user_id)
+            
+            cursor.execute(check_query, check_params)
             result = cursor.fetchone()
             
             if not result:
-                return False, "Entry not found"
+                return False, "Entry not found or access denied"
             
             image_path = result[0]
             
-            # Delete database entry
-            cursor.execute('DELETE FROM manual_journal_entries WHERE id = ?', (entry_id,))
+            # Delete database entry with user_id filter for security
+            delete_query = 'DELETE FROM manual_journal_entries WHERE id = ?'
+            delete_params = [entry_id]
+            
+            # IMPORTANT: Filter by user_id for security if provided
+            if user_id:
+                delete_query += ' AND user_id = ?'
+                delete_params.append(user_id)
+            
+            cursor.execute(delete_query, delete_params)
             conn.commit()
             
             # Delete associated image file if it exists
@@ -300,14 +425,14 @@ class ManualJournalManager:
             if conn:
                 conn.close()
     
-    def get_journal_statistics(self):
-        """Get comprehensive journal statistics"""
+    def get_journal_statistics(self, user_id=None):
+        """Get comprehensive journal statistics, optionally filtered by user_id"""
         try:
             conn = sqlite3.connect(self.db_path)
             cursor = conn.cursor()
             
-            # Overall statistics
-            cursor.execute('''
+            # Overall statistics with optional user_id filter
+            overall_query = '''
                 SELECT 
                     COUNT(*) as total_trades,
                     SUM(CASE WHEN outcome = 'WIN' THEN 1 ELSE 0 END) as wins,
@@ -319,33 +444,52 @@ class ManualJournalManager:
                     MAX(profit_loss) as best_trade,
                     MIN(profit_loss) as worst_trade
                 FROM manual_journal_entries
-            ''')
+            '''
+            overall_params = []
+            
+            if user_id:
+                overall_query += ' WHERE user_id = ?'
+                overall_params.append(user_id)
+            
+            cursor.execute(overall_query, overall_params)
             overall_stats = cursor.fetchone()
             
-            # Statistics by symbol
-            cursor.execute('''
+            # Statistics by symbol with optional user_id filter
+            symbol_query = '''
                 SELECT 
                     symbol,
                     COUNT(*) as trades,
                     SUM(CASE WHEN outcome = 'WIN' THEN 1 ELSE 0 END) as wins,
                     SUM(profit_loss) as pnl
                 FROM manual_journal_entries
-                GROUP BY symbol
-                ORDER BY trades DESC
-            ''')
+            '''
+            symbol_params = []
+            
+            if user_id:
+                symbol_query += ' WHERE user_id = ?'
+                symbol_params.append(user_id)
+            
+            symbol_query += ' GROUP BY symbol ORDER BY trades DESC'
+            cursor.execute(symbol_query, symbol_params)
             symbol_stats = cursor.fetchall()
             
-            # Statistics by trade type
-            cursor.execute('''
+            # Statistics by trade type with optional user_id filter
+            type_query = '''
                 SELECT 
                     trade_type,
                     COUNT(*) as trades,
                     SUM(CASE WHEN outcome = 'WIN' THEN 1 ELSE 0 END) as wins,
                     SUM(profit_loss) as pnl
                 FROM manual_journal_entries
-                GROUP BY trade_type
-                ORDER BY trades DESC
-            ''')
+            '''
+            type_params = []
+            
+            if user_id:
+                type_query += ' WHERE user_id = ?'
+                type_params.append(user_id)
+            
+            type_query += ' GROUP BY trade_type ORDER BY trades DESC'
+            cursor.execute(type_query, type_params)
             type_stats = cursor.fetchall()
             
             return {

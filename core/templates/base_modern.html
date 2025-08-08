@@ -10,6 +10,9 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
     
+    <!-- Feather Icons for Professional Look -->
+    <script src="https://unpkg.com/feather-icons"></script>
+    
     <!-- Favicon -->
     <link rel="icon" type="image/x-icon" href="{{ url_for('static', filename='favicon.ico') }}">
     <link rel="icon" type="image/png" sizes="16x16" href="{{ url_for('static', filename='favicon-16x16.png') }}">
@@ -1063,6 +1066,308 @@
         .font-weight-bold { font-weight: 600; }
         .font-weight-normal { font-weight: 400; }
 
+        /* User Authentication Styles */
+        .user-info {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+        }
+
+        .notification-container {
+            position: relative;
+        }
+
+        .notifications-btn {
+            position: relative;
+            background: transparent;
+            border: none;
+            color: var(--golden-primary);
+            font-size: 18px;
+            cursor: pointer;
+            padding: 8px;
+            border-radius: 6px;
+            transition: all 0.3s ease;
+        }
+
+        .notifications-btn:hover {
+            background: var(--golden-accent);
+            transform: scale(1.05);
+        }
+
+        .notification-badge {
+            position: absolute;
+            top: -2px;
+            right: -2px;
+            background: var(--danger-color);
+            color: white;
+            font-size: 10px;
+            padding: 2px 6px;
+            border-radius: 10px;
+            min-width: 16px;
+            text-align: center;
+            font-weight: 600;
+        }
+
+        .notifications-dropdown {
+            position: absolute;
+            top: 100%;
+            right: 0;
+            width: 320px;
+            max-height: 400px;
+            background: var(--card-bg);
+            border: 1px solid var(--golden-accent);
+            border-radius: var(--border-radius);
+            box-shadow: var(--box-shadow);
+            backdrop-filter: blur(20px);
+            z-index: 1000;
+            display: none;
+            overflow: hidden;
+        }
+
+        .notifications-dropdown.show {
+            display: block;
+            animation: dropdownFadeIn 0.3s ease;
+        }
+
+        .notifications-header {
+            padding: 16px;
+            border-bottom: 1px solid var(--golden-accent);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: var(--golden-accent);
+        }
+
+        .notifications-header span {
+            font-weight: 600;
+            color: var(--text-primary);
+        }
+
+        .mark-all-read {
+            background: none;
+            border: none;
+            color: var(--golden-primary);
+            font-size: 12px;
+            cursor: pointer;
+            text-decoration: underline;
+        }
+
+        .notifications-list {
+            max-height: 300px;
+            overflow-y: auto;
+        }
+
+        .notification-item {
+            padding: 12px 16px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+            transition: background 0.3s ease;
+            cursor: pointer;
+        }
+
+        .notification-item:hover {
+            background: var(--golden-accent);
+        }
+
+        .notification-item.unread {
+            background: rgba(212, 175, 55, 0.05);
+            border-left: 3px solid var(--golden-primary);
+        }
+
+        .notification-title {
+            font-size: 14px;
+            font-weight: 600;
+            color: var(--text-primary);
+            margin-bottom: 4px;
+        }
+
+        .notification-message {
+            font-size: 12px;
+            color: var(--text-secondary);
+            margin-bottom: 4px;
+        }
+
+        .notification-time {
+            font-size: 10px;
+            color: var(--text-muted);
+        }
+
+        .no-notifications {
+            padding: 32px 16px;
+            text-align: center;
+            color: var(--text-muted);
+            font-size: 14px;
+        }
+
+        .user-menu {
+            position: relative;
+        }
+
+        .user-menu-btn {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            background: var(--golden-accent);
+            border: 1px solid var(--golden-secondary);
+            border-radius: 25px;
+            padding: 6px 16px 6px 6px;
+            color: var(--text-primary);
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-size: 14px;
+        }
+
+        .user-menu-btn:hover {
+            background: var(--golden-secondary);
+            box-shadow: var(--golden-glow);
+        }
+
+        .user-menu-avatar {
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            object-fit: cover;
+            border: 2px solid var(--golden-primary);
+            transition: all 0.3s ease;
+        }
+
+        .user-menu-btn:hover .user-menu-avatar {
+            border-color: var(--golden-bright);
+            box-shadow: 0 0 10px rgba(212, 175, 55, 0.4);
+        }
+
+        .user-icon {
+            font-size: 16px;
+        }
+
+        .user-name {
+            font-weight: 600;
+        }
+
+        .user-role-badge {
+            background: var(--golden-primary);
+            color: var(--primary-bg);
+            padding: 2px 8px;
+            border-radius: 10px;
+            font-size: 10px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .user-dropdown {
+            position: absolute;
+            top: 100%;
+            right: 0;
+            width: 200px;
+            background: var(--card-bg);
+            border: 1px solid var(--golden-accent);
+            border-radius: var(--border-radius);
+            box-shadow: var(--box-shadow);
+            backdrop-filter: blur(20px);
+            z-index: 1000;
+            display: none;
+            overflow: hidden;
+            margin-top: 8px;
+        }
+
+        .user-dropdown.show {
+            display: block;
+            animation: dropdownFadeIn 0.3s ease;
+        }
+
+        .user-info-item {
+            padding: 16px;
+            border-bottom: 1px solid var(--golden-accent);
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .dropdown-avatar {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            object-fit: cover;
+            border: 2px solid var(--golden-primary);
+            flex-shrink: 0;
+        }
+
+        .user-info-text {
+            flex: 1;
+        }
+
+        .user-info-item strong {
+            display: block;
+            color: var(--text-primary);
+            margin-bottom: 4px;
+            font-size: 16px;
+        }
+
+        .user-info-item small {
+            color: var(--golden-primary);
+            text-transform: uppercase;
+            font-weight: 600;
+            letter-spacing: 0.5px;
+            font-size: 11px;
+        }
+
+        .dropdown-divider {
+            border: none;
+            border-top: 1px solid var(--golden-accent);
+            margin: 0;
+        }
+
+        .dropdown-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 12px 16px;
+            color: var(--text-secondary);
+            text-decoration: none;
+            background: none;
+            border: none;
+            width: 100%;
+            text-align: left;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-size: 14px;
+        }
+
+        .dropdown-item:hover {
+            background: var(--golden-accent);
+            color: var(--text-primary);
+        }
+
+        .dropdown-icon {
+            font-size: 14px;
+            width: 16px;
+        }
+
+        .logout-btn {
+            color: var(--danger-color) !important;
+        }
+
+        .logout-btn:hover {
+            background: rgba(255, 71, 87, 0.1) !important;
+            color: var(--danger-color) !important;
+        }
+
+        .auth-buttons {
+            display: flex;
+            gap: 8px;
+        }
+
+        @keyframes dropdownFadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(-10px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
         /* Custom Scrollbar */
         ::-webkit-scrollbar {
             width: 6px;
@@ -1103,27 +1408,39 @@
             
             <nav class="sidebar-nav">
                 <a href="/" class="nav-item {% if request.endpoint == 'dashboard' %}active{% endif %}">
-                    <span class="nav-icon">📊</span>
+                    <span class="nav-icon"><i data-feather="bar-chart-2"></i></span>
                     <span>Dashboard</span>
                 </a>
+                {% if session.user_role == 'admin' %}
                 <a href="/generate_signals" class="nav-item {% if request.endpoint == 'generate_signals' %}active{% endif %}">
-                    <span class="nav-icon">🎯</span>
+                    <span class="nav-icon"><i data-feather="target"></i></span>
                     <span>Generate Signals</span>
                 </a>
+                {% endif %}
+                <a href="/signals" class="nav-item {% if request.endpoint == 'signals' %}active{% endif %}">
+                    <span class="nav-icon"><i data-feather="zap"></i></span>
+                    <span>Signals</span>
+                </a>
                 <a href="/journal" class="nav-item {% if request.endpoint == 'journal' %}active{% endif %}">
-                    <span class="nav-icon">📝</span>
+                    <span class="nav-icon"><i data-feather="book-open"></i></span>
                     <span>Trading Journal</span>
                 </a>
                 <a href="/track_signals" class="nav-item {% if request.endpoint == 'track_signals' %}active{% endif %}">
-                    <span class="nav-icon">📈</span>
+                    <span class="nav-icon"><i data-feather="trending-up"></i></span>
                     <span>Performance</span>
                 </a>
                 <a href="/data_feed_history" class="nav-item {% if request.endpoint == 'data_feed_history' %}active{% endif %}">
-                    <span class="nav-icon">📋</span>
+                    <span class="nav-icon"><i data-feather="database"></i></span>
                     <span>Market Data</span>
                 </a>
-                <a href="/performance" class="nav-item {% if request.endpoint == 'performance' %}active{% endif %}">
-                    <span class="nav-icon">⚙️</span>
+                {% if session.user_role == 'admin' %}
+                <a href="/admin" class="nav-item {% if request.endpoint == 'admin_panel' %}active{% endif %}">
+                    <span class="nav-icon"><i data-feather="shield"></i></span>
+                    <span>Admin Panel</span>
+                </a>
+                {% endif %}
+                <a href="/settings" class="nav-item {% if request.endpoint == 'settings' %}active{% endif %}">
+                    <span class="nav-icon"><i data-feather="settings"></i></span>
                     <span>Settings</span>
                 </a>
             </nav>
@@ -1172,7 +1489,62 @@
                             </div>
                         </div>
                         <div class="header-actions">
-                            <button class="notifications-btn">🔔</button>
+                            {% if session.user_id %}
+                            <div class="user-info">
+                                <div class="notification-container">
+                                    <button class="notifications-btn" onclick="toggleNotifications()">
+                                        <i data-feather="bell"></i>
+                                        <span class="notification-badge" id="notificationBadge" style="display: none;">0</span>
+                                    </button>
+                                    <div class="notifications-dropdown" id="notificationsDropdown">
+                                        <div class="notifications-header">
+                                            <span>Notifications</span>
+                                            <button class="mark-all-read" onclick="markAllNotificationsRead()">Mark all read</button>
+                                        </div>
+                                        <div class="notifications-list" id="notificationsList">
+                                            <div class="no-notifications">No new notifications</div>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="user-menu">
+                                    <button class="user-menu-btn" onclick="toggleUserMenu()">
+                                        <img src="{{ session.user_profile_picture if session.user_profile_picture else url_for('static', filename='images/default-avatar.svg') }}" 
+                                             alt="Profile" 
+                                             class="user-menu-avatar">
+                                        <span class="user-name">{{ session.user_username or 'User' }}</span>
+                                        <span class="user-role-badge">{{ session.user_role or 'user' }}</span>
+                                    </button>
+                                    <div class="user-dropdown" id="userDropdown">
+                                        <div class="user-info-item">
+                                            <img src="{{ session.user_profile_picture if session.user_profile_picture else url_for('static', filename='images/default-avatar.svg') }}" 
+                                                 alt="Profile" 
+                                                 class="dropdown-avatar">
+                                            <div class="user-info-text">
+                                                <strong>{{ session.user_username or 'User' }}</strong>
+                                                <small>{{ session.user_role.title() if session.user_role else 'User' }}</small>
+                                            </div>
+                                        </div>
+                                        <hr class="dropdown-divider">
+                                        <a href="/profile" class="dropdown-item">
+                                            <span class="dropdown-icon"><i data-feather="user"></i></span>
+                                            Profile
+                                        </a>
+                                        <a href="/settings" class="dropdown-item">
+                                            <span class="dropdown-icon"><i data-feather="settings"></i></span>
+                                            Settings
+                                        </a>
+                                        <button class="dropdown-item logout-btn" onclick="logout()">
+                                            <span class="dropdown-icon"><i data-feather="log-out"></i></span>
+                                            Logout
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                            {% else %}
+                            <div class="auth-buttons">
+                                <a href="/login" class="btn btn-secondary">Login</a>
+                            </div>
+                            {% endif %}
                         </div>
                     </div>
                 </div>
@@ -1305,12 +1677,13 @@
                 startDigitalClock() {
                     // Update immediately
                     this.updateClock();
+                    this.updateMarketStatus();
                     
-                    // Update every minute (since we only show date now)
+                    // Update every second for real-time countdown
                     this.clockInterval = setInterval(() => {
                         this.updateClock();
                         this.updateMarketStatus();
-                    }, 60000);
+                    }, 1000);
                 }
                 
                 updateClock() {
@@ -1424,17 +1797,20 @@
                     const now = new Date();
                     const diff = targetTime - now;
                     
-                    if (diff <= 0) return 'now';
+                    if (diff <= 0) return 'in 0:00';
                     
                     const hours = Math.floor(diff / (1000 * 60 * 60));
                     const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
+                    const seconds = Math.floor((diff % (1000 * 60)) / 1000);
                     
                     if (hours > 0) {
-                        return `in ${hours}h ${minutes}m`;
+                        return `in ${hours}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
                     } else if (minutes > 0) {
-                        return `in ${minutes}m`;
+                        return `in ${minutes}:${seconds.toString().padStart(2, '0')}`;
+                    } else if (seconds > 0) {
+                        return `in 0:${seconds.toString().padStart(2, '0')}`;
                     } else {
-                        return 'soon';
+                        return 'in 0:00';
                     }
                 }
                 
@@ -1633,6 +2009,11 @@
             // Initialize sync schedule
             scheduleMarketDataSync();
             continuousDataUpdate();
+            
+            // Initialize authentication features
+            if (typeof initializeAuth === 'function') {
+                initializeAuth();
+            }
 
             // Add smooth scrolling for anchor links
             document.querySelectorAll('a[href^="#"]').forEach(anchor => {
@@ -1657,6 +2038,183 @@
                 });
             });
         });
+
+        // Authentication Functions
+        function toggleNotifications() {
+            const dropdown = document.getElementById('notificationsDropdown');
+            const isVisible = dropdown.classList.contains('show');
+            
+            // Close user menu if open
+            document.getElementById('userDropdown').classList.remove('show');
+            
+            if (isVisible) {
+                dropdown.classList.remove('show');
+            } else {
+                dropdown.classList.add('show');
+                loadNotifications();
+            }
+        }
+
+        function toggleUserMenu() {
+            const dropdown = document.getElementById('userDropdown');
+            const isVisible = dropdown.classList.contains('show');
+            
+            // Close notifications if open
+            document.getElementById('notificationsDropdown').classList.remove('show');
+            
+            if (isVisible) {
+                dropdown.classList.remove('show');
+            } else {
+                dropdown.classList.add('show');
+            }
+        }
+
+        function loadNotifications() {
+            fetch('/api/notifications')
+                .then(response => response.json())
+                .then(result => {
+                    if (result.success) {
+                        displayNotifications(result.notifications);
+                        updateNotificationBadge(result.unread_count);
+                    }
+                })
+                .catch(error => {
+                    console.error('Failed to load notifications:', error);
+                });
+        }
+
+        function displayNotifications(notifications) {
+            const notificationsList = document.getElementById('notificationsList');
+            
+            if (notifications.length === 0) {
+                notificationsList.innerHTML = '<div class="no-notifications">No new notifications</div>';
+                return;
+            }
+            
+            notificationsList.innerHTML = notifications.map(notification => `
+                <div class="notification-item ${notification.is_read ? '' : 'unread'}" 
+                     onclick="markNotificationRead(${notification.id})">
+                    <div class="notification-title">${notification.title}</div>
+                    <div class="notification-message">${notification.message}</div>
+                    <div class="notification-time">${formatTime(notification.created_at)}</div>
+                </div>
+            `).join('');
+        }
+
+        function updateNotificationBadge(count) {
+            const badge = document.getElementById('notificationBadge');
+            if (count > 0) {
+                badge.textContent = count;
+                badge.style.display = 'block';
+            } else {
+                badge.style.display = 'none';
+            }
+        }
+
+        function markNotificationRead(notificationId) {
+            fetch(`/api/notifications/${notificationId}/read`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                }
+            })
+            .then(response => response.json())
+            .then(result => {
+                if (result.success) {
+                    loadNotifications(); // Refresh notifications
+                }
+            })
+            .catch(error => {
+                console.error('Failed to mark notification as read:', error);
+            });
+        }
+
+        function markAllNotificationsRead() {
+            fetch('/api/notifications/mark-all-read', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                }
+            })
+            .then(response => response.json())
+            .then(result => {
+                if (result.success) {
+                    loadNotifications(); // Refresh notifications
+                    showNotification('All notifications marked as read', 'success');
+                }
+            })
+            .catch(error => {
+                console.error('Failed to mark all notifications as read:', error);
+            });
+        }
+
+        function logout() {
+            if (confirm('Are you sure you want to logout?')) {
+                fetch('/api/logout', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    }
+                })
+                .then(response => response.json())
+                .then(result => {
+                    if (result.success) {
+                        showNotification('Logged out successfully', 'success');
+                        setTimeout(() => {
+                            window.location.href = '/login';
+                        }, 1000);
+                    } else {
+                        showNotification('Logout failed', 'error');
+                    }
+                })
+                .catch(error => {
+                    console.error('Logout error:', error);
+                    showNotification('Logout error', 'error');
+                });
+            }
+        }
+
+        function formatTime(timestamp) {
+            const date = new Date(timestamp);
+            const now = new Date();
+            const diff = now - date;
+            
+            if (diff < 60000) { // Less than 1 minute
+                return 'Just now';
+            } else if (diff < 3600000) { // Less than 1 hour
+                const minutes = Math.floor(diff / 60000);
+                return `${minutes}m ago`;
+            } else if (diff < 86400000) { // Less than 1 day
+                const hours = Math.floor(diff / 3600000);
+                return `${hours}h ago`;
+            } else {
+                return date.toLocaleDateString();
+            }
+        }
+
+        function initializeAuth() {
+            // Load notifications on page load if user is logged in
+            if (document.getElementById('notificationBadge')) {
+                loadNotifications();
+                
+                // Poll for new notifications every 30 seconds
+                setInterval(loadNotifications, 30000);
+            }
+            
+            // Close dropdowns when clicking outside
+            document.addEventListener('click', function(event) {
+                const notificationContainer = document.querySelector('.notification-container');
+                const userMenu = document.querySelector('.user-menu');
+                
+                if (notificationContainer && !notificationContainer.contains(event.target)) {
+                    document.getElementById('notificationsDropdown').classList.remove('show');
+                }
+                
+                if (userMenu && !userMenu.contains(event.target)) {
+                    document.getElementById('userDropdown').classList.remove('show');
+                }
+            });
+        }
 
         // Global utility functions
         function showNotification(message, type = 'info') {
@@ -1710,5 +2268,13 @@
     
     <!-- Fixed Market Data Sync System -->
     <script src="{{ url_for('static', filename='js/market_data_sync.js') }}"></script>
+    
+    <!-- Initialize Feather Icons -->
+    <script>
+        // Initialize Feather icons after page load
+        document.addEventListener('DOMContentLoaded', function() {
+            feather.replace();
+        });
+    </script>
 </body>
 </html>

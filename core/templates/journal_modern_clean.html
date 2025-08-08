@@ -1,0 +1,607 @@
+{% extends "base_modern.html" %}
+
+{% block title %}Trading Journal - BFI Signals AI{% endblock %}
+
+{% block page_title %}Trading Journal{% endblock %}
+
+{% block extra_css %}
+<!-- Trading Journal Modal CSS -->
+<link rel="stylesheet" href="{{ url_for('static', filename='css/trading-journal-modal.css') }}">
+<style>
+    /* Trading Journal Specific Styles */
+    .journal-container {
+        max-width: 1400px;
+        margin: 0 auto;
+    }
+
+    .journal-header {
+        text-align: center;
+        margin-bottom: 40px;
+        padding: 40px 20px;
+        background: var(--card-bg);
+        backdrop-filter: blur(10px);
+        border: 1px solid var(--golden-accent);
+        border-radius: var(--border-radius-lg);
+        position: relative;
+        overflow: hidden;
+    }
+
+    .journal-header::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        height: 3px;
+        background: linear-gradient(90deg, var(--golden-primary), var(--golden-bright));
+    }
+
+    .journal-header h1 {
+        font-size: 32px;
+        font-weight: 700;
+        color: var(--text-primary);
+        margin-bottom: 12px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 12px;
+    }
+
+    .journal-header p {
+        font-size: 16px;
+        color: var(--text-secondary);
+        margin: 0;
+        font-style: italic;
+    }
+
+    /* Journal Stats Row */
+    .journal-stats-row {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+        gap: 20px;
+        margin-bottom: 32px;
+    }
+
+    .journal-stat-card {
+        background: var(--card-bg);
+        backdrop-filter: blur(10px);
+        border: 1px solid var(--golden-accent);
+        border-radius: var(--border-radius);
+        padding: 24px;
+        box-shadow: var(--box-shadow);
+        transition: all 0.3s ease;
+        position: relative;
+        overflow: hidden;
+        text-align: center;
+    }
+
+    .journal-stat-card::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        height: 3px;
+        background: linear-gradient(90deg, var(--golden-primary), var(--golden-bright));
+    }
+
+    .journal-stat-card:hover {
+        border-color: var(--golden-secondary);
+        transform: translateY(-2px);
+        box-shadow: var(--golden-glow);
+    }
+
+    .journal-stat-card h3 {
+        font-size: 14px;
+        color: var(--text-secondary);
+        margin-bottom: 12px;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        font-weight: 500;
+    }
+
+    .big-number {
+        display: block;
+        font-size: 36px;
+        font-weight: 700;
+        color: var(--text-primary);
+        margin-bottom: 8px;
+        font-variant-numeric: tabular-nums;
+    }
+
+    .big-number.success {
+        color: var(--success-color);
+    }
+
+    .big-number.profit {
+        color: var(--profit-color);
+    }
+
+    .big-number.warning {
+        color: var(--warning-color);
+    }
+
+    .stat-subtitle {
+        font-size: 12px;
+        color: var(--text-muted);
+        margin: 0;
+    }
+
+    /* Signals Table Container */
+    .signals-table-container {
+        background: var(--card-bg);
+        backdrop-filter: blur(10px);
+        border: 1px solid var(--golden-accent);
+        border-radius: var(--border-radius-lg);
+        overflow: hidden;
+        box-shadow: var(--box-shadow);
+        margin-bottom: 32px;
+    }
+
+    /* Table Header */
+    .table-header {
+        padding: 24px 32px;
+        background: rgba(212, 175, 55, 0.05);
+        border-bottom: 1px solid var(--golden-accent);
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        flex-wrap: wrap;
+        gap: 20px;
+    }
+
+    .table-title {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+    }
+
+    .table-title h2 {
+        font-size: 20px;
+        font-weight: 600;
+        color: var(--text-primary);
+        margin: 0;
+    }
+
+    .table-title .icon {
+        font-size: 24px;
+    }
+
+    .table-actions {
+        display: flex;
+        gap: 12px;
+        align-items: center;
+    }
+
+    .filter-btn,
+    .export-btn {
+        padding: 8px 16px;
+        background: rgba(255, 255, 255, 0.05);
+        border: 1px solid var(--golden-accent);
+        border-radius: 6px;
+        color: var(--text-primary);
+        font-size: 13px;
+        font-weight: 500;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        text-decoration: none;
+        display: flex;
+        align-items: center;
+        gap: 6px;
+    }
+
+    .filter-btn:hover,
+    .export-btn:hover {
+        background: var(--golden-accent);
+        border-color: var(--golden-secondary);
+    }
+
+    /* Enhanced Table */
+    .journal-table {
+        width: 100%;
+        border-collapse: collapse;
+        font-size: 14px;
+    }
+
+    .journal-table th {
+        background: rgba(255, 255, 255, 0.02);
+        padding: 16px 20px;
+        text-align: left;
+        font-weight: 600;
+        font-size: 12px;
+        color: var(--text-secondary);
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.03);
+        font-variant-numeric: tabular-nums;
+        vertical-align: middle;
+    }
+
+    .journal-table tbody tr {
+        transition: all 0.2s ease;
+    }
+
+    .journal-table tbody tr:hover {
+        background: rgba(212, 175, 55, 0.03);
+    }
+
+    .journal-table td {
+        padding: 16px 20px;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.03);
+        font-variant-numeric: tabular-nums;
+        vertical-align: middle;
+    }
+
+    /* Table Cell Styles */
+    .symbol-cell {
+        font-weight: 700;
+        color: var(--golden-primary);
+    }
+
+    .signal-badge {
+        display: inline-block;
+        padding: 4px 8px;
+        border-radius: 4px;
+        font-size: 11px;
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+    }
+
+    .signal-badge.long {
+        background: rgba(0, 255, 136, 0.1);
+        color: var(--success-color);
+        border: 1px solid rgba(0, 255, 136, 0.2);
+    }
+
+    .signal-badge.short {
+        background: rgba(255, 71, 87, 0.1);
+        color: var(--danger-color);
+        border: 1px solid rgba(255, 71, 87, 0.2);
+    }
+
+    .signal-badge.call {
+        background: rgba(0, 255, 136, 0.1);
+        color: var(--success-color);
+        border: 1px solid rgba(0, 255, 136, 0.2);
+    }
+
+    .signal-badge.put {
+        background: rgba(255, 71, 87, 0.1);
+        color: var(--danger-color);
+        border: 1px solid rgba(255, 71, 87, 0.2);
+    }
+
+    .outcome-badge {
+        display: inline-block;
+        padding: 4px 8px;
+        border-radius: 4px;
+        font-size: 11px;
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+    }
+
+    .outcome-badge.win {
+        background: rgba(0, 255, 136, 0.1);
+        color: var(--success-color);
+        border: 1px solid rgba(0, 255, 136, 0.2);
+    }
+
+    .outcome-badge.loss {
+        background: rgba(255, 71, 87, 0.1);
+        color: var(--danger-color);
+        border: 1px solid rgba(255, 71, 87, 0.2);
+    }
+
+    .outcome-badge.breakeven {
+        background: rgba(255, 165, 2, 0.1);
+        color: var(--warning-color);
+        border: 1px solid rgba(255, 165, 2, 0.2);
+    }
+
+    .outcome-badge.pending {
+        background: rgba(255, 255, 255, 0.05);
+        color: var(--text-muted);
+        border: 1px solid rgba(255, 255, 255, 0.1);
+    }
+
+    .price-cell {
+        font-weight: 600;
+        color: var(--text-primary);
+    }
+
+    .pnl-cell {
+        font-weight: 700;
+        font-variant-numeric: tabular-nums;
+    }
+
+    .pnl-cell.positive {
+        color: var(--success-color);
+    }
+
+    .pnl-cell.negative {
+        color: var(--danger-color);
+    }
+
+    .pnl-cell.neutral {
+        color: var(--text-muted);
+    }
+
+    .probability-cell {
+        font-weight: 600;
+        color: var(--golden-primary);
+    }
+
+    .timestamp-cell {
+        font-size: 12px;
+        color: var(--text-muted);
+    }
+
+    /* Action Buttons */
+    .action-btn {
+        padding: 4px 8px;
+        background: transparent;
+        border: 1px solid var(--golden-accent);
+        border-radius: 4px;
+        color: var(--text-secondary);
+        font-size: 11px;
+        cursor: pointer;
+        transition: all 0.2s ease;
+        margin-right: 4px;
+    }
+
+    .action-btn:hover {
+        background: var(--golden-accent);
+        color: var(--primary-bg);
+    }
+
+    .action-btn.view {
+        border-color: var(--info-color);
+        color: var(--info-color);
+    }
+
+    .action-btn.edit {
+        border-color: var(--warning-color);
+        color: var(--warning-color);
+    }
+
+    .action-btn.delete {
+        border-color: var(--danger-color);
+        color: var(--danger-color);
+    }
+
+    .btn-add-trade {
+        padding: 10px 20px;
+        background: var(--golden-primary);
+        border: none;
+        border-radius: 6px;
+        color: var(--primary-bg);
+        font-size: 13px;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        text-decoration: none;
+        display: flex;
+        align-items: center;
+        gap: 6px;
+    }
+
+    .btn-add-trade:hover {
+        background: var(--golden-bright);
+        transform: translateY(-1px);
+        box-shadow: var(--golden-glow);
+    }
+
+    /* Empty state */
+    .empty-state {
+        text-align: center;
+        padding: 60px 20px;
+        color: var(--text-muted);
+    }
+
+    .empty-state .icon {
+        font-size: 48px;
+        margin-bottom: 16px;
+        opacity: 0.5;
+    }
+
+    .empty-state h3 {
+        font-size: 18px;
+        margin-bottom: 8px;
+        color: var(--text-secondary);
+    }
+
+    .empty-state p {
+        margin-bottom: 24px;
+        line-height: 1.5;
+    }
+
+    /* Mobile responsive */
+    @media (max-width: 768px) {
+        .journal-stats-row {
+            grid-template-columns: repeat(2, 1fr);
+        }
+        
+        .table-header {
+            flex-direction: column;
+            align-items: stretch;
+            gap: 16px;
+        }
+        
+        .table-actions {
+            justify-content: center;
+        }
+        
+        .journal-table {
+            font-size: 12px;
+        }
+        
+        .journal-table th,
+        .journal-table td {
+            padding: 12px 8px;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="journal-container">
+    <!-- Journal Header -->
+    <div class="journal-header">
+        <h1>
+            📊 Manual Trading Journal
+        </h1>
+        <p>Track Your Personal Trading Performance</p>
+    </div>
+
+    <!-- Journal Statistics -->
+    <div class="journal-stats-row">
+        <div class="journal-stat-card">
+            <h3>Total Trades</h3>
+            <span class="big-number">{{ stats.total_trades or 0 }}</span>
+            <p class="stat-subtitle">Manual entries</p>
+        </div>
+        
+        <div class="journal-stat-card">
+            <h3>Win Rate</h3>
+            <span class="big-number success">{{ "%.1f"|format(stats.win_rate or 0) }}%</span>
+            <p class="stat-subtitle">Success ratio</p>
+        </div>
+        
+        <div class="journal-stat-card">
+            <h3>Avg Trade</h3>
+            <span class="big-number profit">${{ "%.2f"|format(stats.avg_trade or 0) }}</span>
+            <p class="stat-subtitle">Per trade avg</p>
+        </div>
+        
+        <div class="journal-stat-card">
+            <h3>Total P&L</h3>
+            <span class="big-number {{ 'profit' if (stats.total_pnl or 0) > 0 else 'warning' if (stats.total_pnl or 0) < 0 else '' }}">
+                ${{ "%.2f"|format(stats.total_pnl or 0) }}
+            </span>
+            <p class="stat-subtitle">Net profit/loss</p>
+        </div>
+    </div>
+
+    <!-- Manual Trade History -->
+    <div class="signals-table-container">
+        <div class="table-header">
+            <div class="table-title">
+                <span class="icon">📋</span>
+                <h2>Manual Trade History</h2>
+            </div>
+            <div class="table-actions">
+                {% if entries %}
+                <button class="btn-add-trade" data-action="add-trade">
+                    ➕ Add New Trade
+                </button>
+                {% endif %}
+            </div>
+        </div>
+
+        {% if entries %}
+        <table class="journal-table">
+            <thead>
+                <tr>
+                    <th>Symbol</th>
+                    <th>Type</th>
+                    <th>Entry Price</th>
+                    <th>Exit Price</th>
+                    <th>Quantity</th>
+                    <th>Outcome</th>
+                    <th>P&L</th>
+                    <th>Date</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody id="tradesTableBody">
+                {% for entry in entries %}
+                <tr data-entry-id="{{ entry.id }}">
+                    <td class="symbol-cell">{{ entry.symbol }}</td>
+                    <td>
+                        <span class="signal-badge {{ entry.trade_type.lower() }}">
+                            {% if entry.trade_type == 'LONG' %}📈 Long
+                            {% elif entry.trade_type == 'SHORT' %}📉 Short
+                            {% elif entry.trade_type == 'CALL' %}📞 Call
+                            {% elif entry.trade_type == 'PUT' %}📱 Put
+                            {% else %}{{ entry.trade_type }}
+                            {% endif %}
+                        </span>
+                    </td>
+                    <td class="price-cell">${{ "%.2f"|format(entry.entry_price) if entry.entry_price else 'N/A' }}</td>
+                    <td class="price-cell">${{ "%.2f"|format(entry.exit_price) if entry.exit_price else 'N/A' }}</td>
+                    <td>{{ entry.quantity or 1 }}</td>
+                    <td>
+                        <span class="outcome-badge {{ entry.outcome.lower() if entry.outcome else 'pending' }}">
+                            {% if entry.outcome == 'WIN' %}✅ Win
+                            {% elif entry.outcome == 'LOSS' %}❌ Loss
+                            {% elif entry.outcome == 'BREAKEVEN' %}⚖️ Break
+                            {% else %}⏳ Pending
+                            {% endif %}
+                        </span>
+                    </td>
+                    <td class="pnl-cell {{ 'positive' if (entry.profit_loss or 0) > 0 else 'negative' if (entry.profit_loss or 0) < 0 else 'neutral' }}">
+                        {% if entry.profit_loss is not none %}
+                            {{ '+' if entry.profit_loss > 0 else '' }}${{ "%.2f"|format(entry.profit_loss) }}
+                        {% else %}
+                            N/A
+                        {% endif %}
+                    </td>
+                    <td class="timestamp-cell">{{ entry.trade_date or 'N/A' }}</td>
+                    <td>
+                        <button class="action-btn edit" data-action="edit-trade" data-entry-id="{{ entry.id }}">✏️</button>
+                        <button class="action-btn delete" data-action="delete-trade" data-entry-id="{{ entry.id }}">🗑️</button>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+        {% else %}
+        <div class="empty-state">
+            <div class="icon">📊</div>
+            <h3>No Manual Trades Yet</h3>
+            <p>Start building your trading journal by adding your first manual trade entry.</p>
+            <button class="btn-add-trade" data-action="add-first-trade">
+                ➕ Add Your First Trade
+            </button>
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<!-- Trading Journal Modal JavaScript -->
+<script src="{{ url_for('static', filename='js/trading-journal-modal.js') }}"></script>
+<script>
+    // Clean initialization script for Trading Journal
+    console.log('🚀 Trading Journal page loaded successfully');
+    
+    // Ensure modal system is ready
+    document.addEventListener('DOMContentLoaded', function() {
+        console.log('✅ DOM ready, modal system should be initialized');
+        
+        // Debug function availability after a short delay
+        setTimeout(() => {
+            console.log('🔍 Function availability check:');
+            console.log('  openTradeModal:', typeof window.openTradeModal);
+            console.log('  closeModal:', typeof window.closeModal);
+        }, 500);
+    });
+    
+    // Add CSS animations for notifications
+    const style = document.createElement('style');
+    style.textContent = `
+        @keyframes slideInRight {
+            from { opacity: 0; transform: translateX(100px); }
+            to { opacity: 1; transform: translateX(0); }
+        }
+        @keyframes slideOutRight {
+            from { opacity: 1; transform: translateX(0); }
+            to { opacity: 0; transform: translateX(100px); }
+        }
+    `;
+    document.head.appendChild(style);
+</script>
+{% endblock %}

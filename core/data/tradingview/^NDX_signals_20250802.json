@@ -1,0 +1,28 @@
+{
+  "timestamp": "2025-08-02T20:22:52.668830",
+  "symbol": "^NDX",
+  "display_name": "NAS100",
+  "levels": {
+    "cv": 22763.31,
+    "prv": 23218.12,
+    "keylevel_high": 22972.47,
+    "keylevel_low": 22673.88,
+    "tp": 22308.5,
+    "entry1": 22972.47,
+    "entry2": 22763.31,
+    "sl_tight": 23072.47,
+    "sl_wide": 23172.47
+  },
+  "bias": {
+    "direction": "SHORT",
+    "net_change": -454.81,
+    "change_pct": -1.96,
+    "bias_text": "Bearish (Net Change < 0) | News: Bearish (keywords)"
+  },
+  "meta": {
+    "trading_date": "04 August 2025",
+    "generated_at": "2025-08-02T20:22:39.759333",
+    "is_weekend_signal": true,
+    "cv_position": 0.3
+  }
+}

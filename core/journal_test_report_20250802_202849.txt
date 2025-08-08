@@ -1,0 +1,80 @@
+MANUAL TRADE JOURNAL - COMPREHENSIVE TEST REPORT
+============================================================
+Test Execution Time: 2025-08-02 20:28:49
+Flask Server: http://localhost:5000
+Database: ai_learning.db
+
+BACKEND API TESTS:
+----------------------------------------
+✅ journal_page_load: Journal page loaded successfully (size: 134621 bytes)
+   Timestamp: 2025-08-02 20:28:48
+✅ create_entry: Entry created with ID: 7
+   Timestamp: 2025-08-02 20:28:48
+✅ get_entries: Retrieved 4 entries
+   Timestamp: 2025-08-02 20:28:48
+✅ get_single_entry: Entry retrieved: TEST_SYMBOL
+   Timestamp: 2025-08-02 20:28:48
+✅ update_entry: Entry updated successfully
+   Timestamp: 2025-08-02 20:28:48
+✅ get_statistics: Statistics retrieved, total trades: 4
+   Timestamp: 2025-08-02 20:28:48
+
+DATABASE TESTS:
+----------------------------------------
+✅ table_exists: manual_journal_entries table exists
+   Timestamp: 2025-08-02 20:28:48
+✅ table_schema: All 15 expected columns present
+   Timestamp: 2025-08-02 20:28:48
+✅ entry_count: Database contains 4 entries
+   Timestamp: 2025-08-02 20:28:48
+✅ direct_insert: Direct insert successful, ID: 8
+   Timestamp: 2025-08-02 20:28:48
+✅ direct_select: Direct select successful, symbol: DB_TEST
+   Timestamp: 2025-08-02 20:28:48
+✅ direct_update: Updated 1 record(s)
+   Timestamp: 2025-08-02 20:28:48
+✅ direct_delete: Deleted 1 record(s)
+   Timestamp: 2025-08-02 20:28:48
+
+IMAGE UPLOAD TESTS:
+----------------------------------------
+✅ create_test_png: Created PNG test image (284 bytes)
+   Timestamp: 2025-08-02 20:28:48
+✅ create_test_jpeg: Created JPEG test image (1305 bytes)
+   Timestamp: 2025-08-02 20:28:48
+✅ upload_small_test.png: Image uploaded successfully, entry ID: 9, path: Not provided
+   Timestamp: 2025-08-02 20:28:48
+❌ file_created_small_test.png: Image file not found on disk
+   Timestamp: 2025-08-02 20:28:48
+✅ upload_test_chart.jpg: Image uploaded successfully, entry ID: 10, path: Not provided
+   Timestamp: 2025-08-02 20:28:48
+❌ file_created_test_chart.jpg: Image file not found on disk
+   Timestamp: 2025-08-02 20:28:48
+
+SECURITY TESTS:
+----------------------------------------
+✅ malicious_file_upload: Malicious file upload rejected with HTTP error
+   Timestamp: 2025-08-02 20:28:48
+✅ sql_injection_protection: SQL injection attempt blocked, table still exists
+   Timestamp: 2025-08-02 20:28:48
+⚠️ oversized_file_protection: Test image not large enough (84056 bytes)
+   Timestamp: 2025-08-02 20:28:49
+
+PERFORMANCE TESTS:
+----------------------------------------
+✅ bulk_creation: Created 10/10 entries in 0.03s (avg: 0.003s/entry)
+   Timestamp: 2025-08-02 20:28:49
+✅ bulk_retrieval: Retrieved 17 entries in 0.002s
+   Timestamp: 2025-08-02 20:28:49
+✅ statistics_calculation: Statistics calculated in 0.001s
+   Timestamp: 2025-08-02 20:28:49
+
+SUMMARY:
+----------------------------------------
+Total Tests: 25
+Passed: 22
+Failed: 2
+Warnings: 1
+Success Rate: 88.0%
+
+OVERALL STATUS: ⚠️ MINOR ISSUES DETECTED

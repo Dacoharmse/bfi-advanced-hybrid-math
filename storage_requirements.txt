@@ -1,0 +1,22 @@
+# Storage System Dependencies for BFI Signals
+
+# Supabase client
+supabase>=2.0.0
+
+# Scheduling
+schedule>=1.2.0
+
+# Timezone handling
+pytz>=2023.3
+
+# Data manipulation (if not already installed)
+pandas>=1.5.0
+
+# JSON handling and utilities
+python-dateutil>=2.8.0
+
+# HTTP requests (for Supabase)
+requests>=2.31.0
+
+# Async support (for Supabase)
+aiohttp>=3.8.0

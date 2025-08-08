@@ -10,7 +10,7 @@ import warnings
 logging.getLogger('werkzeug').setLevel(logging.ERROR)
 warnings.filterwarnings("ignore", category=UserWarning, module="transformers")
 
-from flask import Flask, render_template, request, jsonify, redirect, url_for
+from flask import Flask, render_template, request, jsonify, redirect, url_for, send_file, flash, session
 import sqlite3
 import json
 from datetime import datetime, timedelta
@@ -29,12 +29,324 @@ import schedule
 import threading
 import time
 import pytz
+from manual_journal import journal_manager
+from werkzeug.utils import secure_filename
+from auth_manager import auth_manager, login_required, admin_required
+
+def get_todays_signals():
+    """Get signals for today only"""
+    try:
+        conn = sqlite3.connect('ai_learning.db')
+        cursor = conn.cursor()
+        
+        # Get today's date in YYYY-MM-DD format
+        today = datetime.now().strftime('%Y-%m-%d')
+        
+        # Ensure risky_play_outcome column exists
+        try:
+            cursor.execute('ALTER TABLE signal_performance ADD COLUMN risky_play_outcome INTEGER')
+            conn.commit()
+        except sqlite3.OperationalError:
+            pass
+        
+        # Check if risky_play_outcome column exists
+        cursor.execute('PRAGMA table_info(signal_performance)')
+        columns = [col[1] for col in cursor.fetchall()]
+        
+        if 'risky_play_outcome' in columns:
+            cursor.execute('''
+                SELECT id, symbol, signal_type, predicted_probability, risk_level, 
+                       timestamp, actual_outcome, profit_loss, risky_play_outcome
+                FROM signal_performance 
+                WHERE DATE(timestamp) = ?
+                ORDER BY timestamp DESC
+            ''', (today,))
+        else:
+            cursor.execute('''
+                SELECT id, symbol, signal_type, predicted_probability, risk_level, 
+                       timestamp, actual_outcome, profit_loss, NULL as risky_play_outcome
+                FROM signal_performance 
+                WHERE DATE(timestamp) = ?
+                ORDER BY timestamp DESC
+            ''', (today,))
+        
+        signals_data = cursor.fetchall()
+        conn.close()
+        
+        return format_signal_data(signals_data)
+        
+    except Exception as e:
+        print(f"❌ Error getting today's signals: {str(e)}")
+        return []
+
+def get_week_signals():
+    """Get signals for the current week"""
+    try:
+        conn = sqlite3.connect('ai_learning.db')
+        cursor = conn.cursor()
+        
+        # Get start of current week (Monday)
+        today = datetime.now()
+        days_since_monday = today.weekday()
+        monday = today - timedelta(days=days_since_monday)
+        week_start = monday.strftime('%Y-%m-%d')
+        
+        # Ensure risky_play_outcome column exists
+        try:
+            cursor.execute('ALTER TABLE signal_performance ADD COLUMN risky_play_outcome INTEGER')
+            conn.commit()
+        except sqlite3.OperationalError:
+            pass
+        
+        # Check if risky_play_outcome column exists
+        cursor.execute('PRAGMA table_info(signal_performance)')
+        columns = [col[1] for col in cursor.fetchall()]
+        
+        if 'risky_play_outcome' in columns:
+            cursor.execute('''
+                SELECT id, symbol, signal_type, predicted_probability, risk_level, 
+                       timestamp, actual_outcome, profit_loss, risky_play_outcome
+                FROM signal_performance 
+                WHERE DATE(timestamp) >= ?
+                ORDER BY timestamp DESC
+            ''', (week_start,))
+        else:
+            cursor.execute('''
+                SELECT id, symbol, signal_type, predicted_probability, risk_level, 
+                       timestamp, actual_outcome, profit_loss, NULL as risky_play_outcome
+                FROM signal_performance 
+                WHERE DATE(timestamp) >= ?
+                ORDER BY timestamp DESC
+            ''', (week_start,))
+        
+        signals_data = cursor.fetchall()
+        conn.close()
+        
+        return format_signal_data(signals_data)
+        
+    except Exception as e:
+        print(f"❌ Error getting week signals: {str(e)}")
+        return []
+
+def format_signal_data(signals_data):
+    """Format signal data for consistent frontend display"""
+    formatted_signals = []
+    
+    for signal in signals_data:
+        try:
+            formatted_signal = {
+                'id': signal[0],
+                'symbol': signal[1] or 'N/A',
+                'signal_type': signal[2] or 'N/A',
+                'predicted_probability': float(signal[3]) if signal[3] is not None else 0.0,
+                'risk_level': signal[4] or 'N/A',
+                'timestamp': signal[5],
+                'actual_outcome': signal[6] if signal[6] is not None else None,
+                'profit_loss': float(signal[7]) if signal[7] is not None else 0.0,
+                'risky_play_outcome': signal[8] if signal[8] is not None else None,
+                'formatted_timestamp': None,
+                'outcome_text': 'Pending',
+                'outcome_class': 'text-warning'
+            }
+            
+            # Format timestamp for display
+            if formatted_signal['timestamp']:
+                try:
+                    dt = datetime.fromisoformat(formatted_signal['timestamp'].replace('Z', '+00:00'))
+                    formatted_signal['formatted_timestamp'] = dt.strftime('%Y-%m-%d %H:%M:%S UTC')
+                except:
+                    formatted_signal['formatted_timestamp'] = formatted_signal['timestamp']
+            
+            # Format outcome display
+            if formatted_signal['actual_outcome'] is not None:
+                if formatted_signal['actual_outcome'] == 1:
+                    formatted_signal['outcome_text'] = 'Win'
+                    formatted_signal['outcome_class'] = 'text-success'
+                else:
+                    formatted_signal['outcome_text'] = 'Loss'
+                    formatted_signal['outcome_class'] = 'text-danger'
+            
+            formatted_signals.append(formatted_signal)
+            
+        except Exception as e:
+            print(f"❌ Error formatting signal: {str(e)}")
+            continue
+    
+    return formatted_signals
+
+def calculate_signal_stats():
+    """Calculate comprehensive signal performance statistics"""
+    try:
+        conn = sqlite3.connect('ai_learning.db')
+        cursor = conn.cursor()
+        
+        # Get basic statistics
+        cursor.execute('''
+            SELECT 
+                COUNT(*) as total_signals,
+                COUNT(CASE WHEN actual_outcome = 1 THEN 1 END) as wins,
+                COUNT(CASE WHEN actual_outcome = 0 THEN 1 END) as losses,
+                COUNT(CASE WHEN actual_outcome IS NULL THEN 1 END) as pending,
+                COALESCE(SUM(profit_loss), 0) as total_pnl,
+                COALESCE(AVG(profit_loss), 0) as avg_pnl,
+                COALESCE(AVG(predicted_probability), 0) as avg_confidence
+            FROM signal_performance
+        ''')
+        
+        basic_stats = cursor.fetchone()
+        
+        # Calculate win rate
+        total_completed = basic_stats[1] + basic_stats[2]  # wins + losses
+        win_rate = (basic_stats[1] / total_completed * 100) if total_completed > 0 else 0
+        
+        # Get today's statistics
+        today = datetime.now().strftime('%Y-%m-%d')
+        cursor.execute('''
+            SELECT 
+                COUNT(*) as today_signals,
+                COUNT(CASE WHEN actual_outcome = 1 THEN 1 END) as today_wins,
+                COUNT(CASE WHEN actual_outcome = 0 THEN 1 END) as today_losses,
+                COALESCE(SUM(profit_loss), 0) as today_pnl
+            FROM signal_performance
+            WHERE DATE(timestamp) = ?
+        ''', (today,))
+        
+        today_stats = cursor.fetchone()
+        
+        # Get this week's statistics
+        today_dt = datetime.now()
+        days_since_monday = today_dt.weekday()
+        monday = today_dt - timedelta(days=days_since_monday)
+        week_start = monday.strftime('%Y-%m-%d')
+        
+        cursor.execute('''
+            SELECT 
+                COUNT(*) as week_signals,
+                COUNT(CASE WHEN actual_outcome = 1 THEN 1 END) as week_wins,
+                COUNT(CASE WHEN actual_outcome = 0 THEN 1 END) as week_losses,
+                COALESCE(SUM(profit_loss), 0) as week_pnl
+            FROM signal_performance
+            WHERE DATE(timestamp) >= ?
+        ''', (week_start,))
+        
+        week_stats = cursor.fetchone()
+        
+        # Get symbol performance
+        cursor.execute('''
+            SELECT 
+                symbol,
+                COUNT(*) as count,
+                COUNT(CASE WHEN actual_outcome = 1 THEN 1 END) as wins,
+                COUNT(CASE WHEN actual_outcome = 0 THEN 1 END) as losses,
+                COALESCE(SUM(profit_loss), 0) as pnl
+            FROM signal_performance
+            WHERE symbol IS NOT NULL
+            GROUP BY symbol
+            ORDER BY count DESC
+            LIMIT 10
+        ''')
+        
+        symbol_stats = cursor.fetchall()
+        
+        conn.close()
+        
+        # Format symbol statistics
+        formatted_symbols = []
+        for symbol_stat in symbol_stats:
+            symbol_completed = symbol_stat[2] + symbol_stat[3]  # wins + losses
+            symbol_win_rate = (symbol_stat[2] / symbol_completed * 100) if symbol_completed > 0 else 0
+            
+            formatted_symbols.append({
+                'symbol': symbol_stat[0],
+                'total': symbol_stat[1],
+                'wins': symbol_stat[2],
+                'losses': symbol_stat[3],
+                'win_rate': round(symbol_win_rate, 1),
+                'pnl': round(symbol_stat[4], 2)
+            })
+        
+        return {
+            'total_signals': basic_stats[0],
+            'wins': basic_stats[1],
+            'losses': basic_stats[2],
+            'pending': basic_stats[3],
+            'win_rate': round(win_rate, 1),
+            'total_pnl': round(basic_stats[4], 2),
+            'avg_pnl': round(basic_stats[5], 2),
+            'avg_confidence': round(basic_stats[6], 1),
+            'today': {
+                'signals': today_stats[0],
+                'wins': today_stats[1],
+                'losses': today_stats[2],
+                'pnl': round(today_stats[3], 2)
+            },
+            'week': {
+                'signals': week_stats[0],
+                'wins': week_stats[1],
+                'losses': week_stats[2],
+                'pnl': round(week_stats[3], 2)
+            },
+            'by_symbol': formatted_symbols
+        }
+        
+    except Exception as e:
+        print(f"❌ Error calculating signal stats: {str(e)}")
+        return {
+            'total_signals': 0,
+            'wins': 0,
+            'losses': 0,
+            'pending': 0,
+            'win_rate': 0,
+            'total_pnl': 0.0,
+            'avg_pnl': 0.0,
+            'avg_confidence': 0.0,
+            'today': {'signals': 0, 'wins': 0, 'losses': 0, 'pnl': 0.0},
+            'week': {'signals': 0, 'wins': 0, 'losses': 0, 'pnl': 0.0},
+            'by_symbol': []
+        }
+
+def create_signal_notification(signal_data, signal_id=None):
+    """Create notifications for all regular users when a new signal is generated"""
+    try:
+        # Get all regular users (non-admin)
+        conn = sqlite3.connect('ai_learning.db')
+        cursor = conn.cursor()
+        
+        cursor.execute('SELECT id FROM users WHERE role != "admin" AND is_active = 1')
+        regular_users = cursor.fetchall()
+        
+        if not regular_users:
+            print("📡 No regular users to notify")
+            return
+        
+        # Create notification for each regular user
+        for (user_id,) in regular_users:
+            title = f"🎯 New {signal_data.get('instrument', 'Trading')} Signal"
+            message = f"{signal_data.get('direction', 'N/A')} signal generated at {signal_data.get('entry_price', 'N/A')} with {signal_data.get('confidence', 'N/A')}% confidence"
+            
+            auth_manager.create_notification(
+                user_id=user_id,
+                title=title,
+                message=message,
+                notification_type='signal',
+                signal_id=signal_id
+            )
+        
+        print(f"📡 Created signal notifications for {len(regular_users)} users")
+        conn.close()
+        
+    except Exception as e:
+        print(f"❌ Error creating signal notifications: {str(e)}")
 
 # Load environment variables
 load_dotenv('../.env')
 
 app = Flask(__name__, static_folder='static', static_url_path='/static')
 app.secret_key = 'bfi_signals_dashboard_2025'
+
+# File upload configuration
+app.config['UPLOAD_FOLDER'] = 'uploads/charts'
+app.config['MAX_CONTENT_LENGTH'] = 10 * 1024 * 1024  # 10MB max file size
 
 # Ensure favicon files are available in static folder
 def ensure_favicons():
@@ -59,6 +371,89 @@ ensure_favicons()
 # Initialize AI components
 ai_engine = AIEngine()
 ai_manager = AIManager()
+
+def sync_json_signals_to_db():
+    """Load signals from JSON files and sync them to SQLite database"""
+    try:
+        conn = sqlite3.connect("ai_learning.db")
+        cursor = conn.cursor()
+        
+        # Add missing columns to existing table if needed
+        columns_to_add = [
+            ('entry_price', 'REAL'),
+            ('take_profit', 'REAL'),
+            ('stop_loss', 'REAL'),
+            ('bias', 'TEXT'),
+            ('net_change', 'REAL')
+        ]
+        
+        for column_name, column_type in columns_to_add:
+            try:
+                cursor.execute(f'ALTER TABLE signal_performance ADD COLUMN {column_name} {column_type}')
+            except sqlite3.OperationalError as e:
+                if "duplicate column name" in str(e):
+                    # Column already exists
+                    pass
+                else:
+                    raise
+        
+        # Get existing signal timestamps to avoid duplicates
+        cursor.execute('SELECT timestamp FROM signal_performance')
+        existing_timestamps = set(row[0] for row in cursor.fetchall())
+        
+        # Load signals from daily JSON files
+        data_dir = '../data/daily'
+        if not os.path.exists(data_dir):
+            data_dir = 'data/daily'
+            
+        if os.path.exists(data_dir):
+            for filename in os.listdir(data_dir):
+                if filename.endswith('.json') and 'signals_' in filename:
+                    filepath = os.path.join(data_dir, filename)
+                    try:
+                        with open(filepath, 'r') as f:
+                            data = json.load(f)
+                            
+                        if 'signals' in data:
+                            for signal_entry in data['signals']:
+                                signal = signal_entry.get('signal', {})
+                                created_at = signal_entry.get('created_at', signal.get('generated_at', ''))
+                                
+                                # Skip if already exists
+                                if created_at in existing_timestamps:
+                                    continue
+                                
+                                # Extract signal data
+                                symbol = signal.get('symbol', 'UNKNOWN')
+                                probability = signal.get('probability_percentage', 75) / 100.0
+                                entry_price = signal.get('entry1', signal.get('current_value', 0))
+                                take_profit = signal.get('take_profit', 0)
+                                stop_loss = signal.get('sl_tight', 0)
+                                bias = signal.get('bias', 'UNKNOWN')
+                                net_change = signal.get('net_change', 0)
+                                
+                                # Insert into database
+                                cursor.execute('''
+                                    INSERT INTO signal_performance 
+                                    (symbol, signal_type, predicted_probability, risk_level, timestamp, 
+                                     entry_price, take_profit, stop_loss, bias, net_change)
+                                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                                ''', (
+                                    symbol, 'Hybrid Math', probability, 'Medium', created_at,
+                                    entry_price, take_profit, stop_loss, bias, net_change
+                                ))
+                                
+                    except Exception as e:
+                        print(f"Error processing {filename}: {e}")
+        
+        conn.commit()
+        conn.close()
+        print("✅ Signal sync completed successfully")
+        return True
+        
+    except Exception as e:
+        print(f"❌ Error syncing signals: {e}")
+        return False
 
 # Market Data Storage System
 class MarketDataStorage:
@@ -208,10 +603,161 @@ def check_discord_config():
         'env_file_exists': env_file_exists
     }
 
+# Authentication Routes
+@app.route('/login')
+def login():
+    """Login page"""
+    if 'user_id' in session:
+        return redirect(url_for('dashboard'))
+    return render_template('login.html')
+
+@app.route('/register')
+def register():
+    """Registration page"""
+    if 'user_id' in session:
+        return redirect(url_for('dashboard'))
+    return render_template('register.html')
+
+@app.route('/api/login', methods=['POST'])
+def api_login():
+    """Handle login requests"""
+    try:
+        data = request.get_json()
+        username = data.get('username', '').strip()
+        password = data.get('password', '')
+        
+        if not username or not password:
+            return jsonify({'success': False, 'error': 'Username and password are required'})
+        
+        # Authenticate user
+        auth_result = auth_manager.authenticate_user(username, password)
+        
+        if auth_result['success']:
+            user = auth_result['user']
+            
+            # Create session
+            session_token = auth_manager.create_session(
+                user['id'],
+                request.remote_addr,
+                request.headers.get('User-Agent')
+            )
+            
+            if session_token:
+                # Set session data
+                session['user_id'] = user['id']
+                session['username'] = user['username']
+                session['user_role'] = user['role']
+                session['session_token'] = session_token
+                
+                # Determine redirect URL based on role
+                redirect_url = '/generate_signals' if user['role'] == 'admin' else '/dashboard'
+                
+                return jsonify({
+                    'success': True,
+                    'message': 'Login successful',
+                    'redirect': redirect_url,
+                    'user': {
+                        'username': user['username'],
+                        'role': user['role']
+                    }
+                })
+            else:
+                return jsonify({'success': False, 'error': 'Failed to create session'})
+        else:
+            return jsonify({'success': False, 'error': auth_result['error']})
+            
+    except Exception as e:
+        print(f"Login error: {e}")
+        return jsonify({'success': False, 'error': 'Login failed'})
+
+@app.route('/api/register', methods=['POST'])
+def api_register():
+    """Handle registration requests"""
+    try:
+        data = request.get_json()
+        username = data.get('username', '').strip()
+        email = data.get('email', '').strip()
+        password = data.get('password', '')
+        
+        if not username or not email or not password:
+            return jsonify({'success': False, 'error': 'All fields are required'})
+        
+        # Register user
+        register_result = auth_manager.register_user(username, email, password)
+        
+        if register_result['success']:
+            return jsonify({
+                'success': True,
+                'message': 'Account created successfully! Please log in.'
+            })
+        else:
+            return jsonify({'success': False, 'error': register_result['error']})
+            
+    except Exception as e:
+        print(f"Registration error: {e}")
+        return jsonify({'success': False, 'error': 'Registration failed'})
+
+@app.route('/logout')
+def logout():
+    """Handle user logout"""
+    session_token = session.get('session_token')
+    if session_token:
+        auth_manager.logout_user(session_token)
+    
+    session.clear()
+    return redirect(url_for('login'))
+
+@app.route('/api/notifications')
+@login_required
+def api_get_notifications():
+    """Get user notifications"""
+    try:
+        user_id = session.get('user_id')
+        unread_only = request.args.get('unread_only', 'false').lower() == 'true'
+        
+        notifications = auth_manager.get_user_notifications(user_id, unread_only)
+        
+        return jsonify({
+            'success': True,
+            'notifications': notifications
+        })
+        
+    except Exception as e:
+        print(f"Error getting notifications: {e}")
+        return jsonify({'success': False, 'error': 'Failed to get notifications'})
+
+@app.route('/api/notifications/<int:notification_id>/read', methods=['POST'])
+@login_required
+def api_mark_notification_read(notification_id):
+    """Mark notification as read"""
+    try:
+        user_id = session.get('user_id')
+        success = auth_manager.mark_notification_read(notification_id, user_id)
+        
+        return jsonify({'success': success})
+        
+    except Exception as e:
+        print(f"Error marking notification as read: {e}")
+        return jsonify({'success': False, 'error': 'Failed to mark notification as read'})
+
 @app.route('/')
+@login_required
 def dashboard():
     """Main dashboard page"""
+    return dashboard_view()
+
+@app.route('/dashboard')
+@login_required
+def dashboard_redirect():
+    """Redirect /dashboard to root for compatibility"""
+    return dashboard_view()
+
+def dashboard_view():
+    """Main dashboard page"""
     try:
+        # Sync JSON signals to database first
+        sync_json_signals_to_db()
+        
         # Get AI statistics
         stats = ai_engine.get_learning_stats()
         
@@ -294,6 +840,7 @@ def dashboard():
 
 
 @app.route('/performance')
+@login_required
 def performance():
     """Performance monitoring page"""
     try:
@@ -434,8 +981,9 @@ def api_manual_outcome():
         return jsonify({'error': f'Error adding manual outcome: {str(e)}'})
 
 @app.route('/signals')
+@login_required
 def signals():
-    """Signals history page"""
+    """Enhanced signals history page with modern UI"""
     try:
         conn = sqlite3.connect("ai_learning.db")
         cursor = conn.cursor()
@@ -480,178 +1028,495 @@ def signals():
         
         conn.close()
         
+        # Format signals data using helper function
+        formatted_signals = format_signal_data(signals_data)
+        
         # Calculate pagination info
         total_pages = (total_signals + per_page - 1) // per_page
         has_prev = page > 1
         has_next = page < total_pages
         
-        return render_template('signals.html',
-                             signals=signals_data,
+        # Get signal statistics for dashboard display
+        signal_stats = calculate_signal_stats()
+        
+        return render_template('signals_modern.html',
+                             signals=formatted_signals,
                              page=page,
                              total_pages=total_pages,
                              has_prev=has_prev,
-                             has_next=has_next)
+                             has_next=has_next,
+                             stats=signal_stats,
+                             total_signals=total_signals)
         
     except Exception as e:
-        return render_template('signals.html', 
+        print(f"❌ Error loading signals page: {str(e)}")
+        return render_template('signals_modern.html', 
                              error=f"Error loading signals: {e}",
                              signals=[],
                              page=1,
                              total_pages=1,
                              has_prev=False,
-                             has_next=False)
+                             has_next=False,
+                             stats=calculate_signal_stats(),
+                             total_signals=0)
 
 @app.route('/generate_signals')
+@admin_required
 def generate_signals():
     """Generate signals page"""
-    # Get latest market close data (previous day's data)
-    market_close_data = market_data_storage.get_latest_market_close_data()
+    # Get current real-time market data for signal generation display
+    current_market_data = {
+        'nasdaq': market_data_storage.get_market_data('nasdaq'),
+        'dow': market_data_storage.get_market_data('dow'),
+        'gold': market_data_storage.get_market_data('gold')
+    }
+    
+    print("📊 Using current real-time data for generate_signals page")
+    print(f"   NASDAQ: {current_market_data['nasdaq'].get('price', 'N/A')} (Change: {current_market_data['nasdaq'].get('change', 'N/A')})")
     
     return render_template('generate_signals_modern.html', 
-                         market_close_data=market_close_data)
+                         market_close_data=current_market_data)
 
 @app.route('/journal')
+@login_required
 def journal():
-    """Journal Signal Page - Track Win Rate and Performance"""
+    """Manual Trade Journal Page - Track Manual Trading Performance"""
     try:
-        conn = sqlite3.connect("ai_learning.db")
-        cursor = conn.cursor()
+        print("📊 Loading manual journal data...")
         
-        # Get comprehensive performance statistics
-        cursor.execute('''
-            SELECT 
-                COUNT(*) as total_signals,
-                SUM(CASE WHEN actual_outcome = 1 THEN 1 ELSE 0 END) as wins,
-                SUM(CASE WHEN actual_outcome = 0 THEN 1 ELSE 0 END) as losses,
-                SUM(CASE WHEN actual_outcome = 2 THEN 1 ELSE 0 END) as breakevens,
-                SUM(CASE WHEN actual_outcome IS NULL THEN 1 ELSE 0 END) as pending,
-                AVG(CASE WHEN actual_outcome IS NOT NULL THEN predicted_probability * 100 ELSE NULL END) as avg_probability,
-                AVG(CASE WHEN actual_outcome = 1 THEN predicted_probability * 100 ELSE NULL END) as avg_win_probability,
-                AVG(CASE WHEN actual_outcome = 0 THEN predicted_probability * 100 ELSE NULL END) as avg_loss_probability
-            FROM signal_performance
-        ''')
-        overall_stats = cursor.fetchone()
+        # Get manual journal statistics filtered by user
+        user_id = session.get('user_id')
+        stats, stats_message = journal_manager.get_journal_statistics(user_id)
         
-        # Get performance by symbol
-        cursor.execute('''
-            SELECT 
-                symbol,
-                COUNT(*) as total_signals,
-                SUM(CASE WHEN actual_outcome = 1 THEN 1 ELSE 0 END) as wins,
-                SUM(CASE WHEN actual_outcome = 0 THEN 1 ELSE 0 END) as losses,
-                SUM(CASE WHEN actual_outcome = 2 THEN 1 ELSE 0 END) as breakevens,
-                SUM(CASE WHEN actual_outcome IS NULL THEN 1 ELSE 0 END) as pending,
-                AVG(predicted_probability * 100) as avg_probability,
-                ROUND(
-                    CAST(SUM(CASE WHEN actual_outcome = 1 THEN 1 ELSE 0 END) AS FLOAT) / 
-                    CAST(SUM(CASE WHEN actual_outcome IS NOT NULL THEN 1 ELSE 0 END) AS FLOAT) * 100, 2
-                ) as win_rate
-            FROM signal_performance 
-            GROUP BY symbol
-            ORDER BY total_signals DESC
-        ''')
-        symbol_performance = cursor.fetchall()
+        # Get recent manual journal entries filtered by user
+        entries, entries_message = journal_manager.get_journal_entries(limit=20, user_id=user_id)
         
-        # Get performance by signal type (LONG/SHORT)
-        cursor.execute('''
-            SELECT 
-                signal_type,
-                COUNT(*) as total_signals,
-                SUM(CASE WHEN actual_outcome = 1 THEN 1 ELSE 0 END) as wins,
-                SUM(CASE WHEN actual_outcome = 0 THEN 1 ELSE 0 END) as losses,
-                SUM(CASE WHEN actual_outcome = 2 THEN 1 ELSE 0 END) as breakevens,
-                SUM(CASE WHEN actual_outcome IS NULL THEN 1 ELSE 0 END) as pending,
-                AVG(predicted_probability * 100) as avg_probability,
-                ROUND(
-                    CAST(SUM(CASE WHEN actual_outcome = 1 THEN 1 ELSE 0 END) AS FLOAT) / 
-                    CAST(SUM(CASE WHEN actual_outcome IS NOT NULL THEN 1 ELSE 0 END) AS FLOAT) * 100, 2
-                ) as win_rate
-            FROM signal_performance 
-            GROUP BY signal_type
-            ORDER BY total_signals DESC
-        ''')
-        signal_type_performance = cursor.fetchall()
+        # Calculate display statistics
+        if stats and stats['overall']:
+            overall = stats['overall']
+            total_trades = int(overall[0] or 0)
+            wins = int(overall[1] or 0)
+            losses = int(overall[2] or 0)
+            breakevens = int(overall[3] or 0)
+            pending = int(overall[4] or 0)
+            total_pnl = float(overall[5] or 0.0)
+            avg_pnl = float(overall[6] or 0.0)
+            best_trade = float(overall[7] or 0.0)
+            worst_trade = float(overall[8] or 0.0)
+            
+            # Calculate win rate
+            completed_trades = wins + losses + breakevens
+            win_rate = float(wins / completed_trades * 100) if completed_trades > 0 else 0.0
+            
+        else:
+            # Default values when no data
+            total_trades = wins = losses = breakevens = pending = 0
+            total_pnl = avg_pnl = best_trade = worst_trade = win_rate = 0.0
         
-        # Get performance by probability range
-        cursor.execute('''
-            SELECT 
-                CASE 
-                    WHEN predicted_probability >= 0.8 THEN 'High (80%+)'
-                    WHEN predicted_probability >= 0.65 THEN 'Medium (65-79%)'
-                    WHEN predicted_probability >= 0.5 THEN 'Low (50-64%)'
-                    ELSE 'Very Low (<50%)'
-                END as probability_range,
-                COUNT(*) as total_signals,
-                SUM(CASE WHEN actual_outcome = 1 THEN 1 ELSE 0 END) as wins,
-                SUM(CASE WHEN actual_outcome = 0 THEN 1 ELSE 0 END) as losses,
-                SUM(CASE WHEN actual_outcome = 2 THEN 1 ELSE 0 END) as breakevens,
-                SUM(CASE WHEN actual_outcome IS NULL THEN 1 ELSE 0 END) as pending,
-                AVG(predicted_probability * 100) as avg_probability,
-                ROUND(
-                    CAST(SUM(CASE WHEN actual_outcome = 1 THEN 1 ELSE 0 END) AS FLOAT) / 
-                    CAST(SUM(CASE WHEN actual_outcome IS NOT NULL THEN 1 ELSE 0 END) AS FLOAT) * 100, 2
-                ) as win_rate
-            FROM signal_performance 
-            GROUP BY probability_range
-            ORDER BY avg_probability DESC
-        ''')
-        probability_performance = cursor.fetchall()
+        # Format data for template compatibility
+        overall_stats = (total_trades, wins, losses, breakevens, pending, 0, 0, 0)
+        symbol_performance = stats['by_symbol'] if stats else []
+        signal_type_performance = stats['by_type'] if stats else []
         
-        # Get recent signals with outcomes
-        cursor.execute('''
-            SELECT 
-                id, symbol, signal_type, predicted_probability, risk_level, 
-                timestamp, actual_outcome, profit_loss
-            FROM signal_performance 
-            ORDER BY timestamp DESC 
-            LIMIT 20
-        ''')
-        recent_signals = cursor.fetchall()
+        # Format entries for display
+        recent_signals = []
+        for entry in entries:
+            recent_signals.append((
+                entry['symbol'],
+                entry['trade_type'],
+                entry['entry_price'],
+                entry['exit_price'] or 0,
+                0,  # stop_loss placeholder
+                100,  # predicted_probability placeholder
+                'MEDIUM',  # risk_level placeholder
+                1 if entry['outcome'] == 'WIN' else 0 if entry['outcome'] == 'LOSS' else 2 if entry['outcome'] == 'BREAKEVEN' else None,
+                entry['profit_loss'],
+                entry['trade_date']
+            ))
         
-        # Get monthly performance for chart
-        cursor.execute('''
-            SELECT 
-                strftime('%Y-%m', timestamp) as month,
-                COUNT(*) as total_signals,
-                SUM(CASE WHEN actual_outcome = 1 THEN 1 ELSE 0 END) as wins,
-                SUM(CASE WHEN actual_outcome = 0 THEN 1 ELSE 0 END) as losses,
-                SUM(CASE WHEN actual_outcome = 2 THEN 1 ELSE 0 END) as breakevens,
-                ROUND(
-                    CAST(SUM(CASE WHEN actual_outcome = 1 THEN 1 ELSE 0 END) AS FLOAT) / 
-                    CAST(SUM(CASE WHEN actual_outcome IS NOT NULL THEN 1 ELSE 0 END) AS FLOAT) * 100, 2
-                ) as win_rate
-            FROM signal_performance 
-            WHERE timestamp >= datetime('now', '-6 months')
-            GROUP BY strftime('%Y-%m', timestamp)
-            ORDER BY month DESC
-        ''')
-        monthly_performance = cursor.fetchall()
+        print(f"✅ Loaded {len(entries)} manual journal entries")
+        print(f"✅ Total trades: {total_trades}, Win rate: {win_rate:.2f}%")
         
-        conn.close()
-        
-        # Calculate overall win rate
-        total_completed = overall_stats[1] + overall_stats[2] + overall_stats[3]  # wins + losses + breakevens
-        overall_win_rate = (overall_stats[1] / total_completed * 100) if total_completed > 0 else 0
-        
+        # Create stats object for template
+        stats_obj = {
+            'total_trades': total_trades,
+            'win_rate': win_rate,
+            'avg_trade_pnl': avg_pnl,
+            'total_pnl': total_pnl,
+            'best_trade': best_trade,
+            'worst_trade': worst_trade
+        }
+
         return render_template('journal_modern.html',
+                             # Manual journal specific data
+                             manual_mode=True,
+                             entries=entries,
+                             stats=stats_obj,
+                             # Compatibility with existing template
                              overall_stats=overall_stats,
-                             overall_win_rate=round(overall_win_rate, 2),
+                             overall_win_rate=round(win_rate, 2),
+                             total_signals=total_trades,
+                             win_rate=win_rate,
+                             avg_rr=2.0,  # Default risk/reward ratio
+                             total_pnl=total_pnl,
+                             wins=wins,
+                             losses=losses,
+                             breakevens=breakevens,
+                             pending=pending,
                              symbol_performance=symbol_performance,
                              signal_type_performance=signal_type_performance,
-                             probability_performance=probability_performance,
+                             probability_performance=[],
+                             signals=recent_signals,
                              recent_signals=recent_signals,
-                             monthly_performance=monthly_performance)
+                             monthly_performance=[],
+                             debug_info={'manual_journal': True})
         
     except Exception as e:
+        print(f"❌ Error in journal route: {e}")
+        import traceback
+        traceback.print_exc()
         return render_template('journal_modern.html', 
                              error=f"Error loading journal data: {e}",
                              overall_stats=(0, 0, 0, 0, 0, 0, 0, 0),
-                             overall_win_rate=0,
+                             overall_win_rate=0.0,
+                             # Individual stats for display (ensure all numeric types)
+                             total_signals=0,
+                             win_rate=0.0,
+                             avg_rr=0.0,
+                             total_pnl=0.0,
+                             wins=0,
+                             losses=0,
+                             breakevens=0,
+                             pending=0,
+                             # Other data
                              symbol_performance=[],
                              signal_type_performance=[],
                              probability_performance=[],
+                             signals=[],
                              recent_signals=[],
-                             monthly_performance=[])
+                             monthly_performance=[],
+                             debug_info={'error_occurred': True})
+
+# ====================================
+# MANUAL TRADE JOURNAL ROUTES
+# ====================================
+
+@app.route('/journal/new')
+def journal_new():
+    """Manual trade journal entry form"""
+    return render_template('journal_new.html')
+
+@app.route('/journal/api/create', methods=['POST'])
+def api_create_journal_entry():
+    """Create a new manual journal entry"""
+    try:
+        # Handle both JSON and form data
+        if request.is_json:
+            # Get JSON data (new format from frontend)
+            json_data = request.get_json()
+            
+            entry_data = {
+                'symbol': str(json_data.get('symbol', '')).strip().upper(),
+                'trade_type': str(json_data.get('trade_type', '')).strip().upper(),
+                'entry_price': str(json_data.get('entry_price', 0)),
+                'exit_price': str(json_data.get('exit_price', '')) if json_data.get('exit_price') else None,
+                'quantity': str(json_data.get('quantity', 1)),
+                'outcome': str(json_data.get('outcome', 'PENDING')).strip().upper(),
+                'profit_loss': str(json_data.get('profit_loss', 0)),
+                'trade_date': str(json_data.get('trade_date', '')),
+                'entry_time': str(json_data.get('entry_time', '')),
+                'exit_time': str(json_data.get('exit_time', '')),
+                'notes': str(json_data.get('notes', '')).strip(),
+                'chart_link': str(json_data.get('chart_link', '')).strip(),
+                'entry_prices': json_data.get('entry_prices', []),
+                'position_sizes': json_data.get('position_sizes', [])
+            }
+        else:
+            # Get form data (legacy format)
+            entry_data = {
+                'symbol': request.form.get('symbol', '').strip().upper(),
+                'trade_type': request.form.get('trade_type', '').strip().upper(),
+                'entry_price': request.form.get('entry_price', '0'),
+                'exit_price': request.form.get('exit_price', '') or None,
+                'quantity': request.form.get('quantity', '1'),
+                'outcome': request.form.get('outcome', 'PENDING').strip().upper(),
+                'profit_loss': request.form.get('profit_loss', '0'),
+                'trade_date': request.form.get('trade_date', ''),
+                'entry_time': request.form.get('entry_time', ''),
+                'exit_time': request.form.get('exit_time', ''),
+                'notes': request.form.get('notes', '').strip(),
+                'chart_link': '',
+                'entry_prices': [],
+                'position_sizes': []
+            }
+        
+        # Validate required fields
+        if (not entry_data['symbol'] or 
+            not entry_data['trade_type'] or 
+            not entry_data['entry_price'] or 
+            entry_data['entry_price'] == '0' or 
+            float(entry_data['entry_price']) <= 0):
+            return jsonify({
+                'success': False,
+                'error': 'Symbol, trade type, and entry price are required'
+            }), 400
+        
+        # Handle chart image upload (for form data only)
+        chart_image_path = None
+        if not request.is_json and 'chart_image' in request.files:
+            file = request.files['chart_image']
+            if file and file.filename != '':
+                image_path, message = journal_manager.save_chart_image(file)
+                if image_path:
+                    chart_image_path = image_path
+                else:
+                    return jsonify({
+                        'success': False,
+                        'error': f'Image upload failed: {message}'
+                    }), 400
+        
+        entry_data['chart_image_path'] = chart_image_path
+        entry_data['user_id'] = session.get('user_id')
+        
+        # Create journal entry
+        entry_id, message = journal_manager.create_journal_entry(entry_data)
+        
+        if entry_id:
+            return jsonify({
+                'success': True,
+                'message': message,
+                'entry_id': entry_id
+            })
+        else:
+            return jsonify({
+                'success': False,
+                'error': message
+            }), 500
+            
+    except Exception as e:
+        return jsonify({
+            'success': False,
+            'error': f'Server error: {str(e)}'
+        }), 500
+
+@app.route('/journal/api/entries')
+def api_get_journal_entries():
+    """Get manual journal entries with optional filtering"""
+    try:
+        # Get query parameters
+        limit = int(request.args.get('limit', 50))
+        offset = int(request.args.get('offset', 0))
+        symbol = request.args.get('symbol', '').strip().upper() or None
+        outcome = request.args.get('outcome', '').strip().upper() or None
+        
+        # Get entries for current user only
+        user_id = session.get('user_id')
+        entries, message = journal_manager.get_journal_entries(
+            limit=limit, offset=offset, symbol=symbol, outcome=outcome, user_id=user_id
+        )
+        
+        return jsonify({
+            'success': True,
+            'entries': entries,
+            'message': message
+        })
+        
+    except Exception as e:
+        return jsonify({
+            'success': False,
+            'error': f'Server error: {str(e)}'
+        }), 500
+
+@app.route('/journal/api/entry/<int:entry_id>')
+def api_get_journal_entry(entry_id):
+    """Get a single journal entry"""
+    try:
+        user_id = session.get('user_id')
+        entry, message = journal_manager.get_journal_entry(entry_id, user_id)
+        
+        if entry:
+            return jsonify({
+                'success': True,
+                'data': entry,  # Frontend expects 'data' not 'entry'
+                'message': message
+            })
+        else:
+            return jsonify({
+                'success': False,
+                'error': message
+            }), 404
+            
+    except Exception as e:
+        return jsonify({
+            'success': False,
+            'error': f'Server error: {str(e)}'
+        }), 500
+
+@app.route('/journal/api/entry/<int:entry_id>', methods=['PUT'])
+def api_update_journal_entry(entry_id):
+    """Update a journal entry"""
+    try:
+        # Handle both JSON and form data
+        if request.is_json:
+            # Get JSON data (new format from frontend)
+            json_data = request.get_json()
+            entry_data = {
+                'symbol': json_data.get('symbol', '').strip().upper(),
+                'trade_type': json_data.get('trade_type', '').strip().upper(),
+                'entry_price': str(json_data.get('entry_price', 0)),
+                'exit_price': str(json_data.get('exit_price', '')) if json_data.get('exit_price') else None,
+                'quantity': str(json_data.get('quantity', 1)),
+                'outcome': json_data.get('outcome', 'PENDING').strip().upper(),
+                'profit_loss': str(json_data.get('profit_loss', 0)),
+                'trade_date': json_data.get('trade_date', ''),
+                'entry_time': json_data.get('entry_time', ''),
+                'exit_time': json_data.get('exit_time', ''),
+                'notes': json_data.get('notes', '').strip(),
+                'chart_link': json_data.get('chart_link', '').strip(),
+                'entry_prices': json_data.get('entry_prices', []),
+                'position_sizes': json_data.get('position_sizes', [])
+            }
+        else:
+            # Get form data (legacy format)
+            entry_data = {
+                'symbol': request.form.get('symbol', '').strip().upper(),
+                'trade_type': request.form.get('trade_type', '').strip().upper(),
+                'entry_price': request.form.get('entry_price', '0'),
+                'exit_price': request.form.get('exit_price', '') or None,
+                'quantity': request.form.get('quantity', '1'),
+                'outcome': request.form.get('outcome', 'PENDING').strip().upper(),
+                'profit_loss': request.form.get('profit_loss', '0'),
+                'trade_date': request.form.get('trade_date', ''),
+                'entry_time': request.form.get('entry_time', ''),
+                'exit_time': request.form.get('exit_time', ''),
+                'notes': request.form.get('notes', '').strip(),
+                'chart_link': '',
+                'entry_prices': [],
+                'position_sizes': []
+            }
+        
+        # Get current entry to preserve existing image if no new one uploaded
+        current_entry, _ = journal_manager.get_journal_entry(entry_id)
+        if current_entry:
+            import json
+            entry_data['chart_image_path'] = current_entry.get('chart_image_path')
+            # Preserve existing fields if not provided
+            if not entry_data.get('chart_link'):
+                entry_data['chart_link'] = current_entry.get('chart_link', '')
+            if not entry_data.get('entry_prices'):
+                entry_data['entry_prices'] = json.loads(current_entry.get('entry_prices', '[]') or '[]')
+            if not entry_data.get('position_sizes'):
+                entry_data['position_sizes'] = json.loads(current_entry.get('position_sizes', '[]') or '[]')
+        
+        # Handle new chart image upload (for form data only)
+        if not request.is_json and 'chart_image' in request.files:
+            file = request.files['chart_image']
+            if file and file.filename != '':
+                # Delete old image if exists
+                if current_entry and current_entry.get('chart_image_path'):
+                    old_path = current_entry['chart_image_path']
+                    if os.path.exists(old_path):
+                        try:
+                            os.remove(old_path)
+                        except OSError:
+                            pass  # File might be in use
+                
+                # Upload new image
+                image_path, message = journal_manager.save_chart_image(file)
+                if image_path:
+                    entry_data['chart_image_path'] = image_path
+                else:
+                    return jsonify({
+                        'success': False,
+                        'error': f'Image upload failed: {message}'
+                    }), 400
+        
+        # Update entry with user_id for security
+        user_id = session.get('user_id')
+        success, message = journal_manager.update_journal_entry(entry_id, entry_data, user_id)
+        
+        if success:
+            return jsonify({
+                'success': True,
+                'message': message
+            })
+        else:
+            return jsonify({
+                'success': False,
+                'error': message
+            }), 500
+            
+    except Exception as e:
+        return jsonify({
+            'success': False,
+            'error': f'Server error: {str(e)}'
+        }), 500
+
+@app.route('/journal/api/entry/<int:entry_id>', methods=['DELETE'])
+def api_delete_journal_entry(entry_id):
+    """Delete a journal entry"""
+    try:
+        user_id = session.get('user_id')
+        success, message = journal_manager.delete_journal_entry(entry_id, user_id)
+        
+        if success:
+            return jsonify({
+                'success': True,
+                'message': message
+            })
+        else:
+            return jsonify({
+                'success': False,
+                'error': message
+            }), 404 if 'not found' in message.lower() else 500
+            
+    except Exception as e:
+        return jsonify({
+            'success': False,
+            'error': f'Server error: {str(e)}'
+        }), 500
+
+@app.route('/journal/api/statistics')
+def api_get_journal_statistics():
+    """Get comprehensive journal statistics"""
+    try:
+        user_id = session.get('user_id')
+        stats, message = journal_manager.get_journal_statistics(user_id)
+        
+        if stats:
+            return jsonify({
+                'success': True,
+                'statistics': stats,
+                'message': message
+            })
+        else:
+            return jsonify({
+                'success': False,
+                'error': message
+            }), 500
+            
+    except Exception as e:
+        return jsonify({
+            'success': False,
+            'error': f'Server error: {str(e)}'
+        }), 500
+
+@app.route('/uploads/charts/<filename>')
+def serve_chart_image(filename):
+    """Serve uploaded chart images"""
+    try:
+        # Security: ensure filename is safe
+        safe_filename = secure_filename(filename)
+        file_path = os.path.join(app.config['UPLOAD_FOLDER'], safe_filename)
+        
+        # Check if file exists and is in the upload folder
+        if os.path.exists(file_path) and os.path.commonpath([file_path, app.config['UPLOAD_FOLDER']]) == app.config['UPLOAD_FOLDER']:
+            return send_file(file_path)
+        else:
+            return jsonify({'error': 'File not found'}), 404
+            
+    except Exception as e:
+        return jsonify({'error': f'Server error: {str(e)}'}), 500
 
 @app.route('/api/discord_debug', methods=['GET'])
 def api_discord_debug():
@@ -667,6 +1532,34 @@ def api_discord_debug():
             'success': False,
             'error': f'Debug error: {str(e)}'
         })
+
+@app.route('/test/journal-js')
+def test_journal_js():
+    """Serve JavaScript test page for journal functionality"""
+    try:
+        with open('journal_js_test.html', 'r') as f:
+            content = f.read()
+        return content, 200, {'Content-Type': 'text/html'}
+    except FileNotFoundError:
+        return "Test file not found", 404
+
+@app.route('/api/status')
+def api_status():
+    """Simple API status endpoint for connectivity testing"""
+    try:
+        return jsonify({
+            'success': True,
+            'status': 'online',
+            'timestamp': datetime.now().isoformat(),
+            'version': '1.0.0'
+        })
+    except Exception as e:
+        return jsonify({
+            'success': False,
+            'status': 'error',
+            'error': str(e),
+            'timestamp': datetime.now().isoformat()
+        }), 500
 
 @app.route('/api/test_discord_connection', methods=['POST'])
 def api_test_discord_connection():
@@ -803,6 +1696,9 @@ def api_send_discord_signal():
         discord_success = post_signal(signal)
         
         if discord_success:
+            # Create notifications for regular users
+            create_signal_notification(signal)
+            
             return jsonify({
                 'success': True,
                 'message': 'Signal posted to Discord successfully'
@@ -889,6 +1785,7 @@ def track_signals():
                              manual_signals=[])
 
 @app.route('/api/auto_generate_signal', methods=['POST'])
+@admin_required
 def api_auto_generate_signal():
     """Auto-generate signal using hybrid math strategy and post to Discord"""
     try:
@@ -962,6 +1859,9 @@ def api_auto_generate_signal():
         ))
         conn.commit()
         conn.close()
+        
+        # Create notifications for regular users
+        create_signal_notification(signal)
         
         return jsonify({
             'success': True,
@@ -1049,6 +1949,7 @@ def api_fetch_market_data():
         return jsonify({'error': f'Error fetching market data: {str(e)}'})
 
 @app.route('/api/semi_auto_generate_signal', methods=['POST'])
+@admin_required
 def api_semi_auto_generate_signal():
     """Generate signal from datafeed but allow manual TP/SL setting"""
     try:
@@ -1151,6 +2052,10 @@ def api_semi_auto_generate_signal():
         conn.commit()
         conn.close()
         
+        # Create notifications for regular users if posted to Discord
+        if discord_success:
+            create_signal_notification(signal)
+        
         return jsonify({
             'success': True,
             'signal': signal,
@@ -1164,6 +2069,7 @@ def api_semi_auto_generate_signal():
         return jsonify({'error': f'Error generating signal: {str(e)}'})
 
 @app.route('/api/manual_generate_signal', methods=['POST'])
+@admin_required
 def api_manual_generate_signal():
     """Manually generate signal with all custom parameters"""
     try:
@@ -1272,6 +2178,9 @@ def api_manual_generate_signal():
         conn.commit()
         conn.close()
         
+        # Create notifications for regular users
+        create_signal_notification(signal)
+        
         return jsonify({
             'success': True,
             'signal': signal,
@@ -1285,6 +2194,7 @@ def api_manual_generate_signal():
         return jsonify({'error': f'Error creating manual signal: {str(e)}'})
 
 @app.route('/api/delete_signal/<int:signal_id>', methods=['DELETE'])
+@admin_required
 def api_delete_signal(signal_id):
     """API endpoint to delete individual signal"""
     try:
@@ -1308,6 +2218,7 @@ def api_delete_signal(signal_id):
         return jsonify({'error': f'Error deleting signal: {str(e)}'})
 
 @app.route('/api/update_outcome', methods=['POST'])
+@admin_required
 def api_update_outcome():
     """API endpoint to update signal outcome"""
     try:
@@ -1508,10 +2419,15 @@ def api_live_prices():
 
 @app.route('/api/market_close_data')
 def api_market_close_data():
-    """Get market close data for signal generation (Hybrid Math Strategy)"""
+    """Get current market data for signal generation display"""
     try:
-        # Get latest market close data (previous day's data)
-        market_close_data = market_data_storage.get_latest_market_close_data()
+        # Get current real-time market data
+        market_close_data = {
+            'nasdaq': market_data_storage.get_market_data('nasdaq'),
+            'dow': market_data_storage.get_market_data('dow'),
+            'gold': market_data_storage.get_market_data('gold')
+        }
+        print("📊 Using current real-time data for market close data API")
         
         return jsonify({
             'success': True,
@@ -1536,7 +2452,7 @@ def api_market_close_data():
                 }
             },
             'timestamp': datetime.now().isoformat(),
-            'message': 'Using previous day market close data for Hybrid Math Strategy'
+            'message': 'Using yesterday\'s market close data for Hybrid Math Strategy (correct trading logic)'
         })
     except Exception as e:
         return jsonify({
@@ -1917,15 +2833,23 @@ def generate_auto_signal_for_next_day():
         
         print("🤖 Starting auto signal generation for next trading day...")
         
-        # Get market close data (previous day's data)
+        # Get yesterday's market close data (correct for trading logic)
         market_close_data = market_data_storage.get_latest_market_close_data()
         
-        # Calculate next trading day (skip weekends)
-        tomorrow = datetime.now() + timedelta(days=1)
-        while tomorrow.weekday() >= 5:  # Skip Saturday (5) and Sunday (6)
-            tomorrow += timedelta(days=1)
+        print(f"📊 Using yesterday's market close data for today's signals:")
+        for symbol in ['nasdaq', 'dow', 'gold']:
+            if symbol in market_close_data and market_close_data[symbol]:
+                data = market_close_data[symbol]
+                print(f"   {symbol.upper()}: {data.get('price', 'N/A')} (Change: {data.get('change', 'N/A')}) Date: {data.get('date', 'N/A')}")
         
-        next_trading_day = tomorrow.strftime('%Y-%m-%d')
+        # Use current trading day instead of next day
+        current_date = datetime.now()
+        if current_date.weekday() >= 5:  # If weekend, get next Monday
+            days_until_monday = 7 - current_date.weekday()
+            current_date += timedelta(days=days_until_monday)
+        
+        next_trading_day = current_date.strftime('%Y-%m-%d')
+        print(f"📅 Generating signals for: {next_trading_day}")
         
         # Generate signals for available instruments
         signals_generated = []
@@ -1949,6 +2873,8 @@ def generate_auto_signal_for_next_day():
                     discord_success = post_signal(signal)
                     if discord_success:
                         print(f"✅ {signal['instrument']} signal posted to Discord successfully")
+                        # Create notifications for regular users
+                        create_signal_notification(signal)
                     else:
                         print(f"❌ Failed to post {signal['instrument']} signal to Discord")
                 except Exception as e:
@@ -2073,6 +2999,7 @@ def create_hybrid_math_auto_signal(instrument, market_data, signal_date):
         return None
 
 @app.route('/api/generate_auto_signal', methods=['POST'])
+@admin_required
 def api_generate_auto_signal():
     """API endpoint to manually trigger auto signal generation"""
     try:
@@ -2083,6 +3010,70 @@ def api_generate_auto_signal():
             'signals': signals,
             'message': f'Generated {len(signals)} signals for next trading day'
         })
+    except Exception as e:
+        return jsonify({
+            'success': False,
+            'error': str(e)
+        })
+
+@app.route('/settings')
+def settings():
+    """Settings configuration page"""
+    try:
+        # Get current settings status
+        auto_generation_enabled = market_data_storage.is_auto_generation_enabled()
+        
+        # Get Discord status
+        discord_config = check_discord_config()
+        
+        return render_template('settings_modern.html',
+                             auto_generation_enabled=auto_generation_enabled,
+                             discord_config=discord_config)
+    except Exception as e:
+        return render_template('settings_modern.html', 
+                             error=f"Error loading settings: {e}",
+                             auto_generation_enabled=False,
+                             discord_config={'webhook_configured': False})
+
+@app.route('/api/test_journal_data')
+def api_test_journal_data():
+    """Test endpoint to verify journal data is working"""
+    try:
+        conn = sqlite3.connect("ai_learning.db")
+        cursor = conn.cursor()
+        
+        # Test the same query as journal route
+        cursor.execute('''
+            SELECT 
+                COUNT(*) as total_signals,
+                SUM(CASE WHEN actual_outcome = 1 THEN 1 ELSE 0 END) as wins,
+                SUM(CASE WHEN actual_outcome = 0 THEN 1 ELSE 0 END) as losses,
+                SUM(CASE WHEN actual_outcome = 2 THEN 1 ELSE 0 END) as breakevens,
+                SUM(CASE WHEN actual_outcome IS NULL THEN 1 ELSE 0 END) as pending
+            FROM signal_performance
+        ''')
+        overall_stats = cursor.fetchone()
+        
+        cursor.execute('''
+            SELECT COUNT(*) FROM signal_performance 
+            ORDER BY timestamp DESC 
+            LIMIT 20
+        ''')
+        signals_count = cursor.fetchone()[0]
+        
+        conn.close()
+        
+        return jsonify({
+            'success': True,
+            'total_signals': overall_stats[0],
+            'wins': overall_stats[1],
+            'losses': overall_stats[2],
+            'breakevens': overall_stats[3],
+            'pending': overall_stats[4],
+            'signals_count': signals_count,
+            'message': 'Journal data test successful'
+        })
+        
     except Exception as e:
         return jsonify({
             'success': False,
@@ -2142,6 +3133,642 @@ if __name__ == '__main__':
         scheduler_thread.start()
         print("📅 Auto signal generation scheduler started (23:05 GMT+2)")
     
+@app.route('/api/logout', methods=['POST'])
+def api_logout():
+    """Handle logout via API"""
+    try:
+        session_token = session.get('session_token')
+        if session_token:
+            auth_manager.logout_user(session_token)
+        
+        session.clear()
+        return jsonify({'success': True, 'message': 'Logged out successfully'})
+        
+    except Exception as e:
+        print(f"❌ Error during logout: {str(e)}")
+        return jsonify({'success': False, 'error': 'Logout failed'})
+
+# Profile Management Routes
+@app.route('/profile')
+@login_required
+def profile():
+    """User profile page"""
+    try:
+        user_id = session.get('user_id')
+        user_profile = auth_manager.get_user_profile(user_id)
+        
+        if not user_profile:
+            # If no profile found, create basic user data from session
+            from datetime import datetime
+            user_profile = {
+                'id': user_id,
+                'username': session.get('user_username', 'User'),
+                'email': session.get('user_email', ''),
+                'full_name': session.get('user_username', 'User'),
+                'profile_picture': None,
+                'timezone': 'UTC',
+                'role': session.get('user_role', 'user'),
+                'created_at': datetime.now(),
+                'last_login': datetime.now(),
+                'notification_preferences': {
+                    'email_notifications': True,
+                    'push_notifications': True,
+                    'signal_alerts': True,
+                    'trading_updates': True
+                }
+            }
+        
+        return render_template('profile_modern.html', user=user_profile)
+        
+    except Exception as e:
+        print(f"❌ Error loading profile page: {str(e)}")
+        import traceback
+        traceback.print_exc()
+        from datetime import datetime
+        return render_template('profile_modern.html', user={
+            'id': user_id,
+            'username': session.get('user_username', 'User'),
+            'email': session.get('user_email', ''),
+            'full_name': session.get('user_username', 'User'),
+            'profile_picture': None,
+            'timezone': 'UTC',
+            'role': session.get('user_role', 'user'),
+            'created_at': datetime.now(),
+            'last_login': datetime.now(),
+            'notification_preferences': {
+                'email_notifications': True,
+                'push_notifications': True,
+                'signal_alerts': True,
+                'trading_updates': True
+            }
+        })
+
+@app.route('/api/user/profile', methods=['GET'])
+@login_required
+def api_get_user_profile():
+    """Get current user's profile"""
+    try:
+        user_id = session.get('user_id')
+        profile = auth_manager.get_user_profile(user_id)
+        
+        if profile:
+            return jsonify({
+                'success': True,
+                'profile': profile
+            })
+        else:
+            return jsonify({'success': False, 'error': 'Profile not found'}), 404
+            
+    except Exception as e:
+        print(f"❌ Error getting user profile: {str(e)}")
+        return jsonify({'success': False, 'error': 'Failed to get profile'}), 500
+
+@app.route('/api/user/profile', methods=['POST'])
+@login_required
+def api_update_user_profile():
+    """Update current user's profile"""
+    try:
+        user_id = session.get('user_id')
+        profile_data = request.get_json()
+        
+        success = auth_manager.update_user_profile(user_id, profile_data)
+        
+        if success:
+            return jsonify({
+                'success': True,
+                'message': 'Profile updated successfully'
+            })
+        else:
+            return jsonify({'success': False, 'error': 'Failed to update profile'}), 400
+            
+    except Exception as e:
+        print(f"❌ Error updating user profile: {str(e)}")
+        return jsonify({'success': False, 'error': 'Failed to update profile'}), 500
+
+@app.route('/api/user/profile/picture', methods=['POST'])
+@login_required
+def api_upload_profile_picture():
+    """Upload profile picture"""
+    try:
+        user_id = session.get('user_id')
+        
+        if 'profile_picture' not in request.files:
+            return jsonify({'success': False, 'error': 'No file provided'}), 400
+            
+        file = request.files['profile_picture']
+        
+        if file.filename == '':
+            return jsonify({'success': False, 'error': 'No file selected'}), 400
+        
+        # Validate file type
+        allowed_extensions = {'png', 'jpg', 'jpeg', 'gif', 'webp'}
+        if not ('.' in file.filename and file.filename.rsplit('.', 1)[1].lower() in allowed_extensions):
+            return jsonify({'success': False, 'error': 'Invalid file type'}), 400
+        
+        # Create uploads directory if it doesn't exist
+        uploads_dir = os.path.join(app.root_path, 'uploads', 'profiles')
+        os.makedirs(uploads_dir, exist_ok=True)
+        
+        # Generate unique filename
+        import uuid
+        file_extension = file.filename.rsplit('.', 1)[1].lower()
+        filename = f"profile_{user_id}_{uuid.uuid4().hex[:8]}.{file_extension}"
+        file_path = os.path.join(uploads_dir, filename)
+        
+        # Save file
+        file.save(file_path)
+        
+        # Update user profile with picture path
+        relative_path = f"uploads/profiles/{filename}"
+        profile_data = {'profile_picture': relative_path}
+        success = auth_manager.update_user_profile(user_id, profile_data)
+        
+        if success:
+            return jsonify({
+                'success': True,
+                'message': 'Profile picture uploaded successfully',
+                'profile_picture': relative_path
+            })
+        else:
+            # Clean up file if database update failed
+            os.remove(file_path)
+            return jsonify({'success': False, 'error': 'Failed to update profile'}), 500
+            
+    except Exception as e:
+        print(f"❌ Error uploading profile picture: {str(e)}")
+        return jsonify({'success': False, 'error': 'Failed to upload picture'}), 500
+
+@app.route('/api/user/profile/picture/<int:user_id>')
+def api_get_profile_picture(user_id):
+    """Serve profile picture"""
+    try:
+        profile = auth_manager.get_user_profile(user_id)
+        
+        if profile and profile.get('profile_picture'):
+            file_path = os.path.join(app.root_path, profile['profile_picture'])
+            if os.path.exists(file_path):
+                return send_file(file_path)
+        
+        # Return default avatar if no profile picture
+        default_avatar = os.path.join(app.root_path, 'static', 'images', 'default-avatar.svg')
+        if os.path.exists(default_avatar):
+            return send_file(default_avatar, mimetype='image/svg+xml')
+        
+        return '', 404
+        
+    except Exception as e:
+        print(f"❌ Error serving profile picture: {str(e)}")
+        return '', 404
+
+@app.route('/api/user/change-password', methods=['POST'])
+@login_required
+def api_change_password():
+    """Change user password"""
+    try:
+        user_id = session.get('user_id')
+        data = request.get_json()
+        
+        current_password = data.get('current_password')
+        new_password = data.get('new_password')
+        
+        if not current_password or not new_password:
+            return jsonify({'success': False, 'error': 'Both current and new passwords are required'}), 400
+            
+        success = auth_manager.change_user_password(user_id, current_password, new_password)
+        
+        if success:
+            return jsonify({
+                'success': True,
+                'message': 'Password changed successfully'
+            })
+        else:
+            return jsonify({'success': False, 'error': 'Current password is incorrect'}), 400
+            
+    except Exception as e:
+        print(f"❌ Error changing password: {str(e)}")
+        return jsonify({'success': False, 'error': 'Failed to change password'}), 500
+
+@app.route('/admin')
+@admin_required
+def admin_panel():
+    """Admin panel for user management"""
+    return render_template('admin_panel.html')
+
+@app.route('/api/admin/users')
+@admin_required
+def api_admin_get_users():
+    """Get all users for admin management"""
+    try:
+        users = auth_manager.get_all_users(include_admins=True)
+        return jsonify({
+            'success': True,
+            'users': users
+        })
+    except Exception as e:
+        print(f"❌ Error getting users: {str(e)}")
+        return jsonify({'success': False, 'error': 'Failed to get users'})
+
+@app.route('/api/admin/pending-users')
+@admin_required
+def api_admin_get_pending_users():
+    """Get pending users for admin approval"""
+    try:
+        pending_users = auth_manager.get_pending_users()
+        return jsonify({
+            'success': True,
+            'users': pending_users
+        })
+    except Exception as e:
+        print(f"❌ Error getting pending users: {str(e)}")
+        return jsonify({'success': False, 'error': 'Failed to get pending users'})
+
+@app.route('/api/admin/users/<int:user_id>/approve', methods=['POST'])
+@admin_required
+def api_admin_approve_user(user_id):
+    """Approve a user registration"""
+    try:
+        admin_id = session.get('user_id')
+        success = auth_manager.approve_user(user_id, admin_id)
+        
+        if success:
+            return jsonify({'success': True, 'message': 'User approved successfully'})
+        else:
+            return jsonify({'success': False, 'error': 'Failed to approve user'})
+    except Exception as e:
+        print(f"❌ Error approving user: {str(e)}")
+        return jsonify({'success': False, 'error': 'Failed to approve user'})
+
+@app.route('/api/admin/users/<int:user_id>/reject', methods=['DELETE'])
+@admin_required
+def api_admin_reject_user(user_id):
+    """Reject a user registration"""
+    try:
+        success = auth_manager.reject_user(user_id)
+        
+        if success:
+            return jsonify({'success': True, 'message': 'User rejected and deleted'})
+        else:
+            return jsonify({'success': False, 'error': 'Failed to reject user'})
+    except Exception as e:
+        print(f"❌ Error rejecting user: {str(e)}")
+        return jsonify({'success': False, 'error': 'Failed to reject user'})
+
+@app.route('/api/admin/users/<int:user_id>/deactivate', methods=['POST'])
+@admin_required
+def api_admin_deactivate_user(user_id):
+    """Deactivate a user account"""
+    try:
+        admin_id = session.get('user_id')
+        success = auth_manager.deactivate_user(user_id, admin_id)
+        
+        if success:
+            return jsonify({'success': True, 'message': 'User deactivated successfully'})
+        else:
+            return jsonify({'success': False, 'error': 'Failed to deactivate user'})
+    except Exception as e:
+        print(f"❌ Error deactivating user: {str(e)}")
+        return jsonify({'success': False, 'error': 'Failed to deactivate user'})
+
+@app.route('/api/admin/users/<int:user_id>/reactivate', methods=['POST'])
+@admin_required
+def api_admin_reactivate_user(user_id):
+    """Reactivate a user account"""
+    try:
+        success = auth_manager.reactivate_user(user_id)
+        
+        if success:
+            return jsonify({'success': True, 'message': 'User reactivated successfully'})
+        else:
+            return jsonify({'success': False, 'error': 'Failed to reactivate user'})
+    except Exception as e:
+        print(f"❌ Error reactivating user: {str(e)}")
+        return jsonify({'success': False, 'error': 'Failed to reactivate user'})
+
+@app.route('/api/admin/users/<int:user_id>/role', methods=['PUT'])
+@admin_required
+def api_admin_update_user_role(user_id):
+    """Update a user's role"""
+    try:
+        data = request.get_json()
+        new_role = data.get('role')
+        
+        if new_role not in ['user', 'admin']:
+            return jsonify({'success': False, 'error': 'Invalid role'})
+        
+        admin_id = session.get('user_id')
+        success = auth_manager.update_user_role(user_id, new_role, admin_id)
+        
+        if success:
+            return jsonify({'success': True, 'message': f'User role updated to {new_role}'})
+        else:
+            return jsonify({'success': False, 'error': 'Failed to update user role'})
+    except Exception as e:
+        print(f"❌ Error updating user role: {str(e)}")
+        return jsonify({'success': False, 'error': 'Failed to update user role'})
+
+@app.route('/api/admin/create-user', methods=['POST'])
+@admin_required
+def api_admin_create_user():
+    """Create a new user as admin"""
+    try:
+        data = request.get_json()
+        username = data.get('username', '').strip()
+        email = data.get('email', '').strip()
+        password = data.get('password', '')
+        role = data.get('role', 'user')
+        
+        if not username or not email or not password:
+            return jsonify({'success': False, 'error': 'All fields are required'})
+        
+        if role not in ['user', 'admin']:
+            return jsonify({'success': False, 'error': 'Invalid role'})
+        
+        admin_id = session.get('user_id')
+        result = auth_manager.admin_create_user(username, email, password, role, admin_id)
+        
+        return jsonify(result)
+        
+    except Exception as e:
+        print(f"❌ Error creating user: {str(e)}")
+        return jsonify({'success': False, 'error': 'Failed to create user'})
+
+@app.route('/api/notifications/mark-all-read', methods=['POST'])
+@login_required
+def api_mark_all_notifications_read():
+    """Mark all notifications as read for the current user"""
+    try:
+        user_id = session.get('user_id')
+        
+        # Get all unread notifications for the user
+        conn = sqlite3.connect('ai_learning.db')
+        cursor = conn.cursor()
+        
+        cursor.execute('''
+            UPDATE user_notifications 
+            SET is_read = 1 
+            WHERE user_id = ? AND is_read = 0
+        ''', (user_id,))
+        
+        conn.commit()
+        conn.close()
+        
+        return jsonify({'success': True, 'message': 'All notifications marked as read'})
+        
+    except Exception as e:
+        print(f"❌ Error marking all notifications as read: {str(e)}")
+        return jsonify({'success': False, 'error': 'Failed to mark notifications as read'})
+
+@app.route('/api/sync_signals', methods=['POST'])
+@admin_required
+def api_sync_signals():
+    """API endpoint to manually sync signals from JSON to database"""
+    try:
+        success = sync_json_signals_to_db()
+        if success:
+            return jsonify({
+                'success': True,
+                'message': 'Signals synced successfully from JSON files to database!'
+            })
+        else:
+            return jsonify({
+                'success': False,
+                'error': 'Signal sync failed. Check server logs for details.'
+            })
+    except Exception as e:
+        print(f"❌ Error in sync API: {str(e)}")
+        return jsonify({
+            'success': False,
+            'error': f'Error syncing signals: {str(e)}'
+        })
+
+# Enhanced Signals API Endpoints
+@app.route('/api/signals/today')
+@login_required
+def api_signals_today():
+    """Get today's signals only"""
+    try:
+        signals = get_todays_signals()
+        
+        return jsonify({
+            'success': True,
+            'data': signals,
+            'count': len(signals),
+            'date': datetime.now().strftime('%Y-%m-%d'),
+            'message': f'Retrieved {len(signals)} signals for today'
+        })
+        
+    except Exception as e:
+        print(f"❌ Error getting today's signals: {str(e)}")
+        return jsonify({
+            'success': False,
+            'error': f'Error retrieving today\'s signals: {str(e)}',
+            'data': [],
+            'count': 0
+        }), 500
+
+@app.route('/api/signals/week')
+@login_required
+def api_signals_week():
+    """Get this week's signals"""
+    try:
+        signals = get_week_signals()
+        
+        # Calculate week range for response
+        today = datetime.now()
+        days_since_monday = today.weekday()
+        monday = today - timedelta(days=days_since_monday)
+        week_start = monday.strftime('%Y-%m-%d')
+        week_end = (monday + timedelta(days=6)).strftime('%Y-%m-%d')
+        
+        return jsonify({
+            'success': True,
+            'data': signals,
+            'count': len(signals),
+            'week_start': week_start,
+            'week_end': week_end,
+            'message': f'Retrieved {len(signals)} signals for this week ({week_start} to {week_end})'
+        })
+        
+    except Exception as e:
+        print(f"❌ Error getting week signals: {str(e)}")
+        return jsonify({
+            'success': False,
+            'error': f'Error retrieving week signals: {str(e)}',
+            'data': [],
+            'count': 0
+        }), 500
+
+@app.route('/api/signals/search')
+@login_required
+def api_signals_search():
+    """Search signals by symbol or type"""
+    try:
+        query = request.args.get('q', '').strip()
+        limit = int(request.args.get('limit', 50))
+        offset = int(request.args.get('offset', 0))
+        
+        if not query:
+            return jsonify({
+                'success': False,
+                'error': 'Search query parameter "q" is required',
+                'data': [],
+                'count': 0
+            }), 400
+        
+        conn = sqlite3.connect('ai_learning.db')
+        cursor = conn.cursor()
+        
+        # Ensure risky_play_outcome column exists
+        try:
+            cursor.execute('ALTER TABLE signal_performance ADD COLUMN risky_play_outcome INTEGER')
+            conn.commit()
+        except sqlite3.OperationalError:
+            pass
+        
+        # Check if risky_play_outcome column exists
+        cursor.execute('PRAGMA table_info(signal_performance)')
+        columns = [col[1] for col in cursor.fetchall()]
+        
+        # Search in symbol and signal_type fields
+        search_term = f'%{query}%'
+        
+        if 'risky_play_outcome' in columns:
+            cursor.execute('''
+                SELECT id, symbol, signal_type, predicted_probability, risk_level, 
+                       timestamp, actual_outcome, profit_loss, risky_play_outcome
+                FROM signal_performance 
+                WHERE (symbol LIKE ? OR signal_type LIKE ?)
+                ORDER BY timestamp DESC 
+                LIMIT ? OFFSET ?
+            ''', (search_term, search_term, limit, offset))
+        else:
+            cursor.execute('''
+                SELECT id, symbol, signal_type, predicted_probability, risk_level, 
+                       timestamp, actual_outcome, profit_loss, NULL as risky_play_outcome
+                FROM signal_performance 
+                WHERE (symbol LIKE ? OR signal_type LIKE ?)
+                ORDER BY timestamp DESC 
+                LIMIT ? OFFSET ?
+            ''', (search_term, search_term, limit, offset))
+        
+        signals_data = cursor.fetchall()
+        
+        # Get total count for pagination
+        cursor.execute('''
+            SELECT COUNT(*) FROM signal_performance 
+            WHERE (symbol LIKE ? OR signal_type LIKE ?)
+        ''', (search_term, search_term))
+        total_count = cursor.fetchone()[0]
+        
+        conn.close()
+        
+        # Format signals data
+        formatted_signals = format_signal_data(signals_data)
+        
+        return jsonify({
+            'success': True,
+            'data': formatted_signals,
+            'count': len(formatted_signals),
+            'total_count': total_count,
+            'query': query,
+            'limit': limit,
+            'offset': offset,
+            'message': f'Found {total_count} signals matching "{query}"'
+        })
+        
+    except Exception as e:
+        print(f"❌ Error searching signals: {str(e)}")
+        return jsonify({
+            'success': False,
+            'error': f'Error searching signals: {str(e)}',
+            'data': [],
+            'count': 0
+        }), 500
+
+@app.route('/api/signals/<int:signal_id>')
+@login_required
+def api_signal_detail(signal_id):
+    """Get single signal details"""
+    try:
+        conn = sqlite3.connect('ai_learning.db')
+        cursor = conn.cursor()
+        
+        # Ensure risky_play_outcome column exists
+        try:
+            cursor.execute('ALTER TABLE signal_performance ADD COLUMN risky_play_outcome INTEGER')
+            conn.commit()
+        except sqlite3.OperationalError:
+            pass
+        
+        # Check if risky_play_outcome column exists
+        cursor.execute('PRAGMA table_info(signal_performance)')
+        columns = [col[1] for col in cursor.fetchall()]
+        
+        if 'risky_play_outcome' in columns:
+            cursor.execute('''
+                SELECT id, symbol, signal_type, predicted_probability, risk_level, 
+                       timestamp, actual_outcome, profit_loss, risky_play_outcome
+                FROM signal_performance 
+                WHERE id = ?
+            ''', (signal_id,))
+        else:
+            cursor.execute('''
+                SELECT id, symbol, signal_type, predicted_probability, risk_level, 
+                       timestamp, actual_outcome, profit_loss, NULL as risky_play_outcome
+                FROM signal_performance 
+                WHERE id = ?
+            ''', (signal_id,))
+        
+        signal_data = cursor.fetchone()
+        conn.close()
+        
+        if not signal_data:
+            return jsonify({
+                'success': False,
+                'error': f'Signal with ID {signal_id} not found',
+                'data': None
+            }), 404
+        
+        # Format signal data
+        formatted_signals = format_signal_data([signal_data])
+        signal = formatted_signals[0] if formatted_signals else None
+        
+        return jsonify({
+            'success': True,
+            'data': signal,
+            'message': f'Retrieved signal {signal_id}'
+        })
+        
+    except Exception as e:
+        print(f"❌ Error getting signal {signal_id}: {str(e)}")
+        return jsonify({
+            'success': False,
+            'error': f'Error retrieving signal: {str(e)}',
+            'data': None
+        }), 500
+
+@app.route('/api/signals/stats')
+@login_required
+def api_signals_stats():
+    """Get comprehensive signal performance statistics"""
+    try:
+        stats = calculate_signal_stats()
+        
+        return jsonify({
+            'success': True,
+            'data': stats,
+            'message': 'Signal statistics retrieved successfully'
+        })
+        
+    except Exception as e:
+        print(f"❌ Error getting signal stats: {str(e)}")
+        return jsonify({
+            'success': False,
+            'error': f'Error retrieving signal statistics: {str(e)}',
+            'data': None
+        }), 500
+
+if __name__ == '__main__':
     # Initialize scheduler
     setup_scheduler()
     

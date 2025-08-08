@@ -1,0 +1,7 @@
+<!-- This is a placeholder - in a real system you would have an actual PNG file -->
+<!-- For now, we'll use a simple placeholder that CSS can style -->
+<svg width="120" height="120" xmlns="http://www.w3.org/2000/svg">
+  <circle cx="60" cy="60" r="60" fill="#1a1a1a"/>
+  <circle cx="60" cy="40" r="20" fill="#d4af37"/>
+  <path d="M20 100 Q20 80 60 80 Q100 80 100 100 L100 120 L20 120 Z" fill="#d4af37"/>
+</svg>

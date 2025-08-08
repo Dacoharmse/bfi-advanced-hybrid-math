@@ -1,0 +1,440 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Enhanced Manual Signal Entry Test</title>
+    <style>
+        :root {
+            --golden-primary: #ffd700;
+            --golden-bright: #ffed4e;
+            --text-primary: #ffffff;
+        }
+        
+        body {
+            font-family: Arial, sans-serif;
+            background: #1a1a1a;
+            color: #fff;
+            margin: 0;
+            padding: 20px;
+            min-height: 100vh;
+        }
+        
+        .container {
+            max-width: 1000px;
+            margin: 0 auto;
+            background: rgba(26, 26, 26, 0.9);
+            border-radius: 16px;
+            padding: 30px;
+            border: 1px solid rgba(255, 215, 0, 0.2);
+        }
+        
+        h1 {
+            color: #ffd700;
+            text-align: center;
+            margin-bottom: 30px;
+            font-size: 28px;
+        }
+        
+        .test-info {
+            background: rgba(0, 255, 136, 0.1);
+            border: 1px solid rgba(0, 255, 136, 0.3);
+            border-radius: 8px;
+            padding: 20px;
+            margin-bottom: 30px;
+        }
+        
+        .test-info h3 {
+            color: #00ff88;
+            margin: 0 0 15px 0;
+        }
+        
+        .form-section {
+            background: rgba(255, 255, 255, 0.02);
+            border: 1px solid rgba(255, 215, 0, 0.2);
+            border-radius: 12px;
+            padding: 24px;
+            margin-bottom: 24px;
+            backdrop-filter: blur(5px);
+        }
+        
+        .section-title {
+            color: var(--golden-primary);
+            font-size: 18px;
+            font-weight: 600;
+            margin: 0 0 20px 0;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        .section-title::before {
+            content: '';
+            width: 4px;
+            height: 20px;
+            background: linear-gradient(135deg, var(--golden-primary), var(--golden-bright));
+            border-radius: 2px;
+        }
+        
+        .form-row {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+            margin-bottom: 24px;
+        }
+        
+        .input-group {
+            margin-bottom: 20px;
+        }
+        
+        .input-group label {
+            display: block;
+            font-size: 14px;
+            font-weight: 600;
+            color: var(--text-primary);
+            margin-bottom: 8px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        
+        .price-input {
+            width: 100%;
+            padding: 12px 16px;
+            background: rgba(255, 255, 255, 0.1);
+            border: 1px solid rgba(255, 215, 0, 0.3);
+            border-radius: 8px;
+            color: var(--text-primary);
+            font-size: 14px;
+            transition: all 0.3s ease;
+        }
+        
+        .price-input:focus {
+            outline: none;
+            border-color: var(--golden-bright);
+            background: rgba(255, 255, 255, 0.15);
+            box-shadow: 0 0 0 3px rgba(255, 215, 0, 0.2);
+        }
+        
+        .risk-calculation {
+            background: rgba(255, 215, 0, 0.05);
+            border: 1px solid rgba(255, 215, 0, 0.3);
+            border-radius: 12px;
+            padding: 24px;
+            margin-top: 30px;
+        }
+        
+        .risk-calculation h3 {
+            color: var(--golden-primary);
+            margin: 0 0 20px 0;
+            text-align: center;
+        }
+        
+        .risk-metrics {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+            gap: 16px;
+        }
+        
+        .risk-metric {
+            background: rgba(255, 255, 255, 0.02);
+            border: 1px solid rgba(255, 215, 0, 0.2);
+            border-radius: 8px;
+            padding: 12px;
+            text-align: center;
+        }
+        
+        .risk-metric label {
+            display: block;
+            font-size: 12px;
+            color: #ccc;
+            margin-bottom: 8px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        
+        .ratio-value {
+            color: #00ff88;
+            font-weight: bold;
+            font-size: 16px;
+        }
+        
+        .profit-value {
+            color: #00ff88;
+            font-weight: bold;
+            font-size: 16px;
+        }
+        
+        .loss-value {
+            color: #ff4757;
+            font-weight: bold;
+            font-size: 16px;
+        }
+        
+        .test-button {
+            background: linear-gradient(135deg, #ffd700, #ffed4e);
+            color: #0a0a0a;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 8px;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            margin: 10px;
+        }
+        
+        .test-button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(255, 215, 0, 0.4);
+        }
+        
+        .log {
+            background: rgba(0, 0, 0, 0.5);
+            border: 1px solid rgba(255, 215, 0, 0.3);
+            border-radius: 8px;
+            padding: 15px;
+            font-family: monospace;
+            font-size: 12px;
+            max-height: 200px;
+            overflow-y: auto;
+            margin-top: 20px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🧪 Enhanced Manual Signal Entry Test</h1>
+        
+        <div class="test-info">
+            <h3>✅ New Features Being Tested:</h3>
+            <ul>
+                <li><strong>Multiple Take Profit Levels:</strong> TP1 (Primary), TP2 (Optional), TP3 (Optional)</li>
+                <li><strong>Dual Entry Points:</strong> Entry 1 (Primary), Entry 2 (Secondary)</li>
+                <li><strong>Dual Stop Loss Options:</strong> SL Tight, SL Wide</li>
+                <li><strong>Enhanced Risk Calculation:</strong> Multi-level risk/reward analysis</li>
+                <li><strong>Real-time Updates:</strong> Event listeners for all form fields</li>
+            </ul>
+        </div>
+        
+        <!-- Entry Points Section -->
+        <div class="form-section">
+            <h4 class="section-title">Entry Points</h4>
+            <div class="form-row">
+                <div class="input-group">
+                    <label>Entry 1 (Primary)</label>
+                    <input type="number" class="price-input" placeholder="20150.00" id="manual-entry1" step="0.01">
+                </div>
+                <div class="input-group">
+                    <label>Entry 2 (Secondary)</label>
+                    <input type="number" class="price-input" placeholder="20120.00" id="manual-entry2" step="0.01">
+                </div>
+            </div>
+        </div>
+        
+        <!-- Take Profit Section -->
+        <div class="form-section">
+            <h4 class="section-title">Take Profit Levels</h4>
+            <div class="form-row">
+                <div class="input-group">
+                    <label>TP1 (Primary)</label>
+                    <input type="number" class="price-input" placeholder="20250.00" id="manual-tp1" step="0.01">
+                </div>
+                <div class="input-group">
+                    <label>TP2 (Optional)</label>
+                    <input type="number" class="price-input" placeholder="20350.00" id="manual-tp2" step="0.01">
+                </div>
+                <div class="input-group">
+                    <label>TP3 (Optional)</label>
+                    <input type="number" class="price-input" placeholder="20450.00" id="manual-tp3" step="0.01">
+                </div>
+            </div>
+        </div>
+        
+        <!-- Stop Loss Section -->
+        <div class="form-section">
+            <h4 class="section-title">Stop Loss Levels</h4>
+            <div class="form-row">
+                <div class="input-group">
+                    <label>SL Tight</label>
+                    <input type="number" class="price-input" placeholder="20100.00" id="manual-sl-tight" step="0.01">
+                </div>
+                <div class="input-group">
+                    <label>SL Wide</label>
+                    <input type="number" class="price-input" placeholder="20050.00" id="manual-sl-wide" step="0.01">
+                </div>
+            </div>
+        </div>
+        
+        <div class="risk-calculation">
+            <h3>🎯 Real-time Risk Assessment</h3>
+            <div class="risk-metrics">
+                <div class="risk-metric">
+                    <label>Primary Risk/Reward</label>
+                    <span class="ratio-value" id="manual-risk-ratio">--</span>
+                </div>
+                <div class="risk-metric">
+                    <label>Max Potential Profit</label>
+                    <span class="profit-value" id="manual-potential-profit">--</span>
+                </div>
+                <div class="risk-metric">
+                    <label>Tight SL Risk</label>
+                    <span class="loss-value" id="manual-tight-loss">--</span>
+                </div>
+                <div class="risk-metric">
+                    <label>Wide SL Risk</label>
+                    <span class="loss-value" id="manual-wide-loss">--</span>
+                </div>
+                <div class="risk-metric">
+                    <label>TP2 Risk/Reward</label>
+                    <span class="ratio-value" id="manual-tp2-ratio">--</span>
+                </div>
+                <div class="risk-metric">
+                    <label>TP3 Risk/Reward</label>
+                    <span class="ratio-value" id="manual-tp3-ratio">--</span>
+                </div>
+            </div>
+        </div>
+        
+        <div style="text-align: center; margin: 30px 0;">
+            <button class="test-button" onclick="populateTestData()">📊 Fill Test Data</button>
+            <button class="test-button" onclick="testCalculations()">🧮 Test Calculations</button>
+            <button class="test-button" onclick="clearAllFields()">🧹 Clear All</button>
+        </div>
+        
+        <div id="log" class="log"></div>
+    </div>
+
+    <script>
+        function log(message) {
+            const logDiv = document.getElementById('log');
+            const timestamp = new Date().toLocaleTimeString();
+            logDiv.innerHTML += `[${timestamp}] ${message}<br>`;
+            logDiv.scrollTop = logDiv.scrollHeight;
+            console.log(message);
+        }
+
+        // Enhanced Manual Risk Calculation Function (from the main app)
+        function calculateManualRisk() {
+            const entry1 = parseFloat(document.getElementById('manual-entry1')?.value) || 0;
+            const entry2 = parseFloat(document.getElementById('manual-entry2')?.value) || 0;
+            const tp1 = parseFloat(document.getElementById('manual-tp1')?.value) || 0;
+            const tp2 = parseFloat(document.getElementById('manual-tp2')?.value) || 0;
+            const tp3 = parseFloat(document.getElementById('manual-tp3')?.value) || 0;
+            const slTight = parseFloat(document.getElementById('manual-sl-tight')?.value) || 0;
+            const slWide = parseFloat(document.getElementById('manual-sl-wide')?.value) || 0;
+            
+            log(`🔄 Calculating risk: Entry1=${entry1}, TP1=${tp1}, SL Tight=${slTight}`);
+            
+            // Use primary entry point for calculations
+            const primaryEntry = entry1 || entry2;
+            
+            if (primaryEntry && tp1 && slTight) {
+                // Calculate profits for each TP level
+                const tp1Profit = Math.abs(tp1 - primaryEntry);
+                const tp2Profit = tp2 ? Math.abs(tp2 - primaryEntry) : 0;
+                const tp3Profit = tp3 ? Math.abs(tp3 - primaryEntry) : 0;
+                const maxProfit = Math.max(tp1Profit, tp2Profit, tp3Profit);
+                
+                // Calculate losses for each SL level
+                const tightLoss = Math.abs(primaryEntry - slTight);
+                const wideLoss = slWide ? Math.abs(primaryEntry - slWide) : 0;
+                
+                // Calculate risk/reward ratios
+                const primaryRatio = tightLoss > 0 ? (tp1Profit / tightLoss).toFixed(1) : '0';
+                const tp2Ratio = (tp2Profit > 0 && tightLoss > 0) ? (tp2Profit / tightLoss).toFixed(1) : '--';
+                const tp3Ratio = (tp3Profit > 0 && tightLoss > 0) ? (tp3Profit / tightLoss).toFixed(1) : '--';
+                
+                // Update risk metrics
+                const updates = {
+                    'manual-risk-ratio': `1:${primaryRatio}`,
+                    'manual-potential-profit': `+${maxProfit.toFixed(2)} pips`,
+                    'manual-tight-loss': `-${tightLoss.toFixed(2)} pips`,
+                    'manual-wide-loss': wideLoss > 0 ? `-${wideLoss.toFixed(2)} pips` : '--',
+                    'manual-tp2-ratio': tp2Ratio !== '--' ? `1:${tp2Ratio}` : '--',
+                    'manual-tp3-ratio': tp3Ratio !== '--' ? `1:${tp3Ratio}` : '--'
+                };
+                
+                Object.entries(updates).forEach(([id, value]) => {
+                    const element = document.getElementById(id);
+                    if (element) {
+                        element.textContent = value;
+                    }
+                });
+                
+                log(`✅ Risk calculated: Primary R/R = 1:${primaryRatio}, Max Profit = ${maxProfit.toFixed(2)} pips`);
+            } else {
+                // Clear risk metrics if insufficient data
+                ['manual-risk-ratio', 'manual-potential-profit', 'manual-tight-loss', 'manual-wide-loss', 'manual-tp2-ratio', 'manual-tp3-ratio'].forEach(id => {
+                    const element = document.getElementById(id);
+                    if (element) element.textContent = '--';
+                });
+                
+                if (!primaryEntry || !tp1 || !slTight) {
+                    log(`⚠️ Insufficient data for calculation. Need Entry, TP1, and SL Tight.`);
+                }
+            }
+        }
+
+        function populateTestData() {
+            const testData = {
+                'manual-entry1': '20150.00',
+                'manual-entry2': '20120.00',
+                'manual-tp1': '20250.00',
+                'manual-tp2': '20350.00',
+                'manual-tp3': '20450.00',
+                'manual-sl-tight': '20100.00',
+                'manual-sl-wide': '20050.00'
+            };
+            
+            Object.entries(testData).forEach(([id, value]) => {
+                const element = document.getElementById(id);
+                if (element) {
+                    element.value = value;
+                    log(`📝 Set ${id} = ${value}`);
+                }
+            });
+            
+            log('✅ Test data populated');
+            calculateManualRisk();
+        }
+
+        function testCalculations() {
+            log('🧮 Testing calculation function...');
+            calculateManualRisk();
+        }
+
+        function clearAllFields() {
+            ['manual-entry1', 'manual-entry2', 'manual-tp1', 'manual-tp2', 'manual-tp3', 'manual-sl-tight', 'manual-sl-wide'].forEach(id => {
+                const element = document.getElementById(id);
+                if (element) {
+                    element.value = '';
+                }
+            });
+            
+            calculateManualRisk();
+            log('🧹 All fields cleared');
+        }
+
+        // Setup event listeners for real-time calculation
+        document.addEventListener('DOMContentLoaded', function() {
+            log('🚀 Enhanced Manual Signal Entry Test initialized');
+            
+            ['manual-entry1', 'manual-entry2', 'manual-tp1', 'manual-tp2', 'manual-tp3', 'manual-sl-tight', 'manual-sl-wide'].forEach(id => {
+                const element = document.getElementById(id);
+                if (element) {
+                    element.addEventListener('input', function() {
+                        log(`📊 Field ${id} changed to: ${this.value}`);
+                        calculateManualRisk();
+                    });
+                    log(`✅ Event listener added for ${id}`);
+                } else {
+                    log(`❌ Element not found: ${id}`);
+                }
+            });
+            
+            log('✅ All event listeners setup complete');
+            log('💡 Try filling in the form fields to see real-time risk calculation');
+        });
+    </script>
+</body>
+</html>

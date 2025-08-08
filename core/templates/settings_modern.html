@@ -1,0 +1,1075 @@
+{% extends "base_modern.html" %}
+
+{% block title %}Settings - BFI Signals AI Dashboard{% endblock %}
+
+{% block extra_css %}
+<style>
+    .settings-container {
+        max-width: 1200px;
+        margin: 0 auto;
+        padding: 0;
+    }
+
+    .settings-header {
+        margin-bottom: 32px;
+        text-align: center;
+    }
+
+    .settings-title {
+        font-size: 32px;
+        font-weight: 700;
+        color: var(--golden-primary);
+        margin-bottom: 8px;
+        text-shadow: 0 0 20px rgba(212, 175, 55, 0.3);
+    }
+
+    .settings-subtitle {
+        font-size: 16px;
+        color: var(--text-secondary);
+        margin: 0;
+    }
+
+    .settings-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
+        gap: 24px;
+        margin-bottom: 32px;
+    }
+
+    .settings-section {
+        background: var(--card-bg);
+        backdrop-filter: blur(10px);
+        border: 1px solid var(--golden-accent);
+        border-radius: var(--border-radius);
+        padding: 24px;
+        box-shadow: var(--box-shadow);
+        transition: all 0.3s ease;
+    }
+
+    .settings-section:hover {
+        border-color: var(--golden-secondary);
+        box-shadow: var(--golden-glow);
+        transform: translateY(-2px);
+    }
+
+    .section-header {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        margin-bottom: 20px;
+        padding-bottom: 16px;
+        border-bottom: 1px solid var(--golden-accent);
+    }
+
+    .section-icon {
+        font-size: 24px;
+        color: var(--golden-primary);
+    }
+
+    .section-title {
+        font-size: 20px;
+        font-weight: 600;
+        color: var(--text-primary);
+        margin: 0;
+    }
+
+    .setting-item {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 16px 0;
+        border-bottom: 1px solid rgba(255, 215, 0, 0.1);
+    }
+
+    .setting-item:last-child {
+        border-bottom: none;
+        padding-bottom: 0;
+    }
+
+    .setting-info {
+        flex: 1;
+        margin-right: 16px;
+    }
+
+    .setting-label {
+        font-size: 16px;
+        font-weight: 500;
+        color: var(--text-primary);
+        margin-bottom: 4px;
+    }
+
+    .setting-description {
+        font-size: 14px;
+        color: var(--text-secondary);
+        line-height: 1.4;
+    }
+
+    .setting-control {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+    }
+
+    /* Toggle Switch */
+    .toggle-switch {
+        position: relative;
+        width: 60px;
+        height: 32px;
+        background: var(--secondary-bg);
+        border: 1px solid var(--golden-accent);
+        border-radius: 16px;
+        cursor: pointer;
+        transition: all 0.3s ease;
+    }
+
+    .toggle-switch.active {
+        background: var(--golden-primary);
+        border-color: var(--golden-bright);
+        box-shadow: 0 0 10px rgba(212, 175, 55, 0.3);
+    }
+
+    .toggle-slider {
+        position: absolute;
+        top: 2px;
+        left: 2px;
+        width: 26px;
+        height: 26px;
+        background: var(--text-primary);
+        border-radius: 50%;
+        transition: all 0.3s ease;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+    }
+
+    .toggle-switch.active .toggle-slider {
+        transform: translateX(28px);
+        background: var(--primary-bg);
+    }
+
+    /* Input Controls */
+    .setting-input {
+        background: var(--secondary-bg);
+        border: 1px solid var(--golden-accent);
+        border-radius: 8px;
+        padding: 8px 12px;
+        color: var(--text-primary);
+        font-size: 14px;
+        width: 120px;
+        transition: all 0.3s ease;
+    }
+
+    .setting-input:focus {
+        outline: none;
+        border-color: var(--golden-primary);
+        box-shadow: 0 0 10px rgba(212, 175, 55, 0.2);
+    }
+
+    .setting-select {
+        background: var(--secondary-bg);
+        border: 1px solid var(--golden-accent);
+        border-radius: 8px;
+        padding: 8px 12px;
+        color: var(--text-primary);
+        font-size: 14px;
+        min-width: 140px;
+        cursor: pointer;
+        transition: all 0.3s ease;
+    }
+
+    .setting-select:focus {
+        outline: none;
+        border-color: var(--golden-primary);
+        box-shadow: 0 0 10px rgba(212, 175, 55, 0.2);
+    }
+
+    /* Status Indicators */
+    .status-indicator {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        padding: 8px 16px;
+        border-radius: 20px;
+        font-size: 14px;
+        font-weight: 500;
+    }
+
+    .status-connected {
+        background: rgba(0, 255, 136, 0.1);
+        color: var(--success-color);
+        border: 1px solid rgba(0, 255, 136, 0.3);
+    }
+
+    .status-disconnected {
+        background: rgba(255, 71, 87, 0.1);
+        color: var(--danger-color);
+        border: 1px solid rgba(255, 71, 87, 0.3);
+    }
+
+    .status-warning {
+        background: rgba(255, 165, 2, 0.1);
+        color: var(--warning-color);
+        border: 1px solid rgba(255, 165, 2, 0.3);
+    }
+
+    .status-dot {
+        width: 8px;
+        height: 8px;
+        border-radius: 50%;
+        background: currentColor;
+        box-shadow: 0 0 8px currentColor;
+        animation: pulse 2s infinite;
+    }
+
+    @keyframes pulse {
+        0%, 100% { opacity: 1; }
+        50% { opacity: 0.5; }
+    }
+
+    /* Action Buttons */
+    .settings-actions {
+        display: flex;
+        gap: 12px;
+        justify-content: center;
+        margin-top: 32px;
+        padding-top: 24px;
+        border-top: 1px solid var(--golden-accent);
+    }
+
+    .btn-save {
+        background: linear-gradient(135deg, var(--golden-primary) 0%, var(--golden-bright) 100%);
+        color: var(--primary-bg);
+        border: none;
+        padding: 12px 32px;
+        border-radius: 8px;
+        font-weight: 600;
+        font-size: 16px;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+    }
+
+    .btn-save:hover {
+        transform: translateY(-2px);
+        box-shadow: var(--golden-glow);
+    }
+
+    .btn-reset {
+        background: transparent;
+        color: var(--text-secondary);
+        border: 1px solid var(--golden-accent);
+        padding: 12px 24px;
+        border-radius: 8px;
+        font-weight: 500;
+        font-size: 16px;
+        cursor: pointer;
+        transition: all 0.3s ease;
+    }
+
+    .btn-reset:hover {
+        color: var(--text-primary);
+        border-color: var(--golden-secondary);
+        background: var(--golden-accent);
+    }
+
+    /* Help Text */
+    .help-text {
+        background: rgba(212, 175, 55, 0.05);
+        border: 1px solid rgba(212, 175, 55, 0.2);
+        border-radius: 8px;
+        padding: 16px;
+        margin-top: 16px;
+        font-size: 14px;
+        color: var(--text-secondary);
+        line-height: 1.5;
+    }
+
+    .help-icon {
+        color: var(--golden-primary);
+        margin-right: 8px;
+    }
+
+    /* Test Buttons */
+    .test-btn {
+        background: var(--info-color);
+        color: white;
+        border: none;
+        padding: 8px 16px;
+        border-radius: 6px;
+        font-size: 14px;
+        cursor: pointer;
+        transition: all 0.3s ease;
+    }
+
+    .test-btn:hover {
+        background: #2c38e6;
+        transform: translateY(-1px);
+    }
+
+    .test-btn:disabled {
+        background: var(--text-muted);
+        cursor: not-allowed;
+        transform: none;
+    }
+
+    /* Advanced Settings Toggle */
+    .advanced-toggle {
+        text-align: center;
+        margin: 32px 0;
+    }
+
+    .advanced-btn {
+        background: transparent;
+        border: 1px solid var(--golden-accent);
+        color: var(--golden-primary);
+        padding: 12px 24px;
+        border-radius: 8px;
+        cursor: pointer;
+        font-size: 14px;
+        transition: all 0.3s ease;
+    }
+
+    .advanced-btn:hover {
+        background: var(--golden-accent);
+        border-color: var(--golden-secondary);
+    }
+
+    .advanced-settings {
+        display: none;
+        opacity: 0;
+        transition: opacity 0.3s ease;
+    }
+
+    .advanced-settings.show {
+        display: block;
+        opacity: 1;
+    }
+
+    /* Loading States */
+    .loading {
+        position: relative;
+        pointer-events: none;
+        opacity: 0.7;
+    }
+
+    .loading::after {
+        content: '';
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        width: 20px;
+        height: 20px;
+        margin: -10px 0 0 -10px;
+        border: 2px solid transparent;
+        border-top: 2px solid var(--golden-primary);
+        border-radius: 50%;
+        animation: spin 1s linear infinite;
+    }
+
+    @keyframes spin {
+        0% { transform: rotate(0deg); }
+        100% { transform: rotate(360deg); }
+    }
+
+    /* Responsive */
+    @media (max-width: 768px) {
+        .settings-grid {
+            grid-template-columns: 1fr;
+        }
+        
+        .setting-item {
+            flex-direction: column;
+            align-items: flex-start;
+            gap: 12px;
+        }
+        
+        .setting-control {
+            width: 100%;
+            justify-content: flex-end;
+        }
+        
+        .settings-actions {
+            flex-direction: column;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="settings-container">
+    <!-- Settings Header -->
+    <div class="settings-header">
+        <h1 class="settings-title">⚙️ Settings</h1>
+        <p class="settings-subtitle">Configure your BFI Signals AI Dashboard preferences</p>
+    </div>
+
+    <!-- Settings Grid -->
+    <div class="settings-grid">
+        <!-- Trading Settings -->
+        <div class="settings-section">
+            <div class="section-header">
+                <span class="section-icon">📈</span>
+                <h2 class="section-title">Trading Configuration</h2>
+            </div>
+            
+            <div class="setting-item">
+                <div class="setting-info">
+                    <div class="setting-label">Auto Signal Generation</div>
+                    <div class="setting-description">Automatically generate signals based on market data</div>
+                </div>
+                <div class="setting-control">
+                    <div class="toggle-switch" id="autoGenerationToggle">
+                        <div class="toggle-slider"></div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="setting-item">
+                <div class="setting-info">
+                    <div class="setting-label">Default Risk Level</div>
+                    <div class="setting-description">Default risk assessment for new signals</div>
+                </div>
+                <div class="setting-control">
+                    <select class="setting-select" id="defaultRiskLevel">
+                        <option value="low">Low Risk</option>
+                        <option value="medium" selected>Medium Risk</option>
+                        <option value="high">High Risk</option>
+                    </select>
+                </div>
+            </div>
+
+            <div class="setting-item">
+                <div class="setting-info">
+                    <div class="setting-label">Minimum Confidence</div>
+                    <div class="setting-description">Minimum confidence threshold for signal generation</div>
+                </div>
+                <div class="setting-control">
+                    <input type="range" min="50" max="95" value="65" class="setting-input" id="minConfidence">
+                    <span id="confidenceValue">65%</span>
+                </div>
+            </div>
+
+            <div class="setting-item">
+                <div class="setting-info">
+                    <div class="setting-label">Trading Instruments</div>
+                    <div class="setting-description">Select which instruments to include in auto-generation</div>
+                </div>
+                <div class="setting-control">
+                    <div style="display: flex; flex-direction: column; gap: 8px;">
+                        <label style="display: flex; align-items: center; gap: 8px; font-size: 14px;">
+                            <input type="checkbox" checked id="instrumentUS30"> US30 (DOW)
+                        </label>
+                        <label style="display: flex; align-items: center; gap: 8px; font-size: 14px;">
+                            <input type="checkbox" checked id="instrumentNAS100"> NAS100 (NASDAQ)
+                        </label>
+                        <label style="display: flex; align-items: center; gap: 8px; font-size: 14px;">
+                            <input type="checkbox" checked id="instrumentXAUUSD"> XAUUSD (Gold)
+                        </label>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Discord Integration -->
+        <div class="settings-section">
+            <div class="section-header">
+                <span class="section-icon">💬</span>
+                <h2 class="section-title">Discord Integration</h2>
+            </div>
+            
+            <div class="setting-item">
+                <div class="setting-info">
+                    <div class="setting-label">Discord Webhook</div>
+                    <div class="setting-description">Send signals automatically to Discord channel</div>
+                </div>
+                <div class="setting-control">
+                    <div class="status-indicator status-connected" id="discordStatus">
+                        <div class="status-dot"></div>
+                        <span>Connected</span>
+                    </div>
+                    <button class="test-btn" id="testDiscord">Test</button>
+                </div>
+            </div>
+
+            <div class="setting-item">
+                <div class="setting-info">
+                    <div class="setting-label">Auto-Post Signals</div>
+                    <div class="setting-description">Automatically post generated signals to Discord</div>
+                </div>
+                <div class="setting-control">
+                    <div class="toggle-switch active" id="autoPostToggle">
+                        <div class="toggle-slider"></div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="setting-item">
+                <div class="setting-info">
+                    <div class="setting-label">Include Risky Play</div>
+                    <div class="setting-description">Include risky play sections in Discord signals</div>
+                </div>
+                <div class="setting-control">
+                    <div class="toggle-switch" id="includeRiskyToggle">
+                        <div class="toggle-slider"></div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="setting-item">
+                <div class="setting-info">
+                    <div class="setting-label">Signal Format</div>
+                    <div class="setting-description">Choose Discord message format style</div>
+                </div>
+                <div class="setting-control">
+                    <select class="setting-select" id="signalFormat">
+                        <option value="standard" selected>Standard Format</option>
+                        <option value="detailed">Detailed Analysis</option>
+                        <option value="compact">Compact Format</option>
+                    </select>
+                </div>
+            </div>
+        </div>
+
+        <!-- Data Feed Settings -->
+        <div class="settings-section">
+            <div class="section-header">
+                <span class="section-icon">📊</span>
+                <h2 class="section-title">Data Feed Configuration</h2>
+            </div>
+            
+            <div class="setting-item">
+                <div class="setting-info">
+                    <div class="setting-label">Update Frequency</div>
+                    <div class="setting-description">How often to refresh market data (minutes)</div>
+                </div>
+                <div class="setting-control">
+                    <select class="setting-select" id="updateFrequency">
+                        <option value="1">1 minute</option>
+                        <option value="5" selected>5 minutes</option>
+                        <option value="15">15 minutes</option>
+                        <option value="30">30 minutes</option>
+                    </select>
+                </div>
+            </div>
+
+            <div class="setting-item">
+                <div class="setting-info">
+                    <div class="setting-label">Data Source Priority</div>
+                    <div class="setting-description">Primary source for market data</div>
+                </div>
+                <div class="setting-control">
+                    <select class="setting-select" id="dataSource">
+                        <option value="yahoo" selected>Yahoo Finance</option>
+                        <option value="mixed">Mixed Sources</option>
+                        <option value="scraper">Web Scraper</option>
+                    </select>
+                </div>
+            </div>
+
+            <div class="setting-item">
+                <div class="setting-info">
+                    <div class="setting-label">Market Close Auto-Save</div>
+                    <div class="setting-description">Automatically save market data at market close</div>
+                </div>
+                <div class="setting-control">
+                    <div class="toggle-switch active" id="autoSaveToggle">
+                        <div class="toggle-slider"></div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="setting-item">
+                <div class="setting-info">
+                    <div class="setting-label">Historical Data Retention</div>
+                    <div class="setting-description">Days to keep historical market data</div>
+                </div>
+                <div class="setting-control">
+                    <select class="setting-select" id="dataRetention">
+                        <option value="30">30 days</option>
+                        <option value="60" selected>60 days</option>
+                        <option value="90">90 days</option>
+                        <option value="180">180 days</option>
+                        <option value="365">1 year</option>
+                    </select>
+                </div>
+            </div>
+        </div>
+
+        <!-- Display & Interface -->
+        <div class="settings-section">
+            <div class="section-header">
+                <span class="section-icon">🎨</span>
+                <h2 class="section-title">Display & Interface</h2>
+            </div>
+            
+            <div class="setting-item">
+                <div class="setting-info">
+                    <div class="setting-label">Theme Mode</div>
+                    <div class="setting-description">Choose your preferred visual theme</div>
+                </div>
+                <div class="setting-control">
+                    <select class="setting-select" id="themeMode">
+                        <option value="dark" selected>Dark Mode</option>
+                        <option value="auto">Auto (System)</option>
+                    </select>
+                </div>
+            </div>
+
+            <div class="setting-item">
+                <div class="setting-info">
+                    <div class="setting-label">Currency Display</div>
+                    <div class="setting-description">Format for displaying prices and values</div>
+                </div>
+                <div class="setting-control">
+                    <select class="setting-select" id="currencyFormat">
+                        <option value="usd" selected>USD ($)</option>
+                        <option value="comma">Comma separated</option>
+                        <option value="space">Space separated</option>
+                    </select>
+                </div>
+            </div>
+
+            <div class="setting-item">
+                <div class="setting-info">
+                    <div class="setting-label">Animations</div>
+                    <div class="setting-description">Enable smooth animations and transitions</div>
+                </div>
+                <div class="setting-control">
+                    <div class="toggle-switch active" id="animationsToggle">
+                        <div class="toggle-slider"></div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="setting-item">
+                <div class="setting-info">
+                    <div class="setting-label">Auto-refresh Dashboard</div>
+                    <div class="setting-description">Automatically refresh dashboard data</div>
+                </div>
+                <div class="setting-control">
+                    <div class="toggle-switch active" id="autoRefreshToggle">
+                        <div class="toggle-slider"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Advanced Settings Toggle -->
+    <div class="advanced-toggle">
+        <button class="advanced-btn" id="advancedToggle">⚙️ Advanced Settings</button>
+    </div>
+
+    <!-- Advanced Settings (Hidden by default) -->
+    <div class="advanced-settings" id="advancedSettings">
+        <div class="settings-grid">
+            <!-- API & Development -->
+            <div class="settings-section">
+                <div class="section-header">
+                    <span class="section-icon">🔧</span>
+                    <h2 class="section-title">API & Development</h2>
+                </div>
+                
+                <div class="setting-item">
+                    <div class="setting-info">
+                        <div class="setting-label">Debug Mode</div>
+                        <div class="setting-description">Enable detailed logging and debug information</div>
+                    </div>
+                    <div class="setting-control">
+                        <div class="toggle-switch" id="debugModeToggle">
+                            <div class="toggle-slider"></div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="setting-item">
+                    <div class="setting-info">
+                        <div class="setting-label">API Rate Limiting</div>
+                        <div class="setting-description">Requests per minute for external APIs</div>
+                    </div>
+                    <div class="setting-control">
+                        <input type="number" min="10" max="100" value="60" class="setting-input" id="rateLimit">
+                        <span>/min</span>
+                    </div>
+                </div>
+
+                <div class="setting-item">
+                    <div class="setting-info">
+                        <div class="setting-label">Cache Duration</div>
+                        <div class="setting-description">How long to cache API responses (minutes)</div>
+                    </div>
+                    <div class="setting-control">
+                        <select class="setting-select" id="cacheDuration">
+                            <option value="1">1 minute</option>
+                            <option value="5" selected>5 minutes</option>
+                            <option value="15">15 minutes</option>
+                            <option value="60">1 hour</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Backup & Security -->
+            <div class="settings-section">
+                <div class="section-header">
+                    <span class="section-icon">🔒</span>
+                    <h2 class="section-title">Backup & Security</h2>
+                </div>
+                
+                <div class="setting-item">
+                    <div class="setting-info">
+                        <div class="setting-label">Auto Backup</div>
+                        <div class="setting-description">Automatically backup signal data</div>
+                    </div>
+                    <div class="setting-control">
+                        <div class="toggle-switch active" id="autoBackupToggle">
+                            <div class="toggle-slider"></div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="setting-item">
+                    <div class="setting-info">
+                        <div class="setting-label">Backup Frequency</div>
+                        <div class="setting-description">How often to create backups</div>
+                    </div>
+                    <div class="setting-control">
+                        <select class="setting-select" id="backupFrequency">
+                            <option value="daily" selected>Daily</option>
+                            <option value="weekly">Weekly</option>
+                            <option value="monthly">Monthly</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="setting-item">
+                    <div class="setting-info">
+                        <div class="setting-label">Data Encryption</div>
+                        <div class="setting-description">Encrypt sensitive data at rest</div>
+                    </div>
+                    <div class="setting-control">
+                        <div class="toggle-switch active" id="encryptionToggle">
+                            <div class="toggle-slider"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Help Text -->
+    <div class="help-text">
+        <span class="help-icon">💡</span>
+        <strong>Pro Tip:</strong> Changes are automatically saved when you modify settings. For optimal performance, 
+        keep auto-generation enabled during trading hours and use a balanced update frequency for data feeds.
+        Discord integration requires a valid webhook URL configured in your environment settings.
+    </div>
+
+    <!-- Action Buttons -->
+    <div class="settings-actions">
+        <button class="btn-save" id="saveSettings">
+            <span>💾</span>
+            Save All Settings
+        </button>
+        <button class="btn-reset" id="resetSettings">Reset to Defaults</button>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Settings functionality
+    const settings = {
+        // Trading
+        autoGeneration: true,
+        defaultRiskLevel: 'medium',
+        minConfidence: 65,
+        instrumentUS30: true,
+        instrumentNAS100: true,
+        instrumentXAUUSD: true,
+        
+        // Discord
+        autoPost: true,
+        includeRisky: false,
+        signalFormat: 'standard',
+        
+        // Data Feed
+        updateFrequency: 5,
+        dataSource: 'yahoo',
+        autoSave: true,
+        dataRetention: 60,
+        
+        // Display
+        themeMode: 'dark',
+        currencyFormat: 'usd',
+        animations: true,
+        autoRefresh: true,
+        
+        // Advanced
+        debugMode: false,
+        rateLimit: 60,
+        cacheDuration: 5,
+        autoBackup: true,
+        backupFrequency: 'daily',
+        encryption: true
+    };
+
+    // Load settings from localStorage or use defaults
+    function loadSettings() {
+        const saved = localStorage.getItem('bfi_settings');
+        if (saved) {
+            Object.assign(settings, JSON.parse(saved));
+        }
+        updateUI();
+        checkDiscordStatus();
+    }
+
+    // Update UI elements with current settings
+    function updateUI() {
+        // Toggle switches
+        document.getElementById('autoGenerationToggle').classList.toggle('active', settings.autoGeneration);
+        document.getElementById('autoPostToggle').classList.toggle('active', settings.autoPost);
+        document.getElementById('includeRiskyToggle').classList.toggle('active', settings.includeRisky);
+        document.getElementById('autoSaveToggle').classList.toggle('active', settings.autoSave);
+        document.getElementById('animationsToggle').classList.toggle('active', settings.animations);
+        document.getElementById('autoRefreshToggle').classList.toggle('active', settings.autoRefresh);
+        document.getElementById('debugModeToggle').classList.toggle('active', settings.debugMode);
+        document.getElementById('autoBackupToggle').classList.toggle('active', settings.autoBackup);
+        document.getElementById('encryptionToggle').classList.toggle('active', settings.encryption);
+
+        // Select elements
+        document.getElementById('defaultRiskLevel').value = settings.defaultRiskLevel;
+        document.getElementById('signalFormat').value = settings.signalFormat;
+        document.getElementById('updateFrequency').value = settings.updateFrequency;
+        document.getElementById('dataSource').value = settings.dataSource;
+        document.getElementById('dataRetention').value = settings.dataRetention;
+        document.getElementById('themeMode').value = settings.themeMode;
+        document.getElementById('currencyFormat').value = settings.currencyFormat;
+        document.getElementById('cacheDuration').value = settings.cacheDuration;
+        document.getElementById('backupFrequency').value = settings.backupFrequency;
+
+        // Input elements
+        document.getElementById('minConfidence').value = settings.minConfidence;
+        document.getElementById('confidenceValue').textContent = settings.minConfidence + '%';
+        document.getElementById('rateLimit').value = settings.rateLimit;
+
+        // Checkboxes
+        document.getElementById('instrumentUS30').checked = settings.instrumentUS30;
+        document.getElementById('instrumentNAS100').checked = settings.instrumentNAS100;
+        document.getElementById('instrumentXAUUSD').checked = settings.instrumentXAUUSD;
+    }
+
+    // Save settings to localStorage and backend
+    function saveSettings() {
+        localStorage.setItem('bfi_settings', JSON.stringify(settings));
+        
+        // Show save animation
+        const saveBtn = document.getElementById('saveSettings');
+        saveBtn.classList.add('loading');
+        
+        // Simulate API call to save settings
+        setTimeout(() => {
+            saveBtn.classList.remove('loading');
+            showNotification('Settings saved successfully!', 'success');
+            
+            // Apply settings to backend if needed
+            applySettingsToBackend();
+        }, 1000);
+    }
+
+    // Apply settings to backend
+    function applySettingsToBackend() {
+        // Auto generation toggle
+        fetch('/api/toggle_auto_generation', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ enabled: settings.autoGeneration })
+        }).catch(console.error);
+    }
+
+    // Check Discord connection status
+    async function checkDiscordStatus() {
+        try {
+            const response = await fetch('/api/discord_debug');
+            const result = await response.json();
+            
+            const statusEl = document.getElementById('discordStatus');
+            if (result.success && result.config.webhook_configured) {
+                statusEl.className = 'status-indicator status-connected';
+                statusEl.innerHTML = '<div class="status-dot"></div><span>Connected</span>';
+            } else {
+                statusEl.className = 'status-indicator status-disconnected';
+                statusEl.innerHTML = '<div class="status-dot"></div><span>Not Configured</span>';
+            }
+        } catch (error) {
+            const statusEl = document.getElementById('discordStatus');
+            statusEl.className = 'status-indicator status-warning';
+            statusEl.innerHTML = '<div class="status-dot"></div><span>Error</span>';
+        }
+    }
+
+    // Test Discord connection
+    async function testDiscordConnection() {
+        const testBtn = document.getElementById('testDiscord');
+        testBtn.disabled = true;
+        testBtn.textContent = 'Testing...';
+        
+        try {
+            const response = await fetch('/api/test_discord_connection', {
+                method: 'POST'
+            });
+            const result = await response.json();
+            
+            if (result.success) {
+                showNotification('Discord test successful!', 'success');
+            } else {
+                showNotification('Discord test failed: ' + result.error, 'error');
+            }
+        } catch (error) {
+            showNotification('Discord test error: ' + error.message, 'error');
+        } finally {
+            testBtn.disabled = false;
+            testBtn.textContent = 'Test';
+        }
+    }
+
+    // Toggle switches event handlers
+    document.querySelectorAll('.toggle-switch').forEach(toggle => {
+        toggle.addEventListener('click', function() {
+            const isActive = this.classList.contains('active');
+            this.classList.toggle('active');
+            
+            // Update setting based on toggle ID
+            const settingKey = this.id.replace('Toggle', '').replace(/([A-Z])/g, (match, letter) => 
+                match.toLowerCase()
+            );
+            
+            // Map camelCase to settings object
+            const settingMap = {
+                autogeneration: 'autoGeneration',
+                autopost: 'autoPost',
+                includerisky: 'includeRisky',
+                autosave: 'autoSave',
+                animations: 'animations',
+                autorefresh: 'autoRefresh',
+                debugmode: 'debugMode',
+                autobackup: 'autoBackup',
+                encryption: 'encryption'
+            };
+            
+            const actualKey = settingMap[settingKey] || settingKey;
+            if (settings.hasOwnProperty(actualKey)) {
+                settings[actualKey] = !isActive;
+                saveSettings();
+            }
+        });
+    });
+
+    // Select elements event handlers
+    document.querySelectorAll('.setting-select, .setting-input').forEach(element => {
+        element.addEventListener('change', function() {
+            const settingKey = this.id;
+            let value = this.value;
+            
+            // Convert numeric values
+            if (['updateFrequency', 'dataRetention', 'minConfidence', 'rateLimit', 'cacheDuration'].includes(settingKey)) {
+                value = parseInt(value);
+            }
+            
+            if (settings.hasOwnProperty(settingKey)) {
+                settings[settingKey] = value;
+                
+                // Update confidence display
+                if (settingKey === 'minConfidence') {
+                    document.getElementById('confidenceValue').textContent = value + '%';
+                }
+                
+                saveSettings();
+            }
+        });
+    });
+
+    // Checkbox event handlers
+    document.querySelectorAll('input[type="checkbox"]').forEach(checkbox => {
+        checkbox.addEventListener('change', function() {
+            const settingKey = this.id;
+            if (settings.hasOwnProperty(settingKey)) {
+                settings[settingKey] = this.checked;
+                saveSettings();
+            }
+        });
+    });
+
+    // Advanced settings toggle
+    document.getElementById('advancedToggle').addEventListener('click', function() {
+        const advancedSettings = document.getElementById('advancedSettings');
+        const isVisible = advancedSettings.classList.contains('show');
+        
+        if (isVisible) {
+            advancedSettings.classList.remove('show');
+            this.textContent = '⚙️ Advanced Settings';
+        } else {
+            advancedSettings.classList.add('show');
+            this.textContent = '🔼 Hide Advanced Settings';
+        }
+    });
+
+    // Test Discord button
+    document.getElementById('testDiscord').addEventListener('click', testDiscordConnection);
+
+    // Save settings button
+    document.getElementById('saveSettings').addEventListener('click', saveSettings);
+
+    // Reset settings button
+    document.getElementById('resetSettings').addEventListener('click', function() {
+        if (confirm('Are you sure you want to reset all settings to defaults?')) {
+            localStorage.removeItem('bfi_settings');
+            location.reload();
+        }
+    });
+
+    // Simple notification function
+    function showNotification(message, type = 'info') {
+        const notification = document.createElement('div');
+        notification.className = `notification notification-${type}`;
+        notification.style.cssText = `
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            padding: 16px 24px;
+            background: var(--card-bg);
+            border: 1px solid var(--golden-accent);
+            border-radius: 8px;
+            color: var(--text-primary);
+            z-index: 10000;
+            backdrop-filter: blur(10px);
+            animation: slideIn 0.3s ease;
+            box-shadow: var(--box-shadow);
+        `;
+        
+        // Add type-specific styling
+        if (type === 'success') {
+            notification.style.borderColor = 'var(--success-color)';
+            notification.style.background = 'rgba(0, 255, 136, 0.1)';
+        } else if (type === 'error') {
+            notification.style.borderColor = 'var(--danger-color)';
+            notification.style.background = 'rgba(255, 71, 87, 0.1)';
+        }
+        
+        notification.textContent = message;
+        document.body.appendChild(notification);
+        
+        setTimeout(() => {
+            notification.style.animation = 'slideOut 0.3s ease forwards';
+            setTimeout(() => {
+                if (notification.parentNode) {
+                    document.body.removeChild(notification);
+                }
+            }, 300);
+        }, 3000);
+    }
+
+    // Initialize settings
+    loadSettings();
+});
+</script>
+{% endblock %}

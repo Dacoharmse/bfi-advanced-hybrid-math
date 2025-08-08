@@ -1,4 +1,5 @@
 {
+  "$schema": "https://json.schemastore.org/claude-code-settings.json",
   "permissions": {
     "allow": [
       "Bash(python:*)",
@@ -23,7 +24,28 @@
       "Bash(wmic process where:*)",
       "Bash(source:*)",
       "Bash(curl:*)",
-      "Bash(kill:*)"
+      "Bash(kill:*)",
+      "Bash(pkill:*)",
+      "Bash(sqlite3:*)",
+      "Bash(wget:*)",
+      "Bash(chmod:*)",
+      "Bash(/home/chronic/Projects/bfi-signals/core/venv/bin/python -c \"from manual_journal import journal_manager; print(''✅ Manual journal manager imported successfully'')\")",
+      "Bash(PYTHONPATH=/home/chronic/Projects/bfi-signals/core /home/chronic/Projects/bfi-signals/core/venv/bin/python -c \"\nimport os\nos.chdir(''/home/chronic/Projects/bfi-signals/core'')\nfrom manual_journal import journal_manager\nprint(''✅ Manual journal manager imported successfully'')\n\n# Test database operations\nentries, message = journal_manager.get_journal_entries()\nprint(f''✅ Retrieved {len(entries)} entries: {message}'')\n\nstats, message = journal_manager.get_journal_statistics()\nprint(f''✅ Statistics retrieved: {message}'')\nif stats:\n    print(f''   Total trades: {stats[\"\"overall\"\"][0]}'')\n    print(f''   Wins: {stats[\"\"overall\"\"][1]}'')\n    print(f''   By symbol: {len(stats[\"\"by_symbol\"\"])} symbols'')\n\")",
+      "Bash(PYTHONPATH=/home/chronic/Projects/bfi-signals/core /home/chronic/Projects/bfi-signals/core/venv/bin/python test_manual_journal.py)",
+      "Bash(PYTHONPATH=/home/chronic/Projects/bfi-signals/core /home/chronic/Projects/bfi-signals/core/venv/bin/python test_image_upload.py)",
+      "Bash(/home/chronic/Projects/bfi-signals/core/venv/bin/pip install Pillow)",
+      "Bash(/home/chronic/Projects/bfi-signals/core/venv/bin/python dashboard.py)",
+      "Bash(/home/chronic/Projects/bfi-signals/core/venv/bin/python -c \"from manual_journal import journal_manager; print(''✅ Manual journal manager imported successfully'')\")",
+      "Bash(git add:*)",
+      "Bash(git commit:*)",
+      "WebFetch(domain:www.tradingview.com)",
+      "WebFetch(domain:chart-img.medium.com)",
+      "Bash(./venv/bin/python:*)",
+      "Bash(/home/chronic/Projects/bfi-signals/venv/bin/pip install bcrypt)",
+      "Bash(/home/chronic/Projects/bfi-signals/venv/bin/python -c \"import bcrypt; print(''✅ bcrypt works in parent venv!'')\")",
+      "Bash(/home/chronic/Projects/bfi-signals/core/venv/bin/pip install bcrypt)",
+      "Bash(PYTHONPATH:*)",
+      "Bash(/home/chronic/Projects/bfi-signals/core/venv/bin/python:*)"
     ],
     "deny": []
   }

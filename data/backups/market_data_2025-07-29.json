@@ -1,0 +1,20 @@
+{
+  "capture_date": "2025-07-29",
+  "captured_at": "2025-07-30T23:32:15.538877",
+  "symbols": {
+    "gold": {
+      "price": "3,324.00",
+      "change": "-2.80",
+      "changePercent": "-0.08%",
+      "rawChange": -2.8,
+      "previousClose": "3,326.80",
+      "high": "3,331.80",
+      "low": "3,320.90",
+      "timestamp": "2025-07-30T23:32:15.538883"
+    }
+  },
+  "metadata": {
+    "source": "bfi_signals_local",
+    "symbols_count": 1
+  }
+}

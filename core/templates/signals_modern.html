@@ -1,0 +1,353 @@
+{% extends "base_modern.html" %}
+
+{% block title %}Signals - BFI Signals AI{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/signals-page.css') }}">
+{% endblock %}
+
+{% block content %}
+<div class="signals-page">
+    <!-- Page Header -->
+    <div class="page-header">
+        <div class="header-content">
+            <div class="header-text">
+                <h1 class="page-title">
+                    <span class="title-icon"><i data-feather="zap"></i></span>
+                    Trading Signals
+                </h1>
+                <p class="page-subtitle">Monitor and track your AI-generated trading signals with real-time performance metrics</p>
+            </div>
+            <div class="header-actions">
+                <button class="btn btn-secondary" onclick="exportSignals()">
+                    <span class="btn-icon"><i data-feather="download"></i></span>
+                    Export Data
+                </button>
+                <button class="btn btn-primary" onclick="refreshSignals()">
+                    <span class="btn-icon"><i data-feather="refresh-cw"></i></span>
+                    Refresh
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Quick Stats Dashboard -->
+    <div class="stats-dashboard">
+        {% if signals %}
+            {% set total_signals = signals|length %}
+            {% set completed_signals = signals|selectattr(6, 'ne', none)|list %}
+            {% set win_signals = signals|selectattr(6, 'eq', 1)|list %}
+            {% set loss_signals = signals|selectattr(6, 'eq', 0)|list %}
+            {% set breakeven_signals = signals|selectattr(6, 'eq', 2)|list %}
+            {% set pending_signals = signals|selectattr(6, 'eq', none)|list %}
+            {% set win_rate = ((win_signals|length / completed_signals|length * 100) if completed_signals|length > 0 else 0) | round(1) %}
+        {% endif %}
+
+        <div class="stats-grid">
+            <div class="stat-card total">
+                <div class="stat-icon"><i data-feather="bar-chart-2"></i></div>
+                <div class="stat-content">
+                    <div class="stat-value">{{ total_signals if signals else 0 }}</div>
+                    <div class="stat-label">Total Signals</div>
+                </div>
+            </div>
+            
+            <div class="stat-card wins">
+                <div class="stat-icon"><i data-feather="check-circle"></i></div>
+                <div class="stat-content">
+                    <div class="stat-value">{{ win_signals|length if signals else 0 }}</div>
+                    <div class="stat-label">Wins</div>
+                </div>
+            </div>
+            
+            <div class="stat-card losses">
+                <div class="stat-icon"><i data-feather="x-circle"></i></div>
+                <div class="stat-content">
+                    <div class="stat-value">{{ loss_signals|length if signals else 0 }}</div>
+                    <div class="stat-label">Losses</div>
+                </div>
+            </div>
+            
+            <div class="stat-card pending">
+                <div class="stat-icon"><i data-feather="clock"></i></div>
+                <div class="stat-content">
+                    <div class="stat-value">{{ pending_signals|length if signals else 0 }}</div>
+                    <div class="stat-label">Pending</div>
+                </div>
+            </div>
+            
+            <div class="stat-card win-rate">
+                <div class="stat-icon"><i data-feather="target"></i></div>
+                <div class="stat-content">
+                    <div class="stat-value">{{ win_rate if signals else 0 }}%</div>
+                    <div class="stat-label">Win Rate</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Filter Tabs and Search -->
+    <div class="controls-section">
+        <div class="filter-tabs">
+            <button class="filter-tab active" data-filter="all" onclick="setActiveFilter('all')">
+                <span class="tab-icon">📋</span>
+                All Signals
+                <span class="tab-count">{{ total_signals if signals else 0 }}</span>
+            </button>
+            <button class="filter-tab" data-filter="today" onclick="setActiveFilter('today')">
+                <span class="tab-icon">📅</span>
+                Today
+                <span class="tab-count" id="today-count">0</span>
+            </button>
+            <button class="filter-tab" data-filter="week" onclick="setActiveFilter('week')">
+                <span class="tab-icon">📊</span>
+                This Week
+                <span class="tab-count" id="week-count">0</span>
+            </button>
+            <button class="filter-tab" data-filter="wins" onclick="setActiveFilter('wins')">
+                <span class="tab-icon">✅</span>
+                Wins
+                <span class="tab-count">{{ win_signals|length if signals else 0 }}</span>
+            </button>
+            <button class="filter-tab" data-filter="pending" onclick="setActiveFilter('pending')">
+                <span class="tab-icon">⏳</span>
+                Pending
+                <span class="tab-count">{{ pending_signals|length if signals else 0 }}</span>
+            </button>
+        </div>
+        
+        <div class="search-controls">
+            <div class="search-box">
+                <input type="text" id="signalSearch" placeholder="Search by symbol..." onkeyup="performSearch()">
+                <span class="search-icon"><i data-feather="search"></i></span>
+            </div>
+            <div class="advanced-filters">
+                <select id="symbolFilter" onchange="applyFilters()" class="filter-select">
+                    <option value="">All Symbols</option>
+                    <option value="^NDX">^NDX</option>
+                    <option value="US30">US30</option>
+                    <option value="NAS100">NAS100</option>
+                </select>
+                <select id="riskFilter" onchange="applyFilters()" class="filter-select">
+                    <option value="">All Risk Levels</option>
+                    <option value="low">Low Risk</option>
+                    <option value="medium">Medium Risk</option>
+                    <option value="high">High Risk</option>
+                    <option value="extreme">Extreme Risk</option>
+                </select>
+                <select id="typeFilter" onchange="applyFilters()" class="filter-select">
+                    <option value="">All Types</option>
+                    <option value="BUY">BUY/LONG</option>
+                    <option value="SELL">SELL/SHORT</option>
+                </select>
+            </div>
+        </div>
+    </div>
+
+    <!-- Signals Grid -->
+    <div class="signals-container" id="signalsContainer">
+        {% if signals %}
+            <div class="signals-grid" id="signalsGrid">
+                {% for signal_id, symbol, signal_type, probability, risk_level, timestamp, outcome, profit_loss, risky_outcome in signals %}
+                <div class="signal-card" 
+                     data-id="{{ signal_id }}"
+                     data-symbol="{{ symbol }}"
+                     data-type="{{ signal_type }}"
+                     data-risk="{{ risk_level }}"
+                     data-outcome="{{ outcome }}"
+                     data-timestamp="{{ timestamp }}"
+                     data-risky-outcome="{{ risky_outcome }}">
+                    
+                    <!-- Card Header -->
+                    <div class="signal-header">
+                        <div class="signal-symbol">
+                            <span class="symbol-text">{{ symbol }}</span>
+                            <span class="signal-id">#{{ signal_id }}</span>
+                        </div>
+                        <div class="signal-type-badge {{ 'long' if signal_type in ['BUY', 'LONG'] else 'short' }}">
+                            {% if signal_type in ['BUY', 'LONG'] %}
+                                <span class="type-icon">📈</span>
+                                {{ signal_type }}
+                            {% else %}
+                                <span class="type-icon">📉</span>
+                                {{ signal_type }}
+                            {% endif %}
+                        </div>
+                    </div>
+
+                    <!-- Card Content -->
+                    <div class="signal-content">
+                        <!-- Risk Level -->
+                        <div class="signal-row">
+                            <span class="row-label">Risk Level</span>
+                            <span class="risk-badge risk-{{ risk_level }}">
+                                {% if risk_level == 'low' %}
+                                    <span class="risk-icon">🟢</span> Low
+                                {% elif risk_level == 'medium' %}
+                                    <span class="risk-icon">🟡</span> Medium
+                                {% elif risk_level == 'high' %}
+                                    <span class="risk-icon">🟠</span> High
+                                {% else %}
+                                    <span class="risk-icon">🔴</span> Extreme
+                                {% endif %}
+                            </span>
+                        </div>
+
+                        <!-- Probability -->
+                        <div class="signal-row">
+                            <span class="row-label">Probability</span>
+                            <span class="probability-value">{{ probability }}%</span>
+                        </div>
+
+                        <!-- Timestamp -->
+                        <div class="signal-row">
+                            <span class="row-label">Generated</span>
+                            <span class="timestamp-value" data-timestamp="{{ timestamp }}">{{ timestamp[:16] }}</span>
+                        </div>
+
+                        <!-- Main Outcome -->
+                        <div class="signal-row">
+                            <span class="row-label">Main Outcome</span>
+                            <div class="outcome-control">
+                                {% if outcome is none %}
+                                    {% if session.user_role == 'admin' %}
+                                        <select class="outcome-select" onchange="updateOutcome({{ signal_id }}, this.value, 'main')">
+                                            <option value="">⏳ Pending</option>
+                                            <option value="1">✅ Win</option>
+                                            <option value="0">❌ Loss</option>
+                                            <option value="2">➖ Breakeven</option>
+                                        </select>
+                                    {% else %}
+                                        <span class="outcome-badge outcome-pending">⏳ Pending</span>
+                                    {% endif %}
+                                {% else %}
+                                    <span class="outcome-badge outcome-{{ 'win' if outcome == 1 else 'loss' if outcome == 0 else 'breakeven' }}">
+                                        {% if outcome == 1 %}
+                                            ✅ Win
+                                        {% elif outcome == 0 %}
+                                            ❌ Loss
+                                        {% else %}
+                                            ➖ Breakeven
+                                        {% endif %}
+                                    </span>
+                                {% endif %}
+                            </div>
+                        </div>
+
+                        <!-- Risky Play Outcome -->
+                        <div class="signal-row">
+                            <span class="row-label">Risky Play</span>
+                            <div class="outcome-control">
+                                {% if risky_outcome is none %}
+                                    {% if session.user_role == 'admin' %}
+                                        <select class="outcome-select" onchange="updateOutcome({{ signal_id }}, this.value, 'risky')">
+                                            <option value="">⏳ Pending</option>
+                                            <option value="1">✅ Win</option>
+                                            <option value="0">❌ Loss</option>
+                                            <option value="2">➖ Breakeven</option>
+                                        </select>
+                                    {% else %}
+                                        <span class="outcome-badge outcome-pending">⏳ Pending</span>
+                                    {% endif %}
+                                {% else %}
+                                    <span class="outcome-badge outcome-{{ 'win' if risky_outcome == 1 else 'loss' if risky_outcome == 0 else 'breakeven' }}">
+                                        {% if risky_outcome == 1 %}
+                                            ✅ Win
+                                        {% elif risky_outcome == 0 %}
+                                            ❌ Loss
+                                        {% else %}
+                                            ➖ Breakeven
+                                        {% endif %}
+                                    </span>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Card Actions -->
+                    <div class="signal-actions">
+                        <button class="action-btn view-btn" onclick="viewSignalDetails({{ signal_id }})" title="View Details">
+                            <span class="btn-icon">👁️</span>
+                            Details
+                        </button>
+                        {% if session.user_role == 'admin' %}
+                        <button class="action-btn delete-btn" onclick="deleteSignal({{ signal_id }})" title="Delete Signal">
+                            <span class="btn-icon">🗑️</span>
+                            Delete
+                        </button>
+                        {% endif %}
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+
+            <!-- Pagination -->
+            {% if total_pages > 1 %}
+            <div class="pagination-container">
+                <div class="pagination">
+                    {% if has_prev %}
+                        <a href="?page={{ page - 1 }}" class="pagination-btn prev">
+                            <span class="btn-icon">←</span>
+                            Previous
+                        </a>
+                    {% endif %}
+                    
+                    <span class="pagination-info">
+                        Page {{ page }} of {{ total_pages }}
+                    </span>
+                    
+                    {% if has_next %}
+                        <a href="?page={{ page + 1 }}" class="pagination-btn next">
+                            Next
+                            <span class="btn-icon">→</span>
+                        </a>
+                    {% endif %}
+                </div>
+            </div>
+            {% endif %}
+
+        {% else %}
+            <!-- Empty State -->
+            <div class="empty-state">
+                <div class="empty-icon"><i data-feather="inbox"></i></div>
+                <h3 class="empty-title">No Signals Found</h3>
+                <p class="empty-message">
+                    No trading signals have been generated yet. Run your BFI Signals system to start collecting data!
+                </p>
+                <a href="/" class="btn btn-primary">
+                    <span class="btn-icon">📊</span>
+                    Go to Dashboard
+                </a>
+            </div>
+        {% endif %}
+    </div>
+
+    <!-- Loading Overlay -->
+    <div class="loading-overlay" id="loadingOverlay" style="display: none;">
+        <div class="loading-spinner">
+            <div class="spinner-ring"></div>
+            <div class="loading-text">Loading signals...</div>
+        </div>
+    </div>
+</div>
+
+<!-- Signal Details Modal -->
+<div class="modal-overlay" id="signalModal" style="display: none;">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h3 class="modal-title">Signal Details</h3>
+            <button class="modal-close" onclick="closeSignalModal()">×</button>
+        </div>
+        <div class="modal-body" id="signalModalBody">
+            <!-- Signal details will be loaded here -->
+        </div>
+        <div class="modal-actions">
+            <button class="btn btn-secondary" onclick="closeSignalModal()">Close</button>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="{{ url_for('static', filename='js/signals-page.js') }}"></script>
+{% endblock %}

@@ -476,6 +476,231 @@
         backdrop-filter: blur(5px);
     }
 
+    /* Enhanced Risk Level Dropdown Styling */
+    .risk-select {
+        background: linear-gradient(145deg, rgba(26, 26, 26, 0.95) 0%, rgba(20, 20, 20, 0.95) 100%);
+        border: 1px solid rgba(255, 215, 0, 0.4);
+        border-radius: 8px;
+        color: var(--golden-primary);
+        font-weight: 600;
+        font-size: 14px;
+        padding: 12px 16px;
+        cursor: pointer;
+        appearance: none;
+        background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3e%3cpath stroke='%23ffd700' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='M6 8l4 4 4-4'/%3e%3c/svg%3e");
+        background-position: right 12px center;
+        background-repeat: no-repeat;
+        background-size: 16px;
+        padding-right: 40px;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+    }
+    
+    .risk-select:hover {
+        border-color: var(--golden-bright);
+        background: linear-gradient(145deg, rgba(30, 30, 30, 0.95) 0%, rgba(24, 24, 24, 0.95) 100%);
+        box-shadow: 0 4px 12px rgba(255, 215, 0, 0.2);
+        transform: translateY(-1px);
+    }
+    
+    .risk-select:focus {
+        outline: none;
+        border-color: var(--golden-bright);
+        background: linear-gradient(145deg, rgba(34, 34, 34, 0.95) 0%, rgba(28, 28, 28, 0.95) 100%);
+        box-shadow: 0 0 0 3px rgba(255, 215, 0, 0.3);
+    }
+    
+    /* Style the dropdown options */
+    .risk-select option {
+        background: rgba(26, 26, 26, 0.98);
+        color: var(--text-primary);
+        padding: 12px 16px;
+        border: none;
+        font-weight: 500;
+    }
+    
+    .risk-select option:hover {
+        background: rgba(255, 215, 0, 0.1);
+        color: var(--golden-primary);
+    }
+    
+    .risk-select option[value="low"] {
+        color: #22c55e;
+    }
+    
+    .risk-select option[value="medium"] {
+        color: #ffa726;
+    }
+    
+    .risk-select option[value="high"] {
+        color: #ef4444;
+    }
+
+    /* Enhanced Trading Instrument Dropdown Styling */
+    .instrument-select {
+        background: linear-gradient(145deg, rgba(26, 26, 26, 0.95) 0%, rgba(20, 20, 20, 0.95) 100%) !important;
+        border: 1px solid rgba(255, 215, 0, 0.4) !important;
+        border-radius: 8px !important;
+        color: var(--golden-primary) !important;
+        font-weight: 600 !important;
+        font-size: 14px !important;
+        padding: 12px 16px !important;
+        cursor: pointer !important;
+        appearance: none !important;
+        background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3e%3cpath stroke='%23ffd700' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='M6 8l4 4 4-4'/%3e%3c/svg%3e") !important;
+        background-position: right 12px center !important;
+        background-repeat: no-repeat !important;
+        background-size: 16px !important;
+        padding-right: 40px !important;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3) !important;
+        transition: all 0.3s ease !important;
+    }
+    
+    .instrument-select:hover {
+        border-color: var(--golden-bright) !important;
+        background: linear-gradient(145deg, rgba(30, 30, 30, 0.95) 0%, rgba(24, 24, 24, 0.95) 100%) !important;
+        box-shadow: 0 4px 12px rgba(255, 215, 0, 0.2) !important;
+        transform: translateY(-1px) !important;
+    }
+    
+    .instrument-select:focus {
+        outline: none !important;
+        border-color: var(--golden-bright) !important;
+        background: linear-gradient(145deg, rgba(34, 34, 34, 0.95) 0%, rgba(28, 28, 28, 0.95) 100%) !important;
+        box-shadow: 0 0 0 3px rgba(255, 215, 0, 0.3) !important;
+    }
+    
+    /* Enhanced instrument dropdown options */
+    .instrument-select option {
+        background: rgba(26, 26, 26, 0.98) !important;
+        color: var(--text-primary) !important;
+        padding: 12px 16px !important;
+        border: none !important;
+        font-weight: 500 !important;
+    }
+    
+    .instrument-select option:hover {
+        background: rgba(255, 215, 0, 0.1) !important;
+        color: var(--golden-primary) !important;
+    }
+    
+    .instrument-select option[value="NASDAQ"] {
+        color: #00bfff !important;
+    }
+    
+    .instrument-select option[value="DOW"] {
+        color: #ffa726 !important;
+    }
+    
+    .instrument-select option[value="GOLD"] {
+        color: #ffed4e !important;
+    }
+
+    /* Price input with dropdown container */
+    .price-input-container {
+        position: relative;
+        display: flex;
+        align-items: stretch;
+        gap: 0;
+    }
+    
+    .price-input-with-dropdown {
+        flex: 1;
+        border-top-right-radius: 0;
+        border-bottom-right-radius: 0;
+        border-right: none;
+    }
+    
+    .price-dropdown-btn {
+        background: rgba(255, 215, 0, 0.1);
+        border: 1px solid rgba(255, 215, 0, 0.3);
+        border-left: none;
+        border-top-right-radius: 8px;
+        border-bottom-right-radius: 8px;
+        color: var(--golden-primary);
+        padding: 12px;
+        cursor: pointer;
+        font-size: 12px;
+        font-weight: bold;
+        min-width: 40px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        transition: all 0.3s ease;
+    }
+    
+    .price-dropdown-btn:hover {
+        background: rgba(255, 215, 0, 0.2);
+        border-color: var(--golden-primary);
+    }
+    
+    .price-dropdown {
+        position: absolute;
+        top: 100%;
+        right: 0;
+        background: rgba(26, 26, 26, 0.95);
+        border: 1px solid rgba(255, 215, 0, 0.4);
+        border-radius: 8px;
+        backdrop-filter: blur(10px);
+        z-index: 1000;
+        min-width: 200px;
+        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+        display: none;
+        margin-top: 4px;
+    }
+    
+    .price-dropdown.show {
+        display: block;
+        animation: dropdownFadeIn 0.2s ease;
+    }
+    
+    @keyframes dropdownFadeIn {
+        from { opacity: 0; transform: translateY(-10px); }
+        to { opacity: 1; transform: translateY(0); }
+    }
+    
+    .price-option {
+        padding: 12px 16px;
+        cursor: pointer;
+        transition: all 0.2s ease;
+        border-bottom: 1px solid rgba(255, 215, 0, 0.1);
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+    
+    .price-option:last-child {
+        border-bottom: none;
+        border-bottom-left-radius: 8px;
+        border-bottom-right-radius: 8px;
+    }
+    
+    .price-option:first-child {
+        border-top-left-radius: 8px;
+        border-top-right-radius: 8px;
+    }
+    
+    .price-option:hover {
+        background: rgba(255, 215, 0, 0.1);
+        color: var(--golden-bright);
+    }
+    
+    .price-option-label {
+        font-weight: 600;
+        color: var(--text-primary);
+    }
+    
+    .price-option-value {
+        font-family: monospace;
+        color: var(--golden-primary);
+        font-weight: bold;
+    }
+    
+    .price-option-desc {
+        font-size: 11px;
+        color: var(--text-muted);
+        margin-top: 2px;
+    }
+
     .price-input:focus,
     .risk-select:focus,
     .comment-input:focus,
@@ -960,6 +1185,41 @@
         gap: 20px;
         margin-bottom: 24px;
     }
+    
+    /* Enhanced form sections for Manual Entry */
+    .form-section {
+        background: rgba(255, 255, 255, 0.02);
+        border: 1px solid rgba(255, 215, 0, 0.2);
+        border-radius: 12px;
+        padding: 24px;
+        margin-bottom: 24px;
+        backdrop-filter: blur(5px);
+    }
+    
+    .section-title {
+        color: var(--golden-primary);
+        font-size: 18px;
+        font-weight: 600;
+        margin: 0 0 20px 0;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+    }
+    
+    .section-title::before {
+        content: '';
+        width: 4px;
+        height: 20px;
+        background: linear-gradient(135deg, var(--golden-primary), var(--golden-bright));
+        border-radius: 2px;
+    }
+    
+    /* Enhanced risk metrics grid */
+    .risk-metrics {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+        gap: 16px;
+    }
 
     .signal-notes {
         margin-bottom: 24px;
@@ -1170,21 +1430,54 @@
                 <p>Combine Hybrid Math analysis with your manual inputs for customized signal parameters.</p>
             </div>
             
+            <!-- Market Selector for Semi-Auto -->
+            <div class="instrument-selection">
+                <label class="input-label">Select Trading Instrument</label>
+                <div class="instrument-cards">
+                    <div class="instrument-card semi-auto-instrument" data-instrument="NASDAQ">
+                        <img src="{{ url_for('static', filename='nasdaq.svg') }}" alt="NASDAQ" class="instrument-logo">
+                        <div class="instrument-info">
+                            <h4>NASDAQ</h4>
+                            <span>(NAS100)</span>
+                        </div>
+                        <div class="instrument-price">{{ market_close_data.nasdaq.price or '--' }}</div>
+                    </div>
+                    
+                    <div class="instrument-card semi-auto-instrument" data-instrument="US30">
+                        <img src="{{ url_for('static', filename='dow.png') }}" alt="US30" class="instrument-logo">
+                        <div class="instrument-info">
+                            <h4>US30</h4>
+                            <span>(DOW JONES)</span>
+                        </div>
+                        <div class="instrument-price">{{ market_close_data.dow.price or '--' }}</div>
+                    </div>
+                    
+                    <div class="instrument-card semi-auto-instrument" data-instrument="GOLD">
+                        <img src="{{ url_for('static', filename='gold.png') }}" alt="GOLD" class="instrument-logo">
+                        <div class="instrument-info">
+                            <h4>GOLD</h4>
+                            <span>(XAUUSD)</span>
+                        </div>
+                        <div class="instrument-price">{{ market_close_data.gold.price or '--' }}</div>
+                    </div>
+                </div>
+            </div>
+            
             <div class="hybrid-input-section">
                 <div class="analysis-side">
                     <h3>Market Analysis</h3>
                     <div class="analysis-results">
                         <div class="analysis-metric">
                             <label>Suggested Entry</label>
-                            <span class="suggested-value">23,070.00</span>
+                            <span class="suggested-value" id="semi-auto-suggested-entry">23,070.00</span>
                         </div>
                         <div class="analysis-metric">
                             <label>Risk Assessment</label>
-                            <span class="risk-medium">Medium</span>
+                            <span class="risk-medium" id="semi-auto-risk-assessment">Medium</span>
                         </div>
                         <div class="analysis-metric">
                             <label>Market Direction</label>
-                            <span class="direction-neutral">Neutral</span>
+                            <span class="direction-neutral" id="semi-auto-market-direction">Neutral</span>
                         </div>
                     </div>
                 </div>
@@ -1194,35 +1487,258 @@
                     <div class="input-grid">
                         <div class="input-group">
                             <label>Entry Price</label>
-                            <input type="number" class="price-input" placeholder="23,070.00">
+                            <div class="price-input-container">
+                                <input type="number" class="price-input price-input-with-dropdown" id="semi-auto-entry-price" placeholder="23,070.00" step="0.01">
+                                <button type="button" class="price-dropdown-btn" data-field="entry">▼</button>
+                                <div class="price-dropdown" id="entry-dropdown">
+                                    <div class="price-option" data-type="cv">
+                                        <div>
+                                            <div class="price-option-label">Current Value</div>
+                                            <div class="price-option-desc">Real-time market price</div>
+                                        </div>
+                                        <div class="price-option-value" id="entry-cv-value">--</div>
+                                    </div>
+                                    <div class="price-option" data-type="prev-close">
+                                        <div>
+                                            <div class="price-option-label">Previous Close</div>
+                                            <div class="price-option-desc">Yesterday's closing price</div>
+                                        </div>
+                                        <div class="price-option-value" id="entry-prev-value">--</div>
+                                    </div>
+                                    <div class="price-option" data-type="daily-high">
+                                        <div>
+                                            <div class="price-option-label">Daily High</div>
+                                            <div class="price-option-desc">Today's highest price</div>
+                                        </div>
+                                        <div class="price-option-value" id="entry-high-value">--</div>
+                                    </div>
+                                    <div class="price-option" data-type="daily-low">
+                                        <div>
+                                            <div class="price-option-label">Daily Low</div>
+                                            <div class="price-option-desc">Today's lowest price</div>
+                                        </div>
+                                        <div class="price-option-value" id="entry-low-value">--</div>
+                                    </div>
+                                </div>
+                            </div>
                         </div>
                         <div class="input-group">
-                            <label>Take Profit</label>
-                            <input type="number" class="price-input" placeholder="23,270.00">
+                            <label>TP1</label>
+                            <div class="price-input-container">
+                                <input type="number" class="price-input price-input-with-dropdown" id="semi-auto-tp1" placeholder="23,170.00" step="0.01">
+                                <button type="button" class="price-dropdown-btn" data-field="tp1">▼</button>
+                                <div class="price-dropdown" id="tp1-dropdown">
+                                    <div class="price-option" data-type="cv">
+                                        <div>
+                                            <div class="price-option-label">Current Value</div>
+                                        </div>
+                                        <div class="price-option-value" id="tp1-cv-value">--</div>
+                                    </div>
+                                    <div class="price-option" data-type="daily-high">
+                                        <div>
+                                            <div class="price-option-label">Daily High</div>
+                                        </div>
+                                        <div class="price-option-value" id="tp1-high-value">--</div>
+                                    </div>
+                                    <div class="price-option" data-type="math-tp">
+                                        <div>
+                                            <div class="price-option-label">Math TP (CV + Net Change)</div>
+                                            <div class="price-option-desc">Current Value + Net Change</div>
+                                        </div>
+                                        <div class="price-option-value" id="tp1-math-value">--</div>
+                                    </div>
+                                    <div class="price-option" data-type="cv-plus-50">
+                                        <div>
+                                            <div class="price-option-label">CV + 50 points</div>
+                                        </div>
+                                        <div class="price-option-value" id="tp1-cv-plus-50">--</div>
+                                    </div>
+                                    <div class="price-option" data-type="cv-plus-100">
+                                        <div>
+                                            <div class="price-option-label">CV + 100 points</div>
+                                        </div>
+                                        <div class="price-option-value" id="tp1-cv-plus-100">--</div>
+                                    </div>
+                                </div>
+                            </div>
                         </div>
                         <div class="input-group">
-                            <label>Stop Loss</label>
-                            <input type="number" class="price-input" placeholder="22,970.00">
+                            <label>TP2 (Optional)</label>
+                            <div class="price-input-container">
+                                <input type="number" class="price-input price-input-with-dropdown" id="semi-auto-tp2" placeholder="23,270.00" step="0.01">
+                                <button type="button" class="price-dropdown-btn" data-field="tp2">▼</button>
+                                <div class="price-dropdown" id="tp2-dropdown">
+                                    <div class="price-option" data-type="cv">
+                                        <div>
+                                            <div class="price-option-label">Current Value</div>
+                                        </div>
+                                        <div class="price-option-value" id="tp2-cv-value">--</div>
+                                    </div>
+                                    <div class="price-option" data-type="daily-high">
+                                        <div>
+                                            <div class="price-option-label">Daily High</div>
+                                        </div>
+                                        <div class="price-option-value" id="tp2-high-value">--</div>
+                                    </div>
+                                    <div class="price-option" data-type="math-tp-double">
+                                        <div>
+                                            <div class="price-option-label">Math TP x2</div>
+                                            <div class="price-option-desc">CV + (Net Change x 2)</div>
+                                        </div>
+                                        <div class="price-option-value" id="tp2-math-value">--</div>
+                                    </div>
+                                    <div class="price-option" data-type="cv-plus-100">
+                                        <div>
+                                            <div class="price-option-label">CV + 100 points</div>
+                                        </div>
+                                        <div class="price-option-value" id="tp2-cv-plus-100">--</div>
+                                    </div>
+                                    <div class="price-option" data-type="cv-plus-150">
+                                        <div>
+                                            <div class="price-option-label">CV + 150 points</div>
+                                        </div>
+                                        <div class="price-option-value" id="tp2-cv-plus-150">--</div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="input-group">
+                            <label>TP3 (Optional)</label>
+                            <div class="price-input-container">
+                                <input type="number" class="price-input price-input-with-dropdown" id="semi-auto-tp3" placeholder="23,370.00" step="0.01">
+                                <button type="button" class="price-dropdown-btn" data-field="tp3">▼</button>
+                                <div class="price-dropdown" id="tp3-dropdown">
+                                    <div class="price-option" data-type="cv">
+                                        <div>
+                                            <div class="price-option-label">Current Value</div>
+                                        </div>
+                                        <div class="price-option-value" id="tp3-cv-value">--</div>
+                                    </div>
+                                    <div class="price-option" data-type="daily-high">
+                                        <div>
+                                            <div class="price-option-label">Daily High</div>
+                                        </div>
+                                        <div class="price-option-value" id="tp3-high-value">--</div>
+                                    </div>
+                                    <div class="price-option" data-type="math-tp-triple">
+                                        <div>
+                                            <div class="price-option-label">Math TP x3</div>
+                                            <div class="price-option-desc">CV + (Net Change x 3)</div>
+                                        </div>
+                                        <div class="price-option-value" id="tp3-math-value">--</div>
+                                    </div>
+                                    <div class="price-option" data-type="cv-plus-150">
+                                        <div>
+                                            <div class="price-option-label">CV + 150 points</div>
+                                        </div>
+                                        <div class="price-option-value" id="tp3-cv-plus-150">--</div>
+                                    </div>
+                                    <div class="price-option" data-type="cv-plus-200">
+                                        <div>
+                                            <div class="price-option-label">CV + 200 points</div>
+                                        </div>
+                                        <div class="price-option-value" id="tp3-cv-plus-200">--</div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="input-group">
+                            <label>SL Tight</label>
+                            <div class="price-input-container">
+                                <input type="number" class="price-input price-input-with-dropdown" id="semi-auto-sl-tight" placeholder="22,970.00" step="0.01">
+                                <button type="button" class="price-dropdown-btn" data-field="sl-tight">▼</button>
+                                <div class="price-dropdown" id="sl-tight-dropdown">
+                                    <div class="price-option" data-type="cv">
+                                        <div>
+                                            <div class="price-option-label">Current Value</div>
+                                        </div>
+                                        <div class="price-option-value" id="sl-tight-cv-value">--</div>
+                                    </div>
+                                    <div class="price-option" data-type="prev-close">
+                                        <div>
+                                            <div class="price-option-label">Previous Close</div>
+                                        </div>
+                                        <div class="price-option-value" id="sl-tight-prev-value">--</div>
+                                    </div>
+                                    <div class="price-option" data-type="daily-low">
+                                        <div>
+                                            <div class="price-option-label">Daily Low</div>
+                                        </div>
+                                        <div class="price-option-value" id="sl-tight-low-value">--</div>
+                                    </div>
+                                    <div class="price-option" data-type="cv-minus-30">
+                                        <div>
+                                            <div class="price-option-label">CV - 30 points</div>
+                                        </div>
+                                        <div class="price-option-value" id="sl-tight-cv-minus-30">--</div>
+                                    </div>
+                                    <div class="price-option" data-type="cv-minus-50">
+                                        <div>
+                                            <div class="price-option-label">CV - 50 points</div>
+                                        </div>
+                                        <div class="price-option-value" id="sl-tight-cv-minus-50">--</div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="input-group">
+                            <label>SL Extended</label>
+                            <div class="price-input-container">
+                                <input type="number" class="price-input price-input-with-dropdown" id="semi-auto-sl-extended" placeholder="22,870.00" step="0.01">
+                                <button type="button" class="price-dropdown-btn" data-field="sl-extended">▼</button>
+                                <div class="price-dropdown" id="sl-extended-dropdown">
+                                    <div class="price-option" data-type="cv">
+                                        <div>
+                                            <div class="price-option-label">Current Value</div>
+                                        </div>
+                                        <div class="price-option-value" id="sl-extended-cv-value">--</div>
+                                    </div>
+                                    <div class="price-option" data-type="prev-close">
+                                        <div>
+                                            <div class="price-option-label">Previous Close</div>
+                                        </div>
+                                        <div class="price-option-value" id="sl-extended-prev-value">--</div>
+                                    </div>
+                                    <div class="price-option" data-type="daily-low">
+                                        <div>
+                                            <div class="price-option-label">Daily Low</div>
+                                        </div>
+                                        <div class="price-option-value" id="sl-extended-low-value">--</div>
+                                    </div>
+                                    <div class="price-option" data-type="cv-minus-75">
+                                        <div>
+                                            <div class="price-option-label">CV - 75 points</div>
+                                        </div>
+                                        <div class="price-option-value" id="sl-extended-cv-minus-75">--</div>
+                                    </div>
+                                    <div class="price-option" data-type="cv-minus-100">
+                                        <div>
+                                            <div class="price-option-label">CV - 100 points</div>
+                                        </div>
+                                        <div class="price-option-value" id="sl-extended-cv-minus-100">--</div>
+                                    </div>
+                                </div>
+                            </div>
                         </div>
                         <div class="input-group">
                             <label>Risk Level</label>
-                            <select class="risk-select">
-                                <option value="low">Low Risk</option>
-                                <option value="medium" selected>Medium Risk</option>
-                                <option value="high">High Risk</option>
+                            <select class="risk-select" id="semi-auto-risk-level">
+                                <option value="low">🟢 Low Risk</option>
+                                <option value="medium" selected>🟡 Medium Risk</option>
+                                <option value="high">🔴 High Risk</option>
                             </select>
                         </div>
                     </div>
                     
                     <div class="comment-section">
                         <label>Signal Comment</label>
-                        <textarea class="comment-input" placeholder="Add your analysis or notes for this signal..."></textarea>
+                        <textarea class="comment-input" id="semi-auto-comment" placeholder="Add your analysis or notes for this signal..."></textarea>
                     </div>
                 </div>
             </div>
             
             <div class="generation-controls">
-                <button class="generate-btn primary">
+                <button class="generate-btn primary" id="create-semi-auto-signal-btn">
                     <span class="btn-icon">⚡</span>
                     Create Semi-Auto Signal
                 </button>
@@ -1255,18 +1771,52 @@
                     </div>
                 </div>
                 
-                <div class="form-row">
-                    <div class="input-group">
-                        <label>Entry Price</label>
-                        <input type="number" class="price-input" placeholder="0.00" id="entry-price">
+                <!-- Entry Points Section -->
+                <div class="form-section">
+                    <h4 class="section-title">Entry Points</h4>
+                    <div class="form-row">
+                        <div class="input-group">
+                            <label>Entry 1 (Primary)</label>
+                            <input type="number" class="price-input" placeholder="0.00" id="manual-entry1" step="0.01">
+                        </div>
+                        <div class="input-group">
+                            <label>Entry 2 (Secondary)</label>
+                            <input type="number" class="price-input" placeholder="0.00" id="manual-entry2" step="0.01">
+                        </div>
                     </div>
-                    <div class="input-group">
-                        <label>Take Profit</label>
-                        <input type="number" class="price-input" placeholder="0.00" id="take-profit">
+                </div>
+                
+                <!-- Take Profit Section -->
+                <div class="form-section">
+                    <h4 class="section-title">Take Profit Levels</h4>
+                    <div class="form-row">
+                        <div class="input-group">
+                            <label>TP1 (Primary)</label>
+                            <input type="number" class="price-input" placeholder="0.00" id="manual-tp1" step="0.01">
+                        </div>
+                        <div class="input-group">
+                            <label>TP2 (Optional)</label>
+                            <input type="number" class="price-input" placeholder="0.00" id="manual-tp2" step="0.01">
+                        </div>
+                        <div class="input-group">
+                            <label>TP3 (Optional)</label>
+                            <input type="number" class="price-input" placeholder="0.00" id="manual-tp3" step="0.01">
+                        </div>
                     </div>
-                    <div class="input-group">
-                        <label>Stop Loss</label>
-                        <input type="number" class="price-input" placeholder="0.00" id="stop-loss">
+                </div>
+                
+                <!-- Stop Loss Section -->
+                <div class="form-section">
+                    <h4 class="section-title">Stop Loss Levels</h4>
+                    <div class="form-row">
+                        <div class="input-group">
+                            <label>SL Tight</label>
+                            <input type="number" class="price-input" placeholder="0.00" id="manual-sl-tight" step="0.01">
+                        </div>
+                        <div class="input-group">
+                            <label>SL Wide</label>
+                            <input type="number" class="price-input" placeholder="0.00" id="manual-sl-wide" step="0.01">
+                        </div>
                     </div>
                 </div>
                 
@@ -1274,16 +1824,28 @@
                     <h3>Risk Assessment</h3>
                     <div class="risk-metrics">
                         <div class="risk-metric">
-                            <label>Risk/Reward Ratio</label>
-                            <span class="ratio-value" id="risk-ratio">1:2.5</span>
+                            <label>Primary Risk/Reward</label>
+                            <span class="ratio-value" id="manual-risk-ratio">1:2.5</span>
                         </div>
                         <div class="risk-metric">
-                            <label>Potential Profit</label>
-                            <span class="profit-value" id="potential-profit">+200 pips</span>
+                            <label>Max Potential Profit</label>
+                            <span class="profit-value" id="manual-potential-profit">+300 pips</span>
                         </div>
                         <div class="risk-metric">
-                            <label>Potential Loss</label>
-                            <span class="loss-value" id="potential-loss">-80 pips</span>
+                            <label>Tight SL Risk</label>
+                            <span class="loss-value" id="manual-tight-loss">-50 pips</span>
+                        </div>
+                        <div class="risk-metric">
+                            <label>Wide SL Risk</label>
+                            <span class="loss-value" id="manual-wide-loss">-100 pips</span>
+                        </div>
+                        <div class="risk-metric">
+                            <label>TP1 Target</label>
+                            <span class="profit-value" id="manual-tp1-profit">+100 pips</span>
+                        </div>
+                        <div class="risk-metric">
+                            <label>TP3 Target</label>
+                            <span class="profit-value" id="manual-tp3-profit">+300 pips</span>
                         </div>
                     </div>
                 </div>
@@ -1317,29 +1879,36 @@ console.log('🚀 SIGNAL GENERATOR STARTING...');
 let selectedInstrument = 'NASDAQ';
 let selectedDirection = null;
 let currentTab = 'auto';
+let semiAutoSelectedInstrument = 'NASDAQ';
 
-// Live market data - updated from backend
+// Live market data - updated from backend with fallback values
 let marketData = {
     'NASDAQ': {
-        currentValue: '{{ market_close_data.nasdaq.price or "Loading..." }}',
-        netChange: '{{ market_close_data.nasdaq.change or "..." }}',
+        currentValue: '{{ market_close_data.nasdaq.price or "23345.41" }}',
+        netChange: '{{ market_close_data.nasdaq.change or "+45.20" }}',
         changeClass: '{{ "positive" if (market_close_data.nasdaq.rawChange or 0) >= 0 else "negative" }}',
-        previousClose: '{{ market_close_data.nasdaq.previousClose or "..." }}',
-        confidence: '{{ "85%" if market_close_data.nasdaq.price else "..." }}'
+        previousClose: '{{ market_close_data.nasdaq.previousClose or "23300.21" }}',
+        high: '{{ market_close_data.nasdaq.high or "" }}',
+        low: '{{ market_close_data.nasdaq.low or "" }}',
+        confidence: '{{ "85%" if market_close_data.nasdaq.price else "85%" }}'
     },
     'DOW': {
-        currentValue: '{{ market_close_data.dow.price or "Loading..." }}',
-        netChange: '{{ market_close_data.dow.change or "..." }}',
+        currentValue: '{{ market_close_data.dow.price or "44461.28" }}',
+        netChange: '{{ market_close_data.dow.change or "-28.50" }}',
         changeClass: '{{ "positive" if (market_close_data.dow.rawChange or 0) >= 0 else "negative" }}',
-        previousClose: '{{ market_close_data.dow.previousClose or "..." }}',
-        confidence: '{{ "82%" if market_close_data.dow.price else "..." }}'
+        previousClose: '{{ market_close_data.dow.previousClose or "44489.78" }}',
+        high: '{{ market_close_data.dow.high or "" }}',
+        low: '{{ market_close_data.dow.low or "" }}',
+        confidence: '{{ "82%" if market_close_data.dow.price else "82%" }}'
     },
     'GOLD': {
-        currentValue: '{{ market_close_data.gold.price or "Loading..." }}',
-        netChange: '{{ market_close_data.gold.change or "..." }}',
+        currentValue: '{{ market_close_data.gold.price or "2270.90" }}',
+        netChange: '{{ market_close_data.gold.change or "+12.30" }}',
         changeClass: '{{ "positive" if (market_close_data.gold.rawChange or 0) >= 0 else "negative" }}',
-        previousClose: '{{ market_close_data.gold.previousClose or "..." }}',
-        confidence: '{{ "80%" if market_close_data.gold.price else "..." }}'
+        previousClose: '{{ market_close_data.gold.previousClose or "2258.60" }}',
+        high: '{{ market_close_data.gold.high or "" }}',
+        low: '{{ market_close_data.gold.low or "" }}',
+        confidence: '{{ "80%" if market_close_data.gold.price else "80%" }}'
     }
 };
 
@@ -1368,6 +1937,8 @@ async function fetchMarketData() {
                         netChange: (nasdaq.net_change >= 0 ? '+' : '') + nasdaq.net_change.toFixed(2),
                         changeClass: nasdaq.net_change >= 0 ? 'positive' : 'negative',
                         previousClose: nasdaq.previous_close.toLocaleString('en-US', {minimumFractionDigits: 2}),
+                        high: nasdaq.high ? nasdaq.high.toLocaleString('en-US', {minimumFractionDigits: 2}) : null,
+                        low: nasdaq.low ? nasdaq.low.toLocaleString('en-US', {minimumFractionDigits: 2}) : null,
                         confidence: Math.abs(nasdaq.change_percent) > 1 ? '85%' : '75%'
                     };
                 }
@@ -1380,6 +1951,8 @@ async function fetchMarketData() {
                         netChange: (dow.net_change >= 0 ? '+' : '') + dow.net_change.toFixed(2),
                         changeClass: dow.net_change >= 0 ? 'positive' : 'negative',
                         previousClose: dow.previous_close.toLocaleString('en-US', {minimumFractionDigits: 2}),
+                        high: dow.high ? dow.high.toLocaleString('en-US', {minimumFractionDigits: 2}) : null,
+                        low: dow.low ? dow.low.toLocaleString('en-US', {minimumFractionDigits: 2}) : null,
                         confidence: Math.abs(dow.change_percent) > 1 ? '82%' : '72%'
                     };
                 }
@@ -1392,6 +1965,8 @@ async function fetchMarketData() {
                         netChange: (gold.net_change >= 0 ? '+' : '') + gold.net_change.toFixed(2),
                         changeClass: gold.net_change >= 0 ? 'positive' : 'negative',
                         previousClose: gold.previous_close.toLocaleString('en-US', {minimumFractionDigits: 2}),
+                        high: gold.high ? gold.high.toLocaleString('en-US', {minimumFractionDigits: 2}) : null,
+                        low: gold.low ? gold.low.toLocaleString('en-US', {minimumFractionDigits: 2}) : null,
                         confidence: Math.abs(gold.change_percent) > 0.5 ? '80%' : '70%'
                     };
                 }
@@ -1401,6 +1976,16 @@ async function fetchMarketData() {
                 // Update the display if an instrument is selected
                 if (selectedInstrument) {
                     updateMarketAnalysis(selectedInstrument);
+                }
+                
+                // Update semi-auto dropdown values if semi-auto instrument is selected
+                if (semiAutoSelectedInstrument) {
+                    const semiAutoData = marketData[semiAutoSelectedInstrument === 'US30' ? 'DOW' : semiAutoSelectedInstrument];
+                    if (semiAutoData) {
+                        const currentPrice = parseFloat(semiAutoData.currentValue.replace(/,/g, ''));
+                        const netChange = parseFloat(semiAutoData.netChange);
+                        updateDropdownValues(semiAutoSelectedInstrument, currentPrice, netChange);
+                    }
                 }
             }
         } else {
@@ -1934,6 +2519,9 @@ function selectInstrument(instrument) {
     
     selectedInstrument = instrument;
     updateMarketAnalysis(instrument);
+    
+    // Show notification for auto mode selection
+    showNotification(`Selected ${instrument} for Auto Generate`, 'info');
 }
 
 // Update market analysis
@@ -2023,14 +2611,569 @@ function generateAutoSignal() {
     }, 2000);
 }
 
-// Generate Semi-Auto Signal
-function generateSemiAutoSignal() {
-    console.log('⚡ Generating semi-auto signal...');
-    showNotification('Creating semi-auto signal...', 'info');
+// Semi-Auto instrument selection
+function selectSemiAutoInstrument(instrument) {
+    console.log(`🎯 Semi-Auto Selected instrument: ${instrument}`);
     
+    // Remove selected class from all semi-auto cards
+    document.querySelectorAll('.semi-auto-instrument').forEach(card => {
+        card.classList.remove('selected', 'active');
+    });
+    
+    // Add selection to clicked card
+    const selectedCard = document.querySelector(`[data-instrument="${instrument}"].semi-auto-instrument`);
+    if (selectedCard) {
+        selectedCard.classList.add('selected');
+    }
+    
+    semiAutoSelectedInstrument = instrument;
+    updateSemiAutoAnalysis(instrument);
+    
+    // Force populate dropdown values after selection
     setTimeout(() => {
-        showNotification('Semi-auto signal created successfully!', 'success');
-    }, 1500);
+        forcePopulateDropdowns();
+    }, 100);
+    
+    // Show notification based on current mode
+    const currentMode = currentTab === 'auto' ? 'Auto Generate' : 
+                       currentTab === 'semi-auto' ? 'Semi-Auto' : 'Manual';
+    showNotification(`Selected ${instrument} for ${currentMode}`, 'info');
+}
+
+// Update semi-auto analysis based on selected instrument
+function updateSemiAutoAnalysis(instrument) {
+    console.log(`📊 Updating semi-auto analysis for: ${instrument}`);
+    
+    const data = marketData[instrument === 'US30' ? 'DOW' : instrument];
+    if (!data) return;
+    
+    // Update suggested values based on market data
+    const currentPrice = parseFloat(data.currentValue.replace(/,/g, ''));
+    const netChange = parseFloat(data.netChange);
+    
+    // Update analysis display
+    const suggestedEntry = document.getElementById('semi-auto-suggested-entry');
+    const riskAssessment = document.getElementById('semi-auto-risk-assessment');
+    const marketDirection = document.getElementById('semi-auto-market-direction');
+    
+    if (suggestedEntry) {
+        suggestedEntry.textContent = currentPrice.toLocaleString('en-US', {minimumFractionDigits: 2});
+    }
+    
+    if (riskAssessment) {
+        const risk = Math.abs(netChange) > 50 ? 'Low' : Math.abs(netChange) > 20 ? 'Medium' : 'High';
+        riskAssessment.textContent = risk;
+        riskAssessment.className = `risk-${risk.toLowerCase()}`;
+    }
+    
+    if (marketDirection) {
+        const direction = netChange > 0 ? 'Bullish' : netChange < 0 ? 'Bearish' : 'Neutral';
+        marketDirection.textContent = direction;
+        marketDirection.className = `direction-${direction.toLowerCase()}`;
+    }
+    
+    // Auto-populate entry price
+    const entryPriceInput = document.getElementById('semi-auto-entry-price');
+    if (entryPriceInput) {
+        entryPriceInput.value = currentPrice.toFixed(2);
+    }
+    
+    // Calculate and populate suggested TP/SL levels
+    populateSemiAutoSuggestions(instrument, currentPrice, netChange);
+    
+    // Update dropdown values with market data
+    updateDropdownValues(instrument, currentPrice, netChange);
+}
+
+// Populate semi-auto suggestions based on market analysis
+function populateSemiAutoSuggestions(instrument, currentPrice, netChange) {
+    const direction = netChange >= 0 ? 1 : -1; // 1 for bullish, -1 for bearish
+    
+    // Calculate suggested levels based on instrument and market bias
+    let tp1, tp2, tp3, slTight, slExtended;
+    
+    if (instrument === 'NASDAQ' || instrument === 'US30') {
+        // Index-specific calculations
+        tp1 = currentPrice + (direction * 50);
+        tp2 = currentPrice + (direction * 100);
+        tp3 = currentPrice + (direction * 150);
+        slTight = currentPrice - (direction * 30);
+        slExtended = currentPrice - (direction * 60);
+    } else if (instrument === 'GOLD') {
+        // Gold-specific calculations
+        tp1 = currentPrice + (direction * 5);
+        tp2 = currentPrice + (direction * 10);
+        tp3 = currentPrice + (direction * 15);
+        slTight = currentPrice - (direction * 3);
+        slExtended = currentPrice - (direction * 6);
+    }
+    
+    // Populate the form fields
+    const fields = {
+        'semi-auto-tp1': tp1,
+        'semi-auto-tp2': tp2,
+        'semi-auto-tp3': tp3,
+        'semi-auto-sl-tight': slTight,
+        'semi-auto-sl-extended': slExtended
+    };
+    
+    Object.entries(fields).forEach(([id, value]) => {
+        const element = document.getElementById(id);
+        if (element && value) {
+            element.value = value.toFixed(2);
+        }
+    });
+}
+
+// Update dropdown values with market data
+function updateDropdownValues(instrument, currentPrice, netChange) {
+    console.log(`📋 Updating dropdown values for ${instrument}`);
+    
+    // Get the actual market data from the backend data or calculate from available data
+    const data = marketData[instrument === 'US30' ? 'DOW' : instrument];
+    if (!data) {
+        console.warn(`No market data available for ${instrument}`);
+        return;
+    }
+    
+    // Extract actual market values or calculate if not available
+    let previousClose = currentPrice - netChange;
+    if (data.previousClose) {
+        const prevCloseStr = data.previousClose.toString().replace(/,/g, '');
+        const prevCloseNum = parseFloat(prevCloseStr);
+        if (!isNaN(prevCloseNum) && prevCloseNum > 0) {
+            previousClose = prevCloseNum;
+        }
+    }
+    
+    // For daily high/low, try to get from backend first, then estimate
+    let dailyHigh = currentPrice + Math.abs(netChange) * 1.2; // Conservative estimate
+    let dailyLow = currentPrice - Math.abs(netChange) * 1.2; // Conservative estimate
+    
+    // Try to get actual high/low from market data if available
+    if (data.high) {
+        const highStr = data.high.toString().replace(/,/g, '');
+        const highNum = parseFloat(highStr);
+        if (!isNaN(highNum) && highNum > 0) {
+            dailyHigh = highNum;
+        }
+    }
+    if (data.low) {
+        const lowStr = data.low.toString().replace(/,/g, '');
+        const lowNum = parseFloat(lowStr);
+        if (!isNaN(lowNum) && lowNum > 0) {
+            dailyLow = lowNum;
+        }
+    }
+    
+    // Ensure high/low make sense relative to current price
+    if (dailyHigh <= currentPrice) {
+        dailyHigh = currentPrice + Math.abs(netChange) * 1.5;
+    }
+    if (dailyLow >= currentPrice) {
+        dailyLow = currentPrice - Math.abs(netChange) * 1.5;
+    }
+    
+    // Mathematical calculations
+    const mathTP = currentPrice + Math.abs(netChange);
+    const mathTPDouble = currentPrice + (Math.abs(netChange) * 2);
+    const mathTPTriple = currentPrice + (Math.abs(netChange) * 3);
+    
+    // Calculate point adjustments based on instrument
+    const pointMultiplier = instrument === 'GOLD' ? 1 : instrument === 'US30' ? 1 : 1;
+    
+    console.log(`Market data for ${instrument}:`, {
+        currentPrice,
+        previousClose,
+        dailyHigh,
+        dailyLow,
+        netChange
+    });
+    
+    // Update all dropdown values
+    updateDropdownValuesByField('entry', {
+        cv: currentPrice,
+        'prev-close': previousClose,
+        'daily-high': dailyHigh,
+        'daily-low': dailyLow
+    });
+    
+    updateDropdownValuesByField('tp1', {
+        cv: currentPrice,
+        'daily-high': dailyHigh,
+        'math-tp': mathTP,
+        'cv-plus-50': currentPrice + (50 * pointMultiplier),
+        'cv-plus-100': currentPrice + (100 * pointMultiplier)
+    });
+    
+    updateDropdownValuesByField('tp2', {
+        cv: currentPrice,
+        'daily-high': dailyHigh,
+        'math-tp-double': mathTPDouble,
+        'cv-plus-100': currentPrice + (100 * pointMultiplier),
+        'cv-plus-150': currentPrice + (150 * pointMultiplier)
+    });
+    
+    updateDropdownValuesByField('tp3', {
+        cv: currentPrice,
+        'daily-high': dailyHigh,
+        'math-tp-triple': mathTPTriple,
+        'cv-plus-150': currentPrice + (150 * pointMultiplier),
+        'cv-plus-200': currentPrice + (200 * pointMultiplier)
+    });
+    
+    updateDropdownValuesByField('sl-tight', {
+        cv: currentPrice,
+        'prev-close': previousClose,
+        'daily-low': dailyLow,
+        'cv-minus-30': currentPrice - (30 * pointMultiplier),
+        'cv-minus-50': currentPrice - (50 * pointMultiplier)
+    });
+    
+    updateDropdownValuesByField('sl-extended', {
+        cv: currentPrice,
+        'prev-close': previousClose,
+        'daily-low': dailyLow,
+        'cv-minus-75': currentPrice - (75 * pointMultiplier),
+        'cv-minus-100': currentPrice - (100 * pointMultiplier)
+    });
+}
+
+// Helper function to update dropdown values for a specific field
+function updateDropdownValuesByField(field, values) {
+    Object.entries(values).forEach(([type, value]) => {
+        const element = document.getElementById(`${field}-${type}-value`);
+        if (element) {
+            if (value && !isNaN(value) && value > 0) {
+                element.textContent = value.toFixed(2);
+            } else {
+                // Show a fallback or estimated value
+                element.textContent = '--';
+                console.warn(`No valid value for ${field}-${type}:`, value);
+            }
+        } else {
+            console.warn(`Element not found: ${field}-${type}-value`);
+        }
+    });
+}
+
+// Setup dropdown functionality
+function setupDropdownFunctionality() {
+    console.log('🔧 Setting up dropdown functionality...');
+    
+    // Add click handlers for dropdown buttons
+    document.querySelectorAll('.price-dropdown-btn').forEach(btn => {
+        btn.addEventListener('click', function(e) {
+            e.preventDefault();
+            e.stopPropagation();
+            
+            const field = this.dataset.field;
+            const dropdown = document.getElementById(`${field}-dropdown`);
+            
+            // Close all other dropdowns
+            document.querySelectorAll('.price-dropdown').forEach(dd => {
+                if (dd !== dropdown) {
+                    dd.classList.remove('show');
+                }
+            });
+            
+            // Toggle this dropdown
+            dropdown.classList.toggle('show');
+        });
+    });
+    
+    // Add click handlers for dropdown options
+    document.querySelectorAll('.price-option').forEach(option => {
+        option.addEventListener('click', function(e) {
+            e.preventDefault();
+            e.stopPropagation();
+            
+            const dropdown = this.closest('.price-dropdown');
+            const dropdownId = dropdown.id;
+            const field = dropdownId.replace('-dropdown', '');
+            const input = document.getElementById(`semi-auto-${field}`);
+            const valueElement = this.querySelector('.price-option-value');
+            
+            if (input && valueElement) {
+                const value = valueElement.textContent;
+                if (value !== '--') {
+                    input.value = parseFloat(value).toFixed(2);
+                    showNotification(`Set ${field.toUpperCase()} to ${value}`, 'success');
+                }
+            }
+            
+            // Close dropdown
+            dropdown.classList.remove('show');
+        });
+    });
+    
+    // Close dropdowns when clicking outside
+    document.addEventListener('click', function(e) {
+        if (!e.target.closest('.price-input-container')) {
+            document.querySelectorAll('.price-dropdown').forEach(dropdown => {
+                dropdown.classList.remove('show');
+            });
+        }
+    });
+    
+    console.log('✅ Dropdown functionality setup complete');
+}
+
+// Debug function to check dropdown values
+function debugDropdownValues() {
+    console.log('🔍 Debugging dropdown values...');
+    
+    // Check if dropdown elements exist
+    const dropdownElements = [
+        'entry-cv-value', 'entry-prev-value', 'entry-high-value', 'entry-low-value',
+        'tp1-cv-value', 'tp1-high-value', 'tp1-math-value',
+        'sl-tight-cv-value', 'sl-tight-prev-value', 'sl-tight-low-value'
+    ];
+    
+    dropdownElements.forEach(id => {
+        const element = document.getElementById(id);
+        if (element) {
+            console.log(`✅ ${id}: ${element.textContent}`);
+        } else {
+            console.log(`❌ ${id}: Element not found`);
+        }
+    });
+    
+    // Check market data
+    console.log('Market Data:', marketData);
+    console.log('Selected Semi-Auto Instrument:', semiAutoSelectedInstrument);
+}
+
+// Add this to window for debugging
+window.debugDropdownValues = debugDropdownValues;
+
+// Force populate all dropdown values - can be called manually
+function forcePopulateDropdowns() {
+    console.log('🔧 Force populating dropdown values...');
+    
+    const instrument = semiAutoSelectedInstrument || 'NASDAQ';
+    const data = marketData[instrument === 'US30' ? 'DOW' : instrument];
+    
+    if (!data) {
+        console.error('No market data available for', instrument);
+        return;
+    }
+    
+    // Parse current values
+    const currentPrice = parseFloat(data.currentValue.toString().replace(/,/g, ''));
+    const netChange = parseFloat(data.netChange.toString().replace(/[+,]/g, ''));
+    
+    console.log(`Force populate for ${instrument}: CV=${currentPrice}, NetChange=${netChange}`);
+    
+    if (isNaN(currentPrice) || isNaN(netChange)) {
+        console.error('Invalid price data:', { currentPrice, netChange });
+        return;
+    }
+    
+    // Calculate all values directly
+    const previousClose = currentPrice - netChange;
+    const dailyHigh = currentPrice + Math.abs(netChange) * 1.5;
+    const dailyLow = currentPrice - Math.abs(netChange) * 1.5;
+    const mathTP = currentPrice + Math.abs(netChange);
+    const mathTPDouble = currentPrice + (Math.abs(netChange) * 2);
+    const mathTPTriple = currentPrice + (Math.abs(netChange) * 3);
+    
+    // Direct DOM updates with specific element targeting
+    const updates = {
+        // Entry dropdown
+        'entry-cv-value': currentPrice,
+        'entry-prev-value': previousClose,
+        'entry-high-value': dailyHigh,
+        'entry-low-value': dailyLow,
+        
+        // TP1 dropdown
+        'tp1-cv-value': currentPrice,
+        'tp1-high-value': dailyHigh,
+        'tp1-math-value': mathTP,
+        'tp1-cv-plus-50': currentPrice + 50,
+        'tp1-cv-plus-100': currentPrice + 100,
+        
+        // TP2 dropdown
+        'tp2-cv-value': currentPrice,
+        'tp2-high-value': dailyHigh,
+        'tp2-math-value': mathTPDouble,
+        'tp2-cv-plus-100': currentPrice + 100,
+        'tp2-cv-plus-150': currentPrice + 150,
+        
+        // TP3 dropdown
+        'tp3-cv-value': currentPrice,
+        'tp3-high-value': dailyHigh,
+        'tp3-math-value': mathTPTriple,
+        'tp3-cv-plus-150': currentPrice + 150,
+        'tp3-cv-plus-200': currentPrice + 200,
+        
+        // SL Tight dropdown
+        'sl-tight-cv-value': currentPrice,
+        'sl-tight-prev-value': previousClose,
+        'sl-tight-low-value': dailyLow,
+        'sl-tight-cv-minus-30': currentPrice - 30,
+        'sl-tight-cv-minus-50': currentPrice - 50,
+        
+        // SL Extended dropdown
+        'sl-extended-cv-value': currentPrice,
+        'sl-extended-prev-value': previousClose,
+        'sl-extended-low-value': dailyLow,
+        'sl-extended-cv-minus-75': currentPrice - 75,
+        'sl-extended-cv-minus-100': currentPrice - 100
+    };
+    
+    // Apply updates directly to DOM
+    Object.entries(updates).forEach(([id, value]) => {
+        const element = document.getElementById(id);
+        if (element) {
+            element.textContent = value.toFixed(2);
+            console.log(`✅ Updated ${id}: ${value.toFixed(2)}`);
+        } else {
+            console.warn(`❌ Element not found: ${id}`);
+        }
+    });
+    
+    console.log('🎯 Force populate completed');
+}
+
+// Add to window for manual debugging
+window.forcePopulateDropdowns = forcePopulateDropdowns;
+
+// Generate Semi-Auto Signal
+async function generateSemiAutoSignal() {
+    console.log('⚡ Generating semi-auto signal...');
+    
+    if (!semiAutoSelectedInstrument) {
+        showNotification('Please select a trading instrument first!', 'error');
+        return;
+    }
+    
+    // Validate instrument support
+    if (semiAutoSelectedInstrument === 'GOLD') {
+        showNotification('GOLD is not yet supported in Semi-Auto mode. Please use Manual mode for GOLD signals.', 'error');
+        return;
+    }
+    
+    // Collect form data
+    const formData = {
+        symbol: semiAutoSelectedInstrument === 'US30' ? 'US30' : 'NAS100',
+        tp1: document.getElementById('semi-auto-tp1')?.value,
+        tp2: document.getElementById('semi-auto-tp2')?.value || null,
+        tp3: document.getElementById('semi-auto-tp3')?.value || null,
+        sl1: document.getElementById('semi-auto-sl-tight')?.value,
+        sl2: document.getElementById('semi-auto-sl-extended')?.value,
+        custom_comments: document.getElementById('semi-auto-comment')?.value || '',
+        additional_comments: true
+    };
+    
+    // Validate required fields
+    if (!formData.tp1 || !formData.sl1) {
+        showNotification('Please fill in TP1 and SL Tight fields!', 'error');
+        return;
+    }
+    
+    const generateBtn = document.getElementById('create-semi-auto-signal-btn');
+    setButtonLoading(generateBtn, true);
+    
+    try {
+        showNotification('Creating semi-auto signal with market data and your parameters...', 'info');
+        
+        // Send to backend API
+        const response = await fetch('/api/semi_auto_generate_signal', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify(formData)
+        });
+        
+        if (!response.ok) {
+            throw new Error(`API error: ${response.status}`);
+        }
+        
+        const result = await response.json();
+        
+        if (result.error) {
+            throw new Error(result.error);
+        }
+        
+        console.log('📊 Semi-Auto Signal Result:', result);
+        showNotification('Semi-auto signal created and posted to Discord!', 'success');
+        
+        // Display the created signal
+        displaySemiAutoSignalResult(result.signal);
+        
+    } catch (error) {
+        console.error('❌ Semi-auto signal generation error:', error);
+        showNotification(`❌ Failed to create semi-auto signal: ${error.message}`, 'error');
+    } finally {
+        setButtonLoading(generateBtn, false);
+    }
+}
+
+// Display semi-auto signal result
+function displaySemiAutoSignalResult(signalData) {
+    if (!signalData) {
+        console.warn('No signal data to display');
+        return;
+    }
+    
+    const signalDisplay = document.createElement('div');
+    signalDisplay.className = 'signal-result-popup';
+    
+    // Handle both frontend and backend signal formats
+    const direction = signalData.direction || (signalData.entry_price && signalData.tp1 && parseFloat(signalData.entry_price) < parseFloat(signalData.tp1) ? 'BUY' : 'SELL');
+    const emoji = direction === 'BUY' ? '📈' : '📉';
+    const symbol = signalData.symbol || signalData.instrument || semiAutoSelectedInstrument;
+    
+    const entry = signalData.entry_price || signalData.entryPrice || 'N/A';
+    const tp1 = signalData.tp1 || 'N/A';
+    const tp2 = signalData.tp2 || null;
+    const tp3 = signalData.tp3 || null;
+    const slTight = signalData.sl_tight || signalData.slTight || signalData.sl1 || 'N/A';
+    const slExtended = signalData.sl_extended || signalData.slExtended || signalData.sl2 || null;
+    const confidence = signalData.confidence || signalData.probability_percentage || 'N/A';
+    
+    signalDisplay.innerHTML = `
+        <div class="signal-popup-content">
+            <h3>${emoji} ${direction} ${symbol}</h3>
+            <div class="signal-details">
+                <p><strong>Entry:</strong> ${typeof entry === 'number' ? entry.toFixed(2) : entry}</p>
+                <p><strong>TP1:</strong> ${typeof tp1 === 'number' ? tp1.toFixed(2) : tp1}</p>
+                ${tp2 ? `<p><strong>TP2:</strong> ${typeof tp2 === 'number' ? tp2.toFixed(2) : tp2}</p>` : ''}
+                ${tp3 ? `<p><strong>TP3:</strong> ${typeof tp3 === 'number' ? tp3.toFixed(2) : tp3}</p>` : ''}
+                <p><strong>SL Tight:</strong> ${typeof slTight === 'number' ? slTight.toFixed(2) : slTight}</p>
+                ${slExtended ? `<p><strong>SL Extended:</strong> ${typeof slExtended === 'number' ? slExtended.toFixed(2) : slExtended}</p>` : ''}
+                ${confidence !== 'N/A' ? `<p><strong>Confidence:</strong> ${typeof confidence === 'number' ? confidence.toFixed(1) + '%' : confidence}</p>` : ''}
+            </div>
+            <button onclick="this.parentElement.parentElement.remove()" class="close-popup">✕</button>
+        </div>
+    `;
+    
+    // Style the popup
+    Object.assign(signalDisplay.style, {
+        position: 'fixed',
+        top: '50%',
+        left: '50%',
+        transform: 'translate(-50%, -50%)',
+        background: 'rgba(26, 26, 26, 0.95)',
+        border: '2px solid #ffd700',
+        borderRadius: '12px',
+        padding: '20px',
+        zIndex: '10000',
+        backdropFilter: 'blur(10px)',
+        boxShadow: '0 8px 32px rgba(255, 215, 0, 0.3)',
+        maxWidth: '400px'
+    });
+    
+    document.body.appendChild(signalDisplay);
+    
+    // Remove after 8 seconds (longer for more data)
+    setTimeout(() => {
+        if (signalDisplay.parentNode) {
+            signalDisplay.parentNode.removeChild(signalDisplay);
+        }
+    }, 8000);
 }
 
 // Generate Manual Signal
@@ -2117,30 +3260,57 @@ function updateMarketTime() {
     }
 }
 
-// Risk calculation
-function calculateRisk() {
-    const entry = parseFloat(document.getElementById('entry-price')?.value) || 0;
-    const tp = parseFloat(document.getElementById('take-profit')?.value) || 0;
-    const sl = parseFloat(document.getElementById('stop-loss')?.value) || 0;
+// Enhanced risk calculation for manual form
+function calculateManualRisk() {
+    const entry1 = parseFloat(document.getElementById('manual-entry1')?.value) || 0;
+    const entry2 = parseFloat(document.getElementById('manual-entry2')?.value) || 0;
+    const tp1 = parseFloat(document.getElementById('manual-tp1')?.value) || 0;
+    const tp2 = parseFloat(document.getElementById('manual-tp2')?.value) || 0;
+    const tp3 = parseFloat(document.getElementById('manual-tp3')?.value) || 0;
+    const slTight = parseFloat(document.getElementById('manual-sl-tight')?.value) || 0;
+    const slWide = parseFloat(document.getElementById('manual-sl-wide')?.value) || 0;
     
-    if (entry && tp && sl) {
-        const profit = Math.abs(tp - entry);
-        const loss = Math.abs(entry - sl);
-        const ratio = loss > 0 ? (profit / loss).toFixed(1) : '0';
+    // Use primary entry point for calculations
+    const primaryEntry = entry1 || entry2;
+    
+    if (primaryEntry && tp1 && slTight) {
+        // Calculate profits for each TP level
+        const tp1Profit = Math.abs(tp1 - primaryEntry);
+        const tp2Profit = tp2 ? Math.abs(tp2 - primaryEntry) : 0;
+        const tp3Profit = tp3 ? Math.abs(tp3 - primaryEntry) : 0;
+        const maxProfit = Math.max(tp1Profit, tp2Profit, tp3Profit);
         
-        const elements = {
-            'risk-ratio': `1:${ratio}`,
-            'potential-profit': `+${profit.toFixed(2)} pips`,
-            'potential-loss': `-${loss.toFixed(2)} pips`
+        // Calculate losses for each SL level
+        const tightLoss = Math.abs(primaryEntry - slTight);
+        const wideLoss = slWide ? Math.abs(primaryEntry - slWide) : 0;
+        
+        // Calculate primary risk/reward ratio (TP1 vs SL Tight)
+        const primaryRatio = tightLoss > 0 ? (tp1Profit / tightLoss).toFixed(1) : '0';
+        
+        // Update risk metrics
+        const riskElements = {
+            'manual-risk-ratio': `1:${primaryRatio}`,
+            'manual-potential-profit': `+${maxProfit.toFixed(2)} pips`,
+            'manual-tight-loss': `-${tightLoss.toFixed(2)} pips`,
+            'manual-wide-loss': wideLoss > 0 ? `-${wideLoss.toFixed(2)} pips` : 'N/A',
+            'manual-tp1-profit': tp1 ? `+${tp1Profit.toFixed(2)} pips` : 'N/A',
+            'manual-tp3-profit': tp3 ? `+${tp3Profit.toFixed(2)} pips` : 'N/A'
         };
         
-        Object.entries(elements).forEach(([id, value]) => {
+        Object.entries(riskElements).forEach(([id, value]) => {
             const element = document.getElementById(id);
             if (element) {
                 element.textContent = value;
             }
         });
+        
+        console.log('📊 Manual risk calculation updated:', riskElements);
     }
+}
+
+// Legacy risk calculation (for backward compatibility)
+function calculateRisk() {
+    calculateManualRisk();
 }
 
 // Initialize everything when DOM is ready
@@ -2173,20 +3343,30 @@ document.addEventListener('DOMContentLoaded', function() {
         
         console.log('✅ Tab switching initialized successfully');
         
-        // Setup instrument selection
-        document.querySelectorAll('.instrument-card').forEach(card => {
+        // Setup instrument selection for Auto mode
+        document.querySelectorAll('.instrument-card:not(.semi-auto-instrument)').forEach(card => {
             card.addEventListener('click', function(e) {
                 e.preventDefault();
                 const instrument = this.dataset.instrument;
-                console.log(`💰 Instrument clicked: ${instrument}`);
+                console.log(`💰 Auto Instrument clicked: ${instrument}`);
                 selectInstrument(instrument);
+            });
+        });
+        
+        // Setup instrument selection for Semi-Auto mode
+        document.querySelectorAll('.semi-auto-instrument').forEach(card => {
+            card.addEventListener('click', function(e) {
+                e.preventDefault();
+                const instrument = this.dataset.instrument;
+                console.log(`💰 Semi-Auto Instrument clicked: ${instrument}`);
+                selectSemiAutoInstrument(instrument);
             });
         });
         
         // Setup button events
         const buttons = [
             { selector: '.auto-panel .generate-btn', handler: generateAutoSignal },
-            { selector: '.semi-auto-panel .generate-btn', handler: generateSemiAutoSignal },
+            { selector: '#create-semi-auto-signal-btn', handler: generateSemiAutoSignal },
             { selector: '.manual-panel .generate-btn', handler: generateManualSignal },
             { selector: '#generate-signal-btn', handler: enhancedGenerateSignal },
             { selector: '.refresh-btn', handler: refreshMarketData },
@@ -2224,16 +3404,44 @@ document.addEventListener('DOMContentLoaded', function() {
             }
         });
         
+        // Setup manual form events for new fields
+        ['manual-entry1', 'manual-entry2', 'manual-tp1', 'manual-tp2', 'manual-tp3', 'manual-sl-tight', 'manual-sl-wide'].forEach(id => {
+            const element = document.getElementById(id);
+            if (element) {
+                element.addEventListener('input', calculateManualRisk);
+                console.log(`✅ Added event listener for ${id}`);
+            } else {
+                console.warn(`⚠️ Manual form element not found: ${id}`);
+            }
+        });
+        
         // Start market time updates
         updateMarketTime();
         setInterval(updateMarketTime, 1000);
         
-        // Select default instrument
+        // Select default instruments based on current tab
         setTimeout(() => {
             selectInstrument('NASDAQ');
+            // Only call semi-auto selection if we're on semi-auto tab
+            if (currentTab === 'semi-auto') {
+                selectSemiAutoInstrument('NASDAQ');
+            }
+            
+            // Force dropdown values update after initialization
+            setTimeout(() => {
+                const currentPrice = parseFloat(marketData.NASDAQ.currentValue.replace(/,/g, ''));
+                const netChange = parseFloat(marketData.NASDAQ.netChange);
+                if (!isNaN(currentPrice) && !isNaN(netChange)) {
+                    console.log('🔧 Force updating dropdown values on init...');
+                    updateDropdownValues('NASDAQ', currentPrice, netChange);
+                }
+            }, 500);
         }, 100);
         
         console.log('✅ Signal Generator initialized successfully!');
+        
+        // Setup dropdown functionality
+        setupDropdownFunctionality();
         
         // Load initial market data
         fetchMarketData();

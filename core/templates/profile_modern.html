@@ -1,0 +1,352 @@
+{% extends "base_modern.html" %}
+
+{% block title %}Profile - BFI Signals AI Dashboard{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/profile-management.css') }}">
+{% endblock %}
+
+{% block content %}
+<div class="profile-container">
+    <!-- Profile Header -->
+    <div class="profile-header">
+        <div class="profile-header-content">
+            <div class="profile-avatar-section">
+                <div class="profile-avatar-container">
+                    <img src="{{ user.profile_picture if user.profile_picture else url_for('static', filename='images/default-avatar.svg') }}" 
+                         alt="Profile Picture" 
+                         class="profile-avatar" 
+                         id="profileAvatarImg">
+                    <div class="avatar-overlay">
+                        <span class="avatar-upload-icon">📷</span>
+                        <span class="avatar-upload-text">Change Photo</span>
+                    </div>
+                </div>
+                <div class="profile-info">
+                    <h1 class="profile-name">{{ user.username }}</h1>
+                    <p class="profile-role">{{ user.role.title() }}</p>
+                    <p class="profile-email">{{ user.email }}</p>
+                </div>
+            </div>
+            <div class="profile-stats">
+                <div class="stat-item">
+                    <span class="stat-label">Member Since</span>
+                    <span class="stat-value">{{ user.created_at.strftime('%B %Y') if user.created_at else 'N/A' }}</span>
+                </div>
+                <div class="stat-item">
+                    <span class="stat-label">Last Login</span>
+                    <span class="stat-value">{{ user.last_login.strftime('%d %b %Y') if user.last_login else 'Never' }}</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Profile Content -->
+    <div class="profile-content">
+        <!-- Profile Form Section -->
+        <div class="profile-section">
+            <div class="section-header">
+                <h2 class="section-title">
+                    <span class="section-icon"><i data-feather="user"></i></span>
+                    Profile Information
+                </h2>
+                <p class="section-description">Update your personal information and profile settings</p>
+            </div>
+
+            <form id="profileForm" class="profile-form">
+                <div class="form-grid">
+                    <!-- Profile Picture Upload -->
+                    <div class="form-group profile-picture-group">
+                        <label class="form-label">Profile Picture</label>
+                        <div class="profile-picture-upload">
+                            <input type="file" 
+                                   id="profilePictureInput" 
+                                   name="profile_picture" 
+                                   accept="image/*" 
+                                   class="file-input">
+                            <div class="upload-area" id="uploadArea">
+                                <div class="upload-preview" id="uploadPreview">
+                                    <img src="{{ user.profile_picture if user.profile_picture else url_for('static', filename='images/default-avatar.svg') }}" 
+                                         alt="Current Picture" 
+                                         class="preview-image" 
+                                         id="previewImage">
+                                </div>
+                                <div class="upload-content">
+                                    <div class="upload-icon">📸</div>
+                                    <p class="upload-text">Click to upload or drag and drop</p>
+                                    <p class="upload-hint">PNG, JPG up to 5MB</p>
+                                </div>
+                            </div>
+                            <div class="upload-actions">
+                                <button type="button" class="btn btn-secondary" id="removePhotoBtn">
+                                    <span><i data-feather="trash-2"></i></span>
+                                    Remove Photo
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Basic Info -->
+                    <div class="form-group">
+                        <label for="username" class="form-label">Username</label>
+                        <input type="text" 
+                               id="username" 
+                               name="username" 
+                               class="form-input" 
+                               value="{{ user.username }}" 
+                               required>
+                        <div class="form-help">Choose a unique username for your account</div>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="email" class="form-label">Email Address</label>
+                        <input type="email" 
+                               id="email" 
+                               name="email" 
+                               class="form-input" 
+                               value="{{ user.email }}" 
+                               required>
+                        <div class="form-help">Used for notifications and account recovery</div>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="full_name" class="form-label">Full Name</label>
+                        <input type="text" 
+                               id="full_name" 
+                               name="full_name" 
+                               class="form-input" 
+                               value="{{ user.full_name if user.full_name else '' }}" 
+                               placeholder="Enter your full name">
+                        <div class="form-help">Optional: Your display name</div>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="timezone" class="form-label">Timezone</label>
+                        <select id="timezone" name="timezone" class="form-select">
+                            <option value="UTC" {{ 'selected' if user.timezone == 'UTC' else '' }}>UTC</option>
+                            <option value="America/New_York" {{ 'selected' if user.timezone == 'America/New_York' else '' }}>Eastern Time (ET)</option>
+                            <option value="America/Chicago" {{ 'selected' if user.timezone == 'America/Chicago' else '' }}>Central Time (CT)</option>
+                            <option value="America/Denver" {{ 'selected' if user.timezone == 'America/Denver' else '' }}>Mountain Time (MT)</option>
+                            <option value="America/Los_Angeles" {{ 'selected' if user.timezone == 'America/Los_Angeles' else '' }}>Pacific Time (PT)</option>
+                            <option value="Europe/London" {{ 'selected' if user.timezone == 'Europe/London' else '' }}>London (GMT/BST)</option>
+                            <option value="Europe/Paris" {{ 'selected' if user.timezone == 'Europe/Paris' else '' }}>Paris (CET/CEST)</option>
+                            <option value="Asia/Tokyo" {{ 'selected' if user.timezone == 'Asia/Tokyo' else '' }}>Tokyo (JST)</option>
+                        </select>
+                        <div class="form-help">Used for displaying times in your local timezone</div>
+                    </div>
+                </div>
+
+                <div class="form-actions">
+                    <button type="submit" class="btn btn-primary" id="saveProfileBtn">
+                        <span class="btn-icon">💾</span>
+                        <span class="btn-text">Save Changes</span>
+                        <div class="btn-loader" id="profileLoader"></div>
+                    </button>
+                    <button type="button" class="btn btn-secondary" id="cancelProfileBtn">
+                        Cancel
+                    </button>
+                </div>
+            </form>
+        </div>
+
+        <!-- Password Change Section -->
+        <div class="profile-section">
+            <div class="section-header">
+                <h2 class="section-title">
+                    <span class="section-icon"><i data-feather="lock"></i></span>
+                    Change Password
+                </h2>
+                <p class="section-description">Update your account password</p>
+            </div>
+
+            <form id="passwordForm" class="profile-form">
+                <div class="form-grid password-grid">
+                    <div class="form-group">
+                        <label for="current_password" class="form-label">Current Password</label>
+                        <input type="password" 
+                               id="current_password" 
+                               name="current_password" 
+                               class="form-input" 
+                               required>
+                        <div class="form-help">Enter your current password</div>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="new_password" class="form-label">New Password</label>
+                        <input type="password" 
+                               id="new_password" 
+                               name="new_password" 
+                               class="form-input" 
+                               required>
+                        <div class="password-strength" id="passwordStrength">
+                            <div class="strength-meter">
+                                <div class="strength-fill" id="strengthFill"></div>
+                            </div>
+                            <span class="strength-text" id="strengthText">Enter a password</span>
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="confirm_password" class="form-label">Confirm New Password</label>
+                        <input type="password" 
+                               id="confirm_password" 
+                               name="confirm_password" 
+                               class="form-input" 
+                               required>
+                        <div class="form-help">Confirm your new password</div>
+                    </div>
+                </div>
+
+                <div class="form-actions">
+                    <button type="submit" class="btn btn-primary" id="changePasswordBtn">
+                        <span class="btn-icon">🔑</span>
+                        <span class="btn-text">Change Password</span>
+                        <div class="btn-loader" id="passwordLoader"></div>
+                    </button>
+                </div>
+            </form>
+        </div>
+
+        <!-- Notification Preferences -->
+        <div class="profile-section">
+            <div class="section-header">
+                <h2 class="section-title">
+                    <span class="section-icon">🔔</span>
+                    Notification Preferences
+                </h2>
+                <p class="section-description">Choose what notifications you want to receive</p>
+            </div>
+
+            <div class="notification-settings">
+                <div class="notification-item">
+                    <div class="notification-info">
+                        <div class="notification-label">Signal Alerts</div>
+                        <div class="notification-description">Get notified when new trading signals are generated</div>
+                    </div>
+                    <div class="notification-control">
+                        <div class="toggle-switch active" id="signalNotifications">
+                            <div class="toggle-slider"></div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="notification-item">
+                    <div class="notification-info">
+                        <div class="notification-label">Market Updates</div>
+                        <div class="notification-description">Receive important market news and updates</div>
+                    </div>
+                    <div class="notification-control">
+                        <div class="toggle-switch" id="marketNotifications">
+                            <div class="toggle-slider"></div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="notification-item">
+                    <div class="notification-info">
+                        <div class="notification-label">System Updates</div>
+                        <div class="notification-description">Get notified about system maintenance and updates</div>
+                    </div>
+                    <div class="notification-control">
+                        <div class="toggle-switch active" id="systemNotifications">
+                            <div class="toggle-slider"></div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="notification-item">
+                    <div class="notification-info">
+                        <div class="notification-label">Email Notifications</div>
+                        <div class="notification-description">Receive notifications via email</div>
+                    </div>
+                    <div class="notification-control">
+                        <div class="toggle-switch" id="emailNotifications">
+                            <div class="toggle-slider"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Account Status -->
+        <div class="profile-section">
+            <div class="section-header">
+                <h2 class="section-title">
+                    <span class="section-icon"><i data-feather="bell"></i></span>
+                    Account Status
+                </h2>
+                <p class="section-description">Current account information and statistics</p>
+            </div>
+
+            <div class="account-stats">
+                <div class="stat-card">
+                    <div class="stat-icon">✅</div>
+                    <div class="stat-content">
+                        <div class="stat-title">Account Status</div>
+                        <div class="stat-value status-active">Active</div>
+                    </div>
+                </div>
+
+                <div class="stat-card">
+                    <div class="stat-icon">👑</div>
+                    <div class="stat-content">
+                        <div class="stat-title">Role</div>
+                        <div class="stat-value">{{ user.role.title() }}</div>
+                    </div>
+                </div>
+
+                <div class="stat-card">
+                    <div class="stat-icon"><i data-feather="mail"></i></div>
+                    <div class="stat-content">
+                        <div class="stat-title">Email Verified</div>
+                        <div class="stat-value status-{{ 'verified' if user.email_verified else 'pending' }}">
+                            {{ 'Verified' if user.email_verified else 'Pending' }}
+                        </div>
+                    </div>
+                </div>
+
+                <div class="stat-card">
+                    <div class="stat-icon">🕒</div>
+                    <div class="stat-content">
+                        <div class="stat-title">Member Since</div>
+                        <div class="stat-value">{{ user.created_at.strftime('%B %d, %Y') if user.created_at else 'N/A' }}</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Upload Progress Modal -->
+<div class="modal-overlay" id="uploadModal">
+    <div class="modal-content upload-modal">
+        <div class="modal-header">
+            <h3>Uploading Profile Picture</h3>
+        </div>
+        <div class="modal-body">
+            <div class="upload-progress">
+                <div class="progress-bar">
+                    <div class="progress-fill" id="uploadProgress"></div>
+                </div>
+                <div class="progress-text">
+                    <span id="uploadPercent">0%</span>
+                    <span id="uploadStatus">Preparing upload...</span>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Success/Error Notification -->
+<div class="notification-toast" id="notificationToast">
+    <div class="toast-content">
+        <span class="toast-icon" id="toastIcon"></span>
+        <span class="toast-message" id="toastMessage"></span>
+    </div>
+    <button class="toast-close" id="toastClose">×</button>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="{{ url_for('static', filename='js/profile-management.js') }}"></script>
+{% endblock %}

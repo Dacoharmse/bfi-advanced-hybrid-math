@@ -1,0 +1,1072 @@
+{% extends "base_modern.html" %}
+
+{% block title %}Admin Panel - BFI Signals AI{% endblock %}
+
+{% block extra_css %}
+<style>
+    .admin-panel {
+        max-width: 1200px;
+        margin: 0 auto;
+    }
+
+    .admin-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 32px;
+        padding-bottom: 16px;
+        border-bottom: 2px solid var(--golden-accent);
+    }
+
+    .admin-title {
+        font-size: 28px;
+        font-weight: 700;
+        color: var(--golden-primary);
+        margin: 0;
+    }
+
+    .admin-stats {
+        display: flex;
+        gap: 24px;
+        font-size: 14px;
+        color: var(--text-secondary);
+    }
+
+    .stat-item {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 4px;
+    }
+
+    .stat-number {
+        font-size: 20px;
+        font-weight: 700;
+        color: var(--golden-primary);
+    }
+
+    .admin-tabs {
+        display: flex;
+        gap: 8px;
+        margin-bottom: 24px;
+        border-bottom: 1px solid var(--golden-accent);
+    }
+
+    .admin-tab {
+        padding: 12px 24px;
+        background: transparent;
+        border: none;
+        color: var(--text-secondary);
+        font-size: 14px;
+        font-weight: 600;
+        cursor: pointer;
+        border-bottom: 3px solid transparent;
+        transition: all 0.3s ease;
+    }
+
+    .admin-tab.active {
+        color: var(--golden-primary);
+        border-bottom-color: var(--golden-primary);
+        background: var(--golden-accent);
+    }
+
+    .admin-tab:hover {
+        color: var(--text-primary);
+        background: var(--golden-accent);
+    }
+
+    .tab-content {
+        display: none;
+    }
+
+    .tab-content.active {
+        display: block;
+    }
+
+    .users-table {
+        background: var(--card-bg);
+        border: 1px solid var(--golden-accent);
+        border-radius: var(--border-radius);
+        overflow: hidden;
+    }
+
+    .table-header {
+        background: var(--golden-accent);
+        padding: 16px 20px;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        border-bottom: 1px solid var(--golden-secondary);
+    }
+
+    .table-title {
+        font-size: 16px;
+        font-weight: 600;
+        color: var(--text-primary);
+    }
+
+    .btn-create-user {
+        background: linear-gradient(135deg, var(--golden-primary), var(--golden-bright));
+        color: var(--primary-bg);
+        border: none;
+        padding: 8px 16px;
+        border-radius: 6px;
+        font-size: 12px;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.3s ease;
+    }
+
+    .btn-create-user:hover {
+        transform: translateY(-1px);
+        box-shadow: var(--golden-glow);
+    }
+
+    .users-grid {
+        padding: 20px;
+        display: grid;
+        gap: 16px;
+    }
+
+    .user-card {
+        background: rgba(26, 26, 26, 0.6);
+        border: 1px solid var(--golden-accent);
+        border-radius: 8px;
+        padding: 16px;
+        transition: all 0.3s ease;
+    }
+
+    .user-card:hover {
+        border-color: var(--golden-secondary);
+        box-shadow: 0 4px 16px rgba(212, 175, 55, 0.1);
+    }
+
+    .user-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-start;
+        margin-bottom: 12px;
+    }
+
+    .user-info {
+        flex: 1;
+    }
+
+    .user-name {
+        font-size: 16px;
+        font-weight: 600;
+        color: var(--text-primary);
+        margin-bottom: 4px;
+    }
+
+    .user-email {
+        font-size: 14px;
+        color: var(--text-secondary);
+        margin-bottom: 8px;
+    }
+
+    .user-meta {
+        display: flex;
+        gap: 12px;
+        font-size: 12px;
+        color: var(--text-muted);
+    }
+
+    .user-badges {
+        display: flex;
+        gap: 8px;
+        flex-direction: column;
+        align-items: flex-end;
+    }
+
+    .user-badge {
+        padding: 4px 8px;
+        border-radius: 12px;
+        font-size: 10px;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+    }
+
+    .badge-admin {
+        background: var(--golden-primary);
+        color: var(--primary-bg);
+    }
+
+    .badge-user {
+        background: rgba(55, 66, 250, 0.2);
+        color: #3742fa;
+        border: 1px solid #3742fa;
+    }
+
+    .badge-active {
+        background: rgba(0, 255, 136, 0.2);
+        color: var(--success-color);
+        border: 1px solid var(--success-color);
+    }
+
+    .badge-inactive {
+        background: rgba(255, 71, 87, 0.2);
+        color: var(--danger-color);
+        border: 1px solid var(--danger-color);
+    }
+
+    .badge-pending {
+        background: rgba(255, 165, 2, 0.2);
+        color: var(--warning-color);
+        border: 1px solid var(--warning-color);
+    }
+
+    .user-actions {
+        display: flex;
+        gap: 8px;
+        margin-top: 12px;
+        padding-top: 12px;
+        border-top: 1px solid var(--golden-accent);
+    }
+
+    .btn-action {
+        padding: 6px 12px;
+        border-radius: 4px;
+        font-size: 12px;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        border: 1px solid;
+    }
+
+    .btn-approve {
+        background: rgba(0, 255, 136, 0.1);
+        color: var(--success-color);
+        border-color: var(--success-color);
+    }
+
+    .btn-approve:hover {
+        background: var(--success-color);
+        color: var(--primary-bg);
+    }
+
+    .btn-reject {
+        background: rgba(255, 71, 87, 0.1);
+        color: var(--danger-color);
+        border-color: var(--danger-color);
+    }
+
+    .btn-reject:hover {
+        background: var(--danger-color);
+        color: white;
+    }
+
+    .btn-deactivate {
+        background: rgba(255, 165, 2, 0.1);
+        color: var(--warning-color);
+        border-color: var(--warning-color);
+    }
+
+    .btn-deactivate:hover {
+        background: var(--warning-color);
+        color: var(--primary-bg);
+    }
+
+    .btn-promote {
+        background: var(--golden-accent);
+        color: var(--golden-primary);
+        border-color: var(--golden-secondary);
+    }
+
+    .btn-promote:hover {
+        background: var(--golden-primary);
+        color: var(--primary-bg);
+    }
+
+    .empty-state {
+        text-align: center;
+        padding: 48px 20px;
+        color: var(--text-muted);
+    }
+
+    .empty-icon {
+        font-size: 48px;
+        margin-bottom: 16px;
+        opacity: 0.5;
+    }
+
+    /* Modal Styles */
+    .modal {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(0, 0, 0, 0.8);
+        display: none;
+        justify-content: center;
+        align-items: center;
+        z-index: 10000;
+    }
+
+    .modal.show {
+        display: flex;
+    }
+
+    .modal-content {
+        background: var(--card-bg);
+        border: 1px solid var(--golden-accent);
+        border-radius: var(--border-radius);
+        padding: 24px;
+        width: 90%;
+        max-width: 500px;
+        backdrop-filter: blur(20px);
+    }
+
+    .modal-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 20px;
+        padding-bottom: 16px;
+        border-bottom: 1px solid var(--golden-accent);
+    }
+
+    .modal-title {
+        font-size: 20px;
+        font-weight: 600;
+        color: var(--text-primary);
+    }
+
+    .modal-close {
+        background: none;
+        border: none;
+        color: var(--text-muted);
+        font-size: 24px;
+        cursor: pointer;
+        padding: 4px;
+    }
+
+    .modal-close:hover {
+        color: var(--text-primary);
+    }
+
+    .form-group {
+        margin-bottom: 16px;
+    }
+
+    .form-label {
+        display: block;
+        color: var(--text-secondary);
+        font-size: 12px;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        margin-bottom: 6px;
+        font-weight: 500;
+    }
+
+    .form-input, .form-select {
+        width: 100%;
+        padding: 12px 16px;
+        background: rgba(255, 255, 255, 0.02);
+        border: 1px solid var(--golden-accent);
+        border-radius: var(--border-radius);
+        color: var(--text-primary);
+        font-size: 14px;
+        transition: all 0.3s ease;
+        font-family: inherit;
+    }
+
+    .form-input:focus, .form-select:focus {
+        outline: none;
+        border-color: var(--golden-bright);
+        box-shadow: 0 0 0 2px rgba(212, 175, 55, 0.2);
+        background: rgba(255, 255, 255, 0.05);
+    }
+
+    .modal-actions {
+        display: flex;
+        gap: 12px;
+        justify-content: flex-end;
+        margin-top: 24px;
+        padding-top: 16px;
+        border-top: 1px solid var(--golden-accent);
+    }
+
+    .btn-modal {
+        padding: 10px 20px;
+        border-radius: 6px;
+        font-size: 14px;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        border: 1px solid;
+    }
+
+    .btn-primary {
+        background: linear-gradient(135deg, var(--golden-primary), var(--golden-bright));
+        color: var(--primary-bg);
+        border-color: var(--golden-primary);
+    }
+
+    .btn-primary:hover {
+        transform: translateY(-1px);
+        box-shadow: var(--golden-glow);
+    }
+
+    .btn-secondary {
+        background: transparent;
+        color: var(--text-secondary);
+        border-color: var(--golden-accent);
+    }
+
+    .btn-secondary:hover {
+        background: var(--golden-accent);
+        color: var(--text-primary);
+    }
+
+    /* Responsive */
+    @media (max-width: 768px) {
+        .admin-header {
+            flex-direction: column;
+            gap: 16px;
+            align-items: flex-start;
+        }
+
+        .admin-stats {
+            flex-wrap: wrap;
+            gap: 16px;
+        }
+
+        .admin-tabs {
+            overflow-x: auto;
+            padding-bottom: 8px;
+        }
+
+        .user-header {
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        .user-badges {
+            flex-direction: row;
+            align-items: flex-start;
+        }
+
+        .user-actions {
+            flex-wrap: wrap;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="admin-panel">
+    <div class="admin-header">
+        <div>
+            <h1 class="admin-title">👑 Admin Panel</h1>
+            <p style="color: var(--text-secondary); margin: 8px 0 0 0;">Manage users and system settings</p>
+        </div>
+        <div class="admin-stats">
+            <div class="stat-item">
+                <span class="stat-number" id="totalUsers">0</span>
+                <span>Total Users</span>
+            </div>
+            <div class="stat-item">
+                <span class="stat-number" id="pendingUsers">0</span>
+                <span>Pending</span>
+            </div>
+            <div class="stat-item">
+                <span class="stat-number" id="activeUsers">0</span>
+                <span>Active</span>
+            </div>
+        </div>
+    </div>
+
+    <div class="admin-tabs">
+        <button class="admin-tab active" onclick="switchTab('pending')">
+            🕐 Pending Approvals
+        </button>
+        <button class="admin-tab" onclick="switchTab('users')">
+            👥 All Users
+        </button>
+        <button class="admin-tab" onclick="switchTab('create')">
+            ➕ Create User
+        </button>
+    </div>
+
+    <!-- Pending Users Tab -->
+    <div id="pending-tab" class="tab-content active">
+        <div class="users-table">
+            <div class="table-header">
+                <div class="table-title">🕐 Users Pending Approval</div>
+                <button class="btn-create-user" onclick="refreshData()">🔄 Refresh</button>
+            </div>
+            <div class="users-grid" id="pendingUsersGrid">
+                <!-- Pending users will be loaded here -->
+            </div>
+        </div>
+    </div>
+
+    <!-- All Users Tab -->
+    <div id="users-tab" class="tab-content">
+        <div class="users-table">
+            <div class="table-header">
+                <div class="table-title">👥 All Users</div>
+                <button class="btn-create-user" onclick="openCreateUserModal()">➕ Create User</button>
+            </div>
+            <div class="users-grid" id="allUsersGrid">
+                <!-- All users will be loaded here -->
+            </div>
+        </div>
+    </div>
+
+    <!-- Create User Tab -->
+    <div id="create-tab" class="tab-content">
+        <div class="users-table">
+            <div class="table-header">
+                <div class="table-title">➕ Create New User</div>
+            </div>
+            <div style="padding: 24px;">
+                <form id="createUserForm">
+                    <div class="form-group">
+                        <label class="form-label" for="newUsername">Username</label>
+                        <input type="text" id="newUsername" name="username" class="form-input" 
+                               placeholder="Enter username" required minlength="3" maxlength="30">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label class="form-label" for="newEmail">Email Address</label>
+                        <input type="email" id="newEmail" name="email" class="form-input" 
+                               placeholder="Enter email address" required>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label class="form-label" for="newPassword">Password</label>
+                        <input type="password" id="newPassword" name="password" class="form-input" 
+                               placeholder="Enter password" required minlength="6">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label class="form-label" for="newRole">Role</label>
+                        <select id="newRole" name="role" class="form-select" required>
+                            <option value="user">Regular User</option>
+                            <option value="admin">Administrator</option>
+                        </select>
+                    </div>
+                    
+                    <div class="modal-actions">
+                        <button type="button" class="btn-modal btn-secondary" onclick="clearCreateForm()">Clear</button>
+                        <button type="submit" class="btn-modal btn-primary">Create User</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Create User Modal (alternative to tab) -->
+<div id="createUserModal" class="modal">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h3 class="modal-title">➕ Create New User</h3>
+            <button class="modal-close" onclick="closeCreateUserModal()">&times;</button>
+        </div>
+        
+        <form id="modalCreateUserForm">
+            <div class="form-group">
+                <label class="form-label" for="modalUsername">Username</label>
+                <input type="text" id="modalUsername" name="username" class="form-input" 
+                       placeholder="Enter username" required minlength="3" maxlength="30">
+            </div>
+            
+            <div class="form-group">
+                <label class="form-label" for="modalEmail">Email Address</label>
+                <input type="email" id="modalEmail" name="email" class="form-input" 
+                       placeholder="Enter email address" required>
+            </div>
+            
+            <div class="form-group">
+                <label class="form-label" for="modalPassword">Password</label>
+                <input type="password" id="modalPassword" name="password" class="form-input" 
+                       placeholder="Enter password" required minlength="6">
+            </div>
+            
+            <div class="form-group">
+                <label class="form-label" for="modalRole">Role</label>
+                <select id="modalRole" name="role" class="form-select" required>
+                    <option value="user">Regular User</option>
+                    <option value="admin">Administrator</option>
+                </select>
+            </div>
+            
+            <div class="modal-actions">
+                <button type="button" class="btn-modal btn-secondary" onclick="closeCreateUserModal()">Cancel</button>
+                <button type="submit" class="btn-modal btn-primary">Create User</button>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+let currentTab = 'pending';
+let users = [];
+let pendingUsers = [];
+
+document.addEventListener('DOMContentLoaded', function() {
+    loadAdminData();
+    setupEventListeners();
+});
+
+function setupEventListeners() {
+    // Create user form (tab version)
+    document.getElementById('createUserForm').addEventListener('submit', handleCreateUser);
+    
+    // Create user form (modal version)
+    document.getElementById('modalCreateUserForm').addEventListener('submit', handleCreateUser);
+}
+
+function switchTab(tabName) {
+    // Update tab buttons
+    document.querySelectorAll('.admin-tab').forEach(tab => {
+        tab.classList.remove('active');
+    });
+    event.target.classList.add('active');
+    
+    // Update tab content
+    document.querySelectorAll('.tab-content').forEach(content => {
+        content.classList.remove('active');
+    });
+    document.getElementById(tabName + '-tab').classList.add('active');
+    
+    currentTab = tabName;
+    
+    // Load data for the current tab
+    if (tabName === 'pending') {
+        loadPendingUsers();
+    } else if (tabName === 'users') {
+        loadAllUsers();
+    }
+}
+
+async function loadAdminData() {
+    try {
+        await Promise.all([
+            loadPendingUsers(),
+            loadAllUsers()
+        ]);
+        updateStats();
+    } catch (error) {
+        console.error('Error loading admin data:', error);
+        showNotification('Failed to load admin data', 'error');
+    }
+}
+
+async function loadPendingUsers() {
+    try {
+        const response = await fetch('/api/admin/pending-users');
+        const result = await response.json();
+        
+        if (result.success) {
+            pendingUsers = result.users;
+            displayPendingUsers();
+        } else {
+            console.error('Failed to load pending users:', result.error);
+        }
+    } catch (error) {
+        console.error('Error loading pending users:', error);
+    }
+}
+
+async function loadAllUsers() {
+    try {
+        const response = await fetch('/api/admin/users');
+        const result = await response.json();
+        
+        if (result.success) {
+            users = result.users;
+            displayAllUsers();
+        } else {
+            console.error('Failed to load users:', result.error);
+        }
+    } catch (error) {
+        console.error('Error loading users:', error);
+    }
+}
+
+function displayPendingUsers() {
+    const container = document.getElementById('pendingUsersGrid');
+    
+    if (pendingUsers.length === 0) {
+        container.innerHTML = `
+            <div class="empty-state">
+                <div class="empty-icon">✅</div>
+                <h3>No Pending Approvals</h3>
+                <p>All user registrations have been processed.</p>
+            </div>
+        `;
+        return;
+    }
+    
+    container.innerHTML = pendingUsers.map(user => `
+        <div class="user-card">
+            <div class="user-header">
+                <div class="user-info">
+                    <div class="user-name">${user.username}</div>
+                    <div class="user-email">${user.email}</div>
+                    <div class="user-meta">
+                        <span>📅 Registered: ${formatDate(user.created_at)}</span>
+                    </div>
+                </div>
+                <div class="user-badges">
+                    <span class="user-badge badge-pending">Pending</span>
+                </div>
+            </div>
+            <div class="user-actions">
+                <button class="btn-action btn-approve" onclick="approveUser(${user.id})">
+                    ✅ Approve
+                </button>
+                <button class="btn-action btn-reject" onclick="rejectUser(${user.id})">
+                    ❌ Reject
+                </button>
+            </div>
+        </div>
+    `).join('');
+}
+
+function displayAllUsers() {
+    const container = document.getElementById('allUsersGrid');
+    
+    if (users.length === 0) {
+        container.innerHTML = `
+            <div class="empty-state">
+                <div class="empty-icon">👥</div>
+                <h3>No Users Found</h3>
+                <p>No users are registered in the system.</p>
+            </div>
+        `;
+        return;
+    }
+    
+    container.innerHTML = users.map(user => `
+        <div class="user-card">
+            <div class="user-header">
+                <div class="user-info">
+                    <div class="user-name">${user.username}</div>
+                    <div class="user-email">${user.email}</div>
+                    <div class="user-meta">
+                        <span>📅 Joined: ${formatDate(user.created_at)}</span>
+                        ${user.last_login ? `<span>🕐 Last login: ${formatDate(user.last_login)}</span>` : '<span>🕐 Never logged in</span>'}
+                    </div>
+                </div>
+                <div class="user-badges">
+                    <span class="user-badge badge-${user.role}">${user.role.toUpperCase()}</span>
+                    ${user.is_active ? 
+                        '<span class="user-badge badge-active">Active</span>' : 
+                        '<span class="user-badge badge-inactive">Inactive</span>'
+                    }
+                    ${!user.is_approved ? '<span class="user-badge badge-pending">Pending</span>' : ''}
+                </div>
+            </div>
+            ${user.role !== 'admin' || users.filter(u => u.role === 'admin').length > 1 ? `
+            <div class="user-actions">
+                ${!user.is_approved ? `
+                    <button class="btn-action btn-approve" onclick="approveUser(${user.id})">
+                        ✅ Approve
+                    </button>
+                ` : ''}
+                ${user.is_active ? `
+                    <button class="btn-action btn-deactivate" onclick="deactivateUser(${user.id})">
+                        🚫 Deactivate
+                    </button>
+                ` : `
+                    <button class="btn-action btn-approve" onclick="reactivateUser(${user.id})">
+                        ✅ Reactivate
+                    </button>
+                `}
+                ${user.role === 'user' ? `
+                    <button class="btn-action btn-promote" onclick="promoteUser(${user.id})">
+                        👑 Make Admin
+                    </button>
+                ` : ''}
+                ${user.role === 'admin' ? `
+                    <button class="btn-action btn-deactivate" onclick="demoteUser(${user.id})">
+                        👤 Make User
+                    </button>
+                ` : ''}
+            </div>
+            ` : ''}
+        </div>
+    `).join('');
+}
+
+function updateStats() {
+    const totalUsers = users.length;
+    const pendingCount = pendingUsers.length;
+    const activeCount = users.filter(u => u.is_active).length;
+    
+    document.getElementById('totalUsers').textContent = totalUsers;
+    document.getElementById('pendingUsers').textContent = pendingCount;
+    document.getElementById('activeUsers').textContent = activeCount;
+}
+
+async function approveUser(userId) {
+    if (!confirm('Are you sure you want to approve this user?')) return;
+    
+    try {
+        const response = await fetch(`/api/admin/users/${userId}/approve`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            }
+        });
+        
+        const result = await response.json();
+        
+        if (result.success) {
+            showNotification('User approved successfully', 'success');
+            await loadAdminData();
+        } else {
+            showNotification(result.error || 'Failed to approve user', 'error');
+        }
+    } catch (error) {
+        console.error('Error approving user:', error);
+        showNotification('Error approving user', 'error');
+    }
+}
+
+async function rejectUser(userId) {
+    if (!confirm('Are you sure you want to reject this user? This will permanently delete their account.')) return;
+    
+    try {
+        const response = await fetch(`/api/admin/users/${userId}/reject`, {
+            method: 'DELETE',
+            headers: {
+                'Content-Type': 'application/json',
+            }
+        });
+        
+        const result = await response.json();
+        
+        if (result.success) {
+            showNotification('User rejected and deleted', 'success');
+            await loadAdminData();
+        } else {
+            showNotification(result.error || 'Failed to reject user', 'error');
+        }
+    } catch (error) {
+        console.error('Error rejecting user:', error);
+        showNotification('Error rejecting user', 'error');
+    }
+}
+
+async function deactivateUser(userId) {
+    if (!confirm('Are you sure you want to deactivate this user?')) return;
+    
+    try {
+        const response = await fetch(`/api/admin/users/${userId}/deactivate`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            }
+        });
+        
+        const result = await response.json();
+        
+        if (result.success) {
+            showNotification('User deactivated successfully', 'success');
+            await loadAdminData();
+        } else {
+            showNotification(result.error || 'Failed to deactivate user', 'error');
+        }
+    } catch (error) {
+        console.error('Error deactivating user:', error);
+        showNotification('Error deactivating user', 'error');
+    }
+}
+
+async function reactivateUser(userId) {
+    if (!confirm('Are you sure you want to reactivate this user?')) return;
+    
+    try {
+        const response = await fetch(`/api/admin/users/${userId}/reactivate`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            }
+        });
+        
+        const result = await response.json();
+        
+        if (result.success) {
+            showNotification('User reactivated successfully', 'success');
+            await loadAdminData();
+        } else {
+            showNotification(result.error || 'Failed to reactivate user', 'error');
+        }
+    } catch (error) {
+        console.error('Error reactivating user:', error);
+        showNotification('Error reactivating user', 'error');
+    }
+}
+
+async function promoteUser(userId) {
+    if (!confirm('Are you sure you want to make this user an administrator?')) return;
+    
+    try {
+        const response = await fetch(`/api/admin/users/${userId}/role`, {
+            method: 'PUT',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ role: 'admin' })
+        });
+        
+        const result = await response.json();
+        
+        if (result.success) {
+            showNotification('User promoted to administrator', 'success');
+            await loadAdminData();
+        } else {
+            showNotification(result.error || 'Failed to promote user', 'error');
+        }
+    } catch (error) {
+        console.error('Error promoting user:', error);
+        showNotification('Error promoting user', 'error');
+    }
+}
+
+async function demoteUser(userId) {
+    if (!confirm('Are you sure you want to remove admin privileges from this user?')) return;
+    
+    try {
+        const response = await fetch(`/api/admin/users/${userId}/role`, {
+            method: 'PUT',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ role: 'user' })
+        });
+        
+        const result = await response.json();
+        
+        if (result.success) {
+            showNotification('User demoted to regular user', 'success');
+            await loadAdminData();
+        } else {
+            showNotification(result.error || 'Failed to demote user', 'error');
+        }
+    } catch (error) {
+        console.error('Error demoting user:', error);
+        showNotification('Error demoting user', 'error');
+    }
+}
+
+async function handleCreateUser(event) {
+    event.preventDefault();
+    
+    const form = event.target;
+    const formData = new FormData(form);
+    const userData = {
+        username: formData.get('username'),
+        email: formData.get('email'),
+        password: formData.get('password'),
+        role: formData.get('role')
+    };
+    
+    // Validation
+    if (!userData.username || !userData.email || !userData.password || !userData.role) {
+        showNotification('Please fill in all fields', 'error');
+        return;
+    }
+    
+    if (userData.username.length < 3) {
+        showNotification('Username must be at least 3 characters long', 'error');
+        return;
+    }
+    
+    if (userData.password.length < 6) {
+        showNotification('Password must be at least 6 characters long', 'error');
+        return;
+    }
+    
+    try {
+        const response = await fetch('/api/admin/create-user', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify(userData)
+        });
+        
+        const result = await response.json();
+        
+        if (result.success) {
+            showNotification('User created successfully', 'success');
+            form.reset();
+            closeCreateUserModal();
+            await loadAdminData();
+        } else {
+            showNotification(result.error || 'Failed to create user', 'error');
+        }
+    } catch (error) {
+        console.error('Error creating user:', error);
+        showNotification('Error creating user', 'error');
+    }
+}
+
+function openCreateUserModal() {
+    document.getElementById('createUserModal').classList.add('show');
+}
+
+function closeCreateUserModal() {
+    document.getElementById('createUserModal').classList.remove('show');
+    document.getElementById('modalCreateUserForm').reset();
+}
+
+function clearCreateForm() {
+    document.getElementById('createUserForm').reset();
+}
+
+function refreshData() {
+    loadAdminData();
+    showNotification('Data refreshed', 'success');
+}
+
+function formatDate(dateString) {
+    if (!dateString) return 'Never';
+    
+    const date = new Date(dateString);
+    const now = new Date();
+    const diff = now - date;
+    
+    if (diff < 60000) { // Less than 1 minute
+        return 'Just now';
+    } else if (diff < 3600000) { // Less than 1 hour
+        const minutes = Math.floor(diff / 60000);
+        return `${minutes}m ago`;
+    } else if (diff < 86400000) { // Less than 1 day
+        const hours = Math.floor(diff / 3600000);
+        return `${hours}h ago`;
+    } else if (diff < 604800000) { // Less than 1 week
+        const days = Math.floor(diff / 86400000);
+        return `${days}d ago`;
+    } else {
+        return date.toLocaleDateString();
+    }
+}
+
+// Close modal when clicking outside
+document.addEventListener('click', function(event) {
+    const modal = document.getElementById('createUserModal');
+    if (event.target === modal) {
+        closeCreateUserModal();
+    }
+});
+
+// Close modal with Escape key
+document.addEventListener('keydown', function(event) {
+    if (event.key === 'Escape') {
+        closeCreateUserModal();
+    }
+});
+</script>
+{% endblock %}
