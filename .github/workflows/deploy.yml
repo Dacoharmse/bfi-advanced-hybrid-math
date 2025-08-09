@@ -1,0 +1,123 @@
+name: Deploy BFI Signals to VPS
+
+on:
+  push:
+    branches: [ main, master ]
+  workflow_dispatch: # Allow manual deployment
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      
+    - name: Deploy to VPS
+      uses: appleboy/ssh-action@v1.0.0
+      with:
+        host: ${{ secrets.VPS_HOST }}
+        username: ${{ secrets.VPS_USER }}
+        key: ${{ secrets.VPS_SSH_KEY }}
+        port: ${{ secrets.VPS_PORT || 22 }}
+        script: |
+          echo "🚀 Starting deployment..."
+          
+          # Navigate to application directory
+          cd /home/bfi-signals/app || exit 1
+          
+          # Show current status
+          echo "📍 Current directory: $(pwd)"
+          echo "🌟 Current commit: $(git rev-parse --short HEAD)"
+          
+          # Backup current state
+          echo "💾 Creating backup..."
+          sudo systemctl stop bfi-signals.service || true
+          cp core/ai_learning.db core/ai_learning.db.backup.$(date +%Y%m%d_%H%M%S) || true
+          
+          # Pull latest changes
+          echo "📥 Pulling latest changes..."
+          git stash --include-untracked || true
+          git pull origin master
+          
+          # Activate virtual environment and update dependencies
+          echo "📦 Updating dependencies..."
+          source venv/bin/activate
+          pip install -r requirements.txt
+          
+          # Run any database migrations if needed
+          echo "🗄️ Checking database..."
+          python3 -c "
+          import sqlite3
+          import os
+          if os.path.exists('core/ai_learning.db'):
+              conn = sqlite3.connect('core/ai_learning.db')
+              cursor = conn.cursor()
+              # Add any migration code here if needed
+              conn.close()
+              print('✅ Database check complete')
+          else:
+              print('ℹ️ Database will be created on first run')
+          " || true
+          
+          # Test application
+          echo "🧪 Testing application..."
+          timeout 10s python3 -c "
+          import sys
+          sys.path.insert(0, 'core')
+          try:
+              from dashboard import app
+              print('✅ Application imports successfully')
+          except Exception as e:
+              print(f'❌ Application test failed: {e}')
+              exit(1)
+          " || (echo "⚠️ Application test failed, but continuing..." && true)
+          
+          # Restart services
+          echo "🔄 Restarting services..."
+          sudo systemctl start bfi-signals.service
+          sudo systemctl reload nginx
+          
+          # Wait for services to start
+          sleep 5
+          
+          # Check service status
+          echo "🔍 Checking service status..."
+          if sudo systemctl is-active --quiet bfi-signals.service; then
+              echo "✅ BFI Signals service is running"
+          else
+              echo "❌ BFI Signals service failed to start"
+              sudo journalctl -u bfi-signals.service --no-pager -n 20
+              exit 1
+          fi
+          
+          if sudo systemctl is-active --quiet nginx; then
+              echo "✅ Nginx service is running"
+          else
+              echo "❌ Nginx service is not running"
+              exit 1
+          fi
+          
+          # Test HTTP endpoint
+          echo "🌐 Testing HTTP endpoint..."
+          if curl -s -o /dev/null -w "%{http_code}" http://localhost:5000 | grep -q "200\|302\|401"; then
+              echo "✅ Application is responding"
+          else
+              echo "❌ Application is not responding"
+              sudo journalctl -u bfi-signals.service --no-pager -n 10
+              exit 1
+          fi
+          
+          echo "🎉 Deployment completed successfully!"
+          echo "📊 New commit: $(git rev-parse --short HEAD)"
+          echo "🌍 Site available at: https://bonangfinance.co.za"
+    
+    - name: Notify on success
+      if: success()
+      run: |
+        echo "✅ Deployment successful!"
+        
+    - name: Notify on failure
+      if: failure()
+      run: |
+        echo "❌ Deployment failed! Check the logs above."

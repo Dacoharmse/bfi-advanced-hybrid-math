@@ -1,6 +1,6 @@
 {% extends "base.html" %}
 
-{% block title %}Performance - BFI Signals AI{% endblock %}
+{% block title %}Performance - BFI Signals{% endblock %}
 
 {% block content %}
 <div class="card">
@@ -313,19 +313,19 @@
         {% if symbol_performance %}
             {% set avg_success_rate = (symbol_performance|sum(attribute=2) / symbol_performance|length) if symbol_performance else 0 %}
             {% if avg_success_rate > 0.7 %}
-                <p style="color: #cccccc;"><strong>🎉 Excellent Performance!</strong> Your AI-enhanced system is performing very well with an average success rate above 70%.</p>
+                <p style="color: #cccccc;"><strong>🎉 Excellent Performance!</strong> Your intelligent system is performing very well with an average success rate above 70%.</p>
             {% elif avg_success_rate > 0.5 %}
                 <p style="color: #cccccc;"><strong>📈 Good Performance!</strong> Your system shows positive results. Consider analyzing which symbols perform best.</p>
             {% else %}
                 <p style="color: #cccccc;"><strong>🔍 Analysis Needed:</strong> Performance could be improved. Review risk levels and add more trading outcomes for better learning.</p>
             {% endif %}
         {% else %}
-            <p style="color: #cccccc;"><strong>🚀 Getting Started:</strong> Add trading outcomes to see performance analytics and get AI-powered insights!</p>
+            <p style="color: #cccccc;"><strong>🚀 Getting Started:</strong> Add trading outcomes to see performance analytics and get intelligent insights!</p>
         {% endif %}
         
         <h4 style="margin-top: 15px; color: #d4af37;">Next Steps:</h4>
         <ul style="margin-left: 20px; color: #cccccc;">
-            <li>🎯 <a href="/add_outcome" style="color: #d4af37;">Add more trading outcomes</a> for better AI learning</li>
+            <li>🎯 <a href="/add_outcome" style="color: #d4af37;">Add more trading outcomes</a> for better system learning</li>
             <li>📊 Review signals with poor performance for pattern recognition</li>
             <li>⚖️ Focus on low-risk, high-success-rate opportunities</li>
         </ul>

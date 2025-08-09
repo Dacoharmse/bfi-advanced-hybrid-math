@@ -45,7 +45,8 @@
       "Bash(/home/chronic/Projects/bfi-signals/venv/bin/python -c \"import bcrypt; print(''✅ bcrypt works in parent venv!'')\")",
       "Bash(/home/chronic/Projects/bfi-signals/core/venv/bin/pip install bcrypt)",
       "Bash(PYTHONPATH:*)",
-      "Bash(/home/chronic/Projects/bfi-signals/core/venv/bin/python:*)"
+      "Bash(/home/chronic/Projects/bfi-signals/core/venv/bin/python:*)",
+      "Bash(git push:*)"
     ],
     "deny": []
   }

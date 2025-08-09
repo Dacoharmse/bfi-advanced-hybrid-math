@@ -32,6 +32,7 @@ import pytz
 from manual_journal import journal_manager
 from werkzeug.utils import secure_filename
 from auth_manager import auth_manager, login_required, admin_required
+from agent_manager import agent_manager
 
 def get_todays_signals():
     """Get signals for today only"""
@@ -3080,10 +3081,176 @@ def api_test_journal_data():
             'error': str(e)
         })
 
+# =============================================================================
+# AGENT MANAGEMENT ROUTES
+# =============================================================================
+
+@app.route('/api/agents/status')
+@login_required
+def get_agents_status():
+    """Get status of all agents"""
+    try:
+        agents_status = agent_manager.get_all_agents_status()
+        return jsonify({
+            'success': True,
+            'agents': agents_status
+        })
+    except Exception as e:
+        return jsonify({
+            'success': False,
+            'error': str(e)
+        })
+
+@app.route('/api/agents/create_task', methods=['POST'])
+@login_required
+def create_agent_task():
+    """Create a new task for agents"""
+    try:
+        data = request.json
+        task_type = data.get('task_type')
+        agent_type = data.get('agent_type', 'signal_analyzer')
+        parameters = data.get('parameters', {})
+        priority = data.get('priority', 5)
+        
+        task_id = agent_manager.create_task(
+            agent_type=agent_type,
+            task_type=task_type,
+            parameters=parameters,
+            priority=priority
+        )
+        
+        return jsonify({
+            'success': True,
+            'task_id': task_id,
+            'message': 'Task created successfully'
+        })
+    except Exception as e:
+        return jsonify({
+            'success': False,
+            'error': str(e)
+        })
+
+@app.route('/api/agents/task_history')
+@login_required
+def get_task_history():
+    """Get agent task execution history"""
+    try:
+        limit = request.args.get('limit', 50, type=int)
+        history = agent_manager.get_task_history(limit=limit)
+        
+        return jsonify({
+            'success': True,
+            'tasks': history
+        })
+    except Exception as e:
+        return jsonify({
+            'success': False,
+            'error': str(e)
+        })
+
+@app.route('/api/agents/analyze_signal', methods=['POST'])
+@login_required
+def analyze_signal_with_agent():
+    """Use signal analyzer agent to analyze a trading signal"""
+    try:
+        data = request.json
+        symbol = data.get('symbol')
+        signal_data = data.get('signal_data', {})
+        
+        if not symbol:
+            return jsonify({
+                'success': False,
+                'error': 'Symbol is required'
+            })
+        
+        # Create task for signal analysis
+        task_id = agent_manager.create_task(
+            agent_type='signal_analyzer',
+            task_type='analyze_signal',
+            parameters={
+                'symbol': symbol,
+                'signal_data': signal_data
+            },
+            priority=7
+        )
+        
+        return jsonify({
+            'success': True,
+            'task_id': task_id,
+            'message': f'Signal analysis initiated for {symbol}'
+        })
+    except Exception as e:
+        return jsonify({
+            'success': False,
+            'error': str(e)
+        })
+
+@app.route('/api/agents/monitor_market', methods=['POST'])
+@login_required
+def monitor_market_with_agent():
+    """Use market monitor agent to analyze market conditions"""
+    try:
+        data = request.json
+        symbols = data.get('symbols', ['EURUSD', 'GBPUSD', 'USDJPY', 'XAUUSD'])
+        timeframe = data.get('timeframe', '1h')
+        
+        # Create task for market monitoring
+        task_id = agent_manager.create_task(
+            agent_type='market_monitor',
+            task_type='monitor_market',
+            parameters={
+                'symbols': symbols,
+                'timeframe': timeframe
+            },
+            priority=6
+        )
+        
+        return jsonify({
+            'success': True,
+            'task_id': task_id,
+            'message': 'Market monitoring initiated'
+        })
+    except Exception as e:
+        return jsonify({
+            'success': False,
+            'error': str(e)
+        })
+
+@app.route('/api/agents/assess_risk', methods=['POST'])
+@login_required
+def assess_risk_with_agent():
+    """Use risk assessor agent to analyze portfolio risk"""
+    try:
+        data = request.json
+        portfolio = data.get('portfolio', {})
+        new_position = data.get('new_position', {})
+        
+        # Create task for risk assessment
+        task_id = agent_manager.create_task(
+            agent_type='risk_assessor',
+            task_type='assess_risk',
+            parameters={
+                'portfolio': portfolio,
+                'new_position': new_position
+            },
+            priority=8  # High priority for risk assessment
+        )
+        
+        return jsonify({
+            'success': True,
+            'task_id': task_id,
+            'message': 'Risk assessment initiated'
+        })
+    except Exception as e:
+        return jsonify({
+            'success': False,
+            'error': str(e)
+        })
+
 if __name__ == '__main__':
-    print("🚀 Starting BFI Signals AI Dashboard...")
+    print("🚀 Starting BFI Signals Platform...")
     print("📊 Dashboard will be available at: http://localhost:5000")
-    print("🤖 AI features ready for interaction!")
+    print("🤖 Intelligent agents ready for interaction!")
     print("📈 Monitor your trading performance in real-time!")
     
     # Create templates directory if it doesn't exist
