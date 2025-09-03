@@ -825,6 +825,52 @@ class AuthManager:
             print(f"Error changing password: {e}")
             return {'success': False, 'error': str(e)}
     
+    def admin_change_user_password(self, user_id, new_password, admin_id):
+        """Admin changes user password (no current password required)"""
+        try:
+            conn = sqlite3.connect(self.db_path)
+            cursor = conn.cursor()
+            
+            # Verify admin permissions
+            cursor.execute('SELECT role FROM users WHERE id = ?', (admin_id,))
+            admin_result = cursor.fetchone()
+            if not admin_result or admin_result[0] != 'admin':
+                return {'success': False, 'error': 'Insufficient permissions'}
+            
+            # Check if target user exists
+            cursor.execute('SELECT username FROM users WHERE id = ?', (user_id,))
+            user_result = cursor.fetchone()
+            if not user_result:
+                return {'success': False, 'error': 'User not found'}
+            
+            # Hash new password and update
+            new_hash = self.hash_password(new_password)
+            cursor.execute('UPDATE users SET password_hash = ? WHERE id = ?', 
+                          (new_hash, user_id))
+            
+            if cursor.rowcount > 0:
+                # Create notification for password change
+                self.create_notification(
+                    user_id=user_id,
+                    title="🔒 Password Reset by Administrator",
+                    message="Your password has been reset by an administrator. Please log in with your new password.",
+                    notification_type="security"
+                )
+                
+                # Delete all user sessions to force re-login
+                cursor.execute('DELETE FROM user_sessions WHERE user_id = ?', (user_id,))
+                
+                conn.commit()
+                conn.close()
+                return {'success': True, 'message': 'Password changed successfully'}
+            else:
+                conn.close()
+                return {'success': False, 'error': 'Failed to update password'}
+            
+        except Exception as e:
+            print(f"Error changing password: {e}")
+            return {'success': False, 'error': str(e)}
+    
     def update_notification_preferences(self, user_id, preferences):
         """Update user notification preferences"""
         try:
@@ -857,6 +903,94 @@ class AuthManager:
         except Exception as e:
             print(f"Error updating notification preferences: {e}")
             return {'success': False, 'error': str(e)}
+    
+    def initiate_password_reset(self, email_or_username):
+        """Initiate password reset process by sending email"""
+        try:
+            conn = sqlite3.connect(self.db_path)
+            cursor = conn.cursor()
+            
+            # Find user by email or username
+            cursor.execute('''
+                SELECT id, username, email FROM users 
+                WHERE email = ? OR username = ?
+            ''', (email_or_username, email_or_username))
+            
+            user = cursor.fetchone()
+            conn.close()
+            
+            if not user:
+                # Don't reveal whether email exists for security
+                return {'success': True, 'message': 'If an account with that email exists, you will receive a password reset link.'}
+            
+            user_id, username, email = user
+            
+            # Generate reset token using email service
+            from email_config import email_service
+            token_result = email_service.generate_password_reset_token(user_id)
+            
+            if not token_result['success']:
+                return {'success': False, 'error': 'Failed to generate reset token'}
+            
+            # Send reset email
+            email_result = email_service.send_password_reset_email(email, token_result['token'], username)
+            
+            if email_result['success']:
+                return {'success': True, 'message': 'Password reset link has been sent to your email.'}
+            else:
+                return {'success': False, 'error': 'Failed to send reset email'}
+                
+        except Exception as e:
+            print(f"Error initiating password reset: {e}")
+            return {'success': False, 'error': 'An error occurred while processing your request'}
+    
+    def reset_password_with_token(self, token, new_password):
+        """Reset password using a valid token"""
+        try:
+            from email_config import email_service
+            
+            # Validate token
+            token_data = email_service.validate_password_reset_token(token)
+            
+            if not token_data['valid']:
+                return {'success': False, 'error': 'Invalid or expired reset token'}
+            
+            user_id = token_data['user_id']
+            
+            # Hash new password and update
+            new_hash = self.hash_password(new_password)
+            
+            conn = sqlite3.connect(self.db_path)
+            cursor = conn.cursor()
+            
+            cursor.execute('UPDATE users SET password_hash = ? WHERE id = ?', 
+                          (new_hash, user_id))
+            
+            if cursor.rowcount > 0:
+                # Mark token as used
+                email_service.use_password_reset_token(token)
+                
+                # Create notification for password reset
+                self.create_notification(
+                    user_id=user_id,
+                    title="🔒 Password Reset Successful",
+                    message="Your password has been reset successfully. If this wasn't you, please contact support immediately.",
+                    notification_type="security"
+                )
+                
+                # Delete all user sessions to force re-login
+                cursor.execute('DELETE FROM user_sessions WHERE user_id = ?', (user_id,))
+                
+                conn.commit()
+                conn.close()
+                return {'success': True, 'message': 'Password has been reset successfully'}
+            else:
+                conn.close()
+                return {'success': False, 'error': 'Failed to update password'}
+                
+        except Exception as e:
+            print(f"Error resetting password: {e}")
+            return {'success': False, 'error': 'An error occurred while resetting your password'}
     
     def get_notification_preferences(self, user_id):
         """Get user notification preferences"""

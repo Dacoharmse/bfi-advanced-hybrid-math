@@ -6,3 +6,4 @@ python-dotenv==1.0.0
 pytz==2023.3
 lxml==4.9.3
 schedule==1.2.0
+bcrypt==4.0.1

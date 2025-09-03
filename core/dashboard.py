@@ -32,6 +32,7 @@ import pytz
 from manual_journal import journal_manager
 from werkzeug.utils import secure_filename
 from auth_manager import auth_manager, login_required, admin_required
+from email_config import email_service
 from agent_manager import agent_manager
 
 def get_todays_signals():
@@ -707,6 +708,64 @@ def logout():
     
     session.clear()
     return redirect(url_for('login'))
+
+@app.route('/forgot-password')
+def forgot_password():
+    """Show forgot password form"""
+    return render_template('forgot_password.html')
+
+@app.route('/reset-password')
+def reset_password():
+    """Show password reset form"""
+    token = request.args.get('token')
+    if not token:
+        return redirect(url_for('login'))
+    
+    # Validate token
+    token_data = email_service.validate_password_reset_token(token)
+    
+    if not token_data['valid']:
+        return render_template('reset_password.html', error='Invalid or expired reset token')
+    
+    return render_template('reset_password.html', token=token, username=token_data['username'])
+
+@app.route('/api/forgot-password', methods=['POST'])
+def api_forgot_password():
+    """Handle forgot password requests"""
+    try:
+        data = request.get_json()
+        email_or_username = data.get('email', '').strip()
+        
+        if not email_or_username:
+            return jsonify({'success': False, 'error': 'Email or username is required'})
+        
+        result = auth_manager.initiate_password_reset(email_or_username)
+        return jsonify(result)
+        
+    except Exception as e:
+        print(f"Forgot password error: {e}")
+        return jsonify({'success': False, 'error': 'An error occurred while processing your request'})
+
+@app.route('/api/reset-password', methods=['POST'])
+def api_reset_password():
+    """Handle password reset with token"""
+    try:
+        data = request.get_json()
+        token = data.get('token', '').strip()
+        new_password = data.get('password', '')
+        
+        if not token or not new_password:
+            return jsonify({'success': False, 'error': 'Token and password are required'})
+        
+        if len(new_password) < 6:
+            return jsonify({'success': False, 'error': 'Password must be at least 6 characters long'})
+        
+        result = auth_manager.reset_password_with_token(token, new_password)
+        return jsonify(result)
+        
+    except Exception as e:
+        print(f"Password reset error: {e}")
+        return jsonify({'success': False, 'error': 'An error occurred while resetting your password'})
 
 @app.route('/api/notifications')
 @login_required
@@ -3658,6 +3717,29 @@ def api_admin_create_user():
     except Exception as e:
         print(f"❌ Error creating user: {str(e)}")
         return jsonify({'success': False, 'error': 'Failed to create user'})
+
+@app.route('/api/admin/users/<int:user_id>/change-password', methods=['PUT'])
+@admin_required
+def api_admin_change_password(user_id):
+    """Admin changes user password"""
+    try:
+        data = request.get_json()
+        new_password = data.get('new_password', '').strip()
+        
+        if not new_password:
+            return jsonify({'success': False, 'error': 'New password is required'})
+        
+        if len(new_password) < 6:
+            return jsonify({'success': False, 'error': 'Password must be at least 6 characters long'})
+        
+        admin_id = session.get('user_id')
+        result = auth_manager.admin_change_user_password(user_id, new_password, admin_id)
+        
+        return jsonify(result)
+        
+    except Exception as e:
+        print(f"❌ Error changing user password: {str(e)}")
+        return jsonify({'success': False, 'error': 'Failed to change password'})
 
 @app.route('/api/notifications/mark-all-read', methods=['POST'])
 @login_required
