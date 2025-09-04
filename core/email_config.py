@@ -164,7 +164,10 @@ class EmailService:
     
     def send_password_reset_email(self, user_email, reset_token, username):
         """Send password reset email to user"""
-        reset_url = f"http://localhost:5000/reset-password?token={reset_token}"
+        # Use production URL for live site
+        import os
+        base_url = os.getenv('BASE_URL', 'https://trading.bonangfinance.co.za')
+        reset_url = f"{base_url}/reset-password?token={reset_token}"
         
         subject = "Password Reset - BFI Dashboard"
         
@@ -247,7 +250,7 @@ class EmailService:
 <body>
     <div class="container">
         <div class="header">
-            <img src="http://localhost:5000/static/bfi-logo.png" alt="BFI Logo" class="logo">
+            <img src="{base_url}/static/bfi-logo.png" alt="BFI Logo" class="logo">
             <h1>BFI Dashboard</h1>
         </div>
         
