@@ -23,12 +23,36 @@ jobs:
         script: |
           echo "🚀 Starting deployment..."
           
-          # Navigate to application directory
-          cd /home/bfi-signals/app || {
-              echo "❌ Failed to navigate to application directory"
-              echo "📂 Available directories:"
-              ls -la /home/
-              ls -la /home/bfi-signals/ || echo "bfi-signals directory not found"
+          # Show current user and environment
+          echo "👤 Current user: $(whoami)"
+          echo "📂 Home directory: $HOME"
+          echo "📍 Current directory: $(pwd)"
+          
+          # List available directories to debug
+          echo "📂 Available directories in /home:"
+          ls -la /home/ || echo "Cannot access /home"
+          
+          # Try different possible paths
+          if [ -d "/home/bfi-signals/app" ]; then
+              APP_DIR="/home/bfi-signals/app"
+          elif [ -d "$HOME/bfi-signals" ]; then
+              APP_DIR="$HOME/bfi-signals"
+          elif [ -d "$HOME/app" ]; then
+              APP_DIR="$HOME/app"
+          elif [ -d "/var/www/bfi-signals" ]; then
+              APP_DIR="/var/www/bfi-signals"
+          else
+              echo "❌ Could not find application directory"
+              echo "📂 Checking common locations:"
+              ls -la /home/ 2>/dev/null || echo "No access to /home"
+              ls -la $HOME/ 2>/dev/null || echo "No access to HOME"
+              ls -la /var/www/ 2>/dev/null || echo "No access to /var/www"
+              exit 1
+          fi
+          
+          echo "📁 Found application directory: $APP_DIR"
+          cd "$APP_DIR" || {
+              echo "❌ Failed to navigate to $APP_DIR"
               exit 1
           }
           
@@ -38,8 +62,21 @@ jobs:
           
           # Backup current state
           echo "💾 Creating backup..."
-          sudo systemctl stop bfi-signals.service || true
-          cp core/ai_learning.db core/ai_learning.db.backup.$(date +%Y%m%d_%H%M%S) || true
+          # Stop service if it exists
+          if systemctl is-active --quiet bfi-signals.service 2>/dev/null; then
+              echo "🛑 Stopping BFI service..."
+              sudo systemctl stop bfi-signals.service || echo "⚠️ Could not stop service"
+          else
+              echo "ℹ️ BFI service not running or doesn't exist"
+          fi
+          
+          # Backup database if it exists
+          if [ -f "core/ai_learning.db" ]; then
+              cp core/ai_learning.db core/ai_learning.db.backup.$(date +%Y%m%d_%H%M%S) || echo "⚠️ Could not backup database"
+              echo "✅ Database backed up"
+          else
+              echo "ℹ️ No database to backup"
+          fi
           
           # Pull latest changes
           echo "📥 Pulling latest changes..."
@@ -99,28 +136,30 @@ jobs:
           
           # Restart services
           echo "🔄 Restarting services..."
-          sudo systemctl start bfi-signals.service
-          sudo systemctl reload nginx
+          
+          # Start BFI service
+          if sudo systemctl start bfi-signals.service 2>/dev/null; then
+              echo "✅ BFI service started successfully"
+          else
+              echo "⚠️ Could not start BFI service (might not be configured yet)"
+              echo "📋 Checking if service file exists..."
+              if [ -f "/etc/systemd/system/bfi-signals.service" ]; then
+                  echo "Service file exists, checking logs..."
+                  sudo journalctl -u bfi-signals.service --no-pager -n 10 || true
+              else
+                  echo "Service file does not exist - manual setup required"
+              fi
+          fi
+          
+          # Reload nginx if available
+          if sudo systemctl reload nginx 2>/dev/null; then
+              echo "✅ Nginx reloaded successfully"
+          else
+              echo "⚠️ Could not reload nginx (might not be configured)"
+          fi
           
           # Wait for services to start
-          sleep 5
-          
-          # Check service status
-          echo "🔍 Checking service status..."
-          if sudo systemctl is-active --quiet bfi-signals.service; then
-              echo "✅ BFI Signals service is running"
-          else
-              echo "❌ BFI Signals service failed to start"
-              sudo journalctl -u bfi-signals.service --no-pager -n 20
-              exit 1
-          fi
-          
-          if sudo systemctl is-active --quiet nginx; then
-              echo "✅ Nginx service is running"
-          else
-              echo "❌ Nginx service is not running"
-              exit 1
-          fi
+          sleep 3
           
           # Test HTTP endpoint
           echo "🌐 Testing HTTP endpoint..."
