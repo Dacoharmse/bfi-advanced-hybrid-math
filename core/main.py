@@ -15,6 +15,7 @@ from data_fetch import fetch_last_two_1h_bars
 from strategy import calculate_signal
 from discord_post import post_signal, post_simple_signal, post_market_status, test_discord_connection
 from ai_engine import AIEngine
+from whatsapp_signals import NotificationManager
 
 # Load environment variables from parent directory
 load_dotenv('../.env')
@@ -30,6 +31,41 @@ def generate_signals():
     # Initialize AI Engine
     ai_engine = AIEngine()
     print("AI Engine initialized")
+    
+    # Initialize Notification Manager
+    whatsapp_config = None
+    if os.getenv('WHATSAPP_ENABLED', 'false').lower() == 'true':
+        api_provider = os.getenv('WHATSAPP_API_PROVIDER', 'green')
+        if api_provider == 'green':
+            whatsapp_config = {
+                'api_provider': 'green',
+                'instance_id': os.getenv('GREEN_API_INSTANCE_ID'),
+                'access_token': os.getenv('GREEN_API_ACCESS_TOKEN')
+            }
+        elif api_provider == 'wassenger':
+            whatsapp_config = {
+                'api_provider': 'wassenger',
+                'api_key': os.getenv('WASSENGER_API_KEY'),
+                'device_id': os.getenv('WASSENGER_DEVICE_ID')
+            }
+        elif api_provider == 'whapi':
+            whatsapp_config = {
+                'api_provider': 'whapi',
+                'access_token': os.getenv('WHAPI_ACCESS_TOKEN')
+            }
+    
+    notification_manager = NotificationManager(
+        whatsapp_config=whatsapp_config,
+        discord_webhook=os.getenv('DISCORD_WEBHOOK_URL')
+    )
+    
+    whatsapp_group_id = os.getenv('WHATSAPP_GROUP_ID')
+    if whatsapp_config and whatsapp_group_id:
+        print(f"WhatsApp notifications enabled for group: {whatsapp_group_id}")
+    else:
+        print("WhatsApp notifications disabled")
+    
+    print("Notification manager initialized")
     
     # Check if it's weekend and show appropriate message
     if now.weekday() == 5:  # Saturday
@@ -99,16 +135,44 @@ def generate_signals():
             if signal.get('risk_level'):
                 print(f"   Risk Level: {signal['risk_level']}")
             
-            # Post to Discord (use professional format by default)
+            # Send to both Discord and WhatsApp using unified notification manager
             use_simple = os.getenv('USE_SIMPLE_DISCORD', 'false').lower() == 'true'
             
+            # Prepare signal data for unified notifications
+            signal_data = {
+                'signal_type': signal['bias'],
+                'symbol': signal['symbol'],
+                'price': signal['current_value'],
+                'action': f"{signal['bias']} - {signal['probability_label']}",
+                'confidence': signal.get('risk_level', 'Medium'),
+                'additional_info': f"Change: {signal['change_pct']:+.2f}% | Probability: {signal['probability_percentage']}%"
+            }
+            
+            # Send to platforms
+            notification_results = {}
+            
+            # Discord
             if use_simple:
-                success = post_simple_signal(signal)
+                discord_success = post_simple_signal(signal)
             else:
-                success = post_signal(signal)
+                discord_success = post_signal(signal)
+            notification_results['discord'] = discord_success
+            
+            # WhatsApp (if configured)
+            if whatsapp_config and whatsapp_group_id:
+                whatsapp_results = notification_manager.send_signal_to_all(
+                    signal_data=signal_data,
+                    whatsapp_group_id=whatsapp_group_id
+                )
+                notification_results.update(whatsapp_results)
+            
+            # Consider successful if at least one platform succeeded
+            success = any(notification_results.values())
             
             if success:
                 successful_signals.append(signal)
+                platforms_sent = [platform for platform, result in notification_results.items() if result]
+                print(f"SUCCESS: {symbol} signal sent to: {', '.join(platforms_sent)}")
                 
                 # Store signal for AI learning
                 try:
@@ -132,10 +196,10 @@ def generate_signals():
                 except Exception as e:
                     print(f"INFO: Could not store signal for learning: {e}")
                     # Don't fail the main process if learning storage fails
-                print(f"SUCCESS: {symbol} signal posted to Discord successfully")
             else:
                 failed_signals.append(signal)
-                print(f"ERROR: Failed to post {symbol} signal to Discord")
+                platforms_failed = [platform for platform, result in notification_results.items() if not result]
+                print(f"ERROR: Failed to send {symbol} signal to: {', '.join(platforms_failed) if platforms_failed else 'all platforms'}")
                 
         except Exception as e:
             print(f"ERROR: Error processing {symbol}: {str(e)}")

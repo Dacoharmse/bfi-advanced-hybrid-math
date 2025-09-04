@@ -279,6 +279,17 @@
         color: var(--primary-bg);
     }
 
+    .btn-edit {
+        background: rgba(55, 66, 250, 0.1);
+        color: #3742fa;
+        border-color: #3742fa;
+    }
+
+    .btn-edit:hover {
+        background: #3742fa;
+        color: white;
+    }
+
     .empty-state {
         text-align: center;
         padding: 48px 20px;
@@ -603,6 +614,41 @@
         </form>
     </div>
 </div>
+
+<!-- Change Password Modal -->
+<div id="changePasswordModal" class="modal">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h3 class="modal-title">🔒 Change User Password</h3>
+            <button class="modal-close" onclick="closeChangePasswordModal()">&times;</button>
+        </div>
+        
+        <p style="color: var(--text-secondary); margin-bottom: 20px;">
+            Changing password for user: <strong id="changePasswordUsername"></strong>
+        </p>
+        
+        <form id="changePasswordForm">
+            <input type="hidden" id="changePasswordUserId" name="userId">
+            
+            <div class="form-group">
+                <label class="form-label" for="newUserPassword">New Password</label>
+                <input type="password" id="newUserPassword" name="newPassword" class="form-input" 
+                       placeholder="Enter new password" required minlength="6">
+            </div>
+            
+            <div class="form-group">
+                <label class="form-label" for="confirmUserPassword">Confirm New Password</label>
+                <input type="password" id="confirmUserPassword" name="confirmPassword" class="form-input" 
+                       placeholder="Confirm new password" required minlength="6">
+            </div>
+            
+            <div class="modal-actions">
+                <button type="button" class="btn-modal btn-secondary" onclick="closeChangePasswordModal()">Cancel</button>
+                <button type="submit" class="btn-modal btn-primary">Change Password</button>
+            </div>
+        </form>
+    </div>
+</div>
 {% endblock %}
 
 {% block extra_js %}
@@ -622,6 +668,9 @@ function setupEventListeners() {
     
     // Create user form (modal version)
     document.getElementById('modalCreateUserForm').addEventListener('submit', handleCreateUser);
+    
+    // Change password form
+    document.getElementById('changePasswordForm').addEventListener('submit', handleChangePassword);
 }
 
 function switchTab(tabName) {
@@ -792,6 +841,9 @@ function displayAllUsers() {
                         👤 Make User
                     </button>
                 ` : ''}
+                <button class="btn-action btn-edit" onclick="openChangePasswordModal(${user.id}, '${user.username}')">
+                    🔒 Change Password
+                </button>
             </div>
             ` : ''}
         </div>
@@ -1013,6 +1065,65 @@ async function handleCreateUser(event) {
     }
 }
 
+function openChangePasswordModal(userId, username) {
+    document.getElementById('changePasswordUserId').value = userId;
+    document.getElementById('changePasswordUsername').textContent = username;
+    document.getElementById('changePasswordModal').classList.add('show');
+}
+
+function closeChangePasswordModal() {
+    document.getElementById('changePasswordModal').classList.remove('show');
+    document.getElementById('changePasswordForm').reset();
+}
+
+async function handleChangePassword(event) {
+    event.preventDefault();
+    
+    const form = event.target;
+    const userId = document.getElementById('changePasswordUserId').value;
+    const newPassword = document.getElementById('newUserPassword').value;
+    const confirmPassword = document.getElementById('confirmUserPassword').value;
+    
+    // Validation
+    if (!newPassword || !confirmPassword) {
+        showNotification('Please fill in all fields', 'error');
+        return;
+    }
+    
+    if (newPassword !== confirmPassword) {
+        showNotification('Passwords do not match', 'error');
+        return;
+    }
+    
+    if (newPassword.length < 6) {
+        showNotification('Password must be at least 6 characters long', 'error');
+        return;
+    }
+    
+    try {
+        const response = await fetch(`/api/admin/users/${userId}/change-password`, {
+            method: 'PUT',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ new_password: newPassword })
+        });
+        
+        const result = await response.json();
+        
+        if (result.success) {
+            showNotification('Password changed successfully', 'success');
+            closeChangePasswordModal();
+            await loadAdminData();
+        } else {
+            showNotification(result.error || 'Failed to change password', 'error');
+        }
+    } catch (error) {
+        console.error('Error changing password:', error);
+        showNotification('Error changing password', 'error');
+    }
+}
+
 function openCreateUserModal() {
     document.getElementById('createUserModal').classList.add('show');
 }
@@ -1056,9 +1167,15 @@ function formatDate(dateString) {
 
 // Close modal when clicking outside
 document.addEventListener('click', function(event) {
-    const modal = document.getElementById('createUserModal');
-    if (event.target === modal) {
+    const createModal = document.getElementById('createUserModal');
+    const passwordModal = document.getElementById('changePasswordModal');
+    
+    if (event.target === createModal) {
         closeCreateUserModal();
+    }
+    
+    if (event.target === passwordModal) {
+        closeChangePasswordModal();
     }
 });
 
@@ -1066,6 +1183,7 @@ document.addEventListener('click', function(event) {
 document.addEventListener('keydown', function(event) {
     if (event.key === 'Escape') {
         closeCreateUserModal();
+        closeChangePasswordModal();
     }
 });
 </script>

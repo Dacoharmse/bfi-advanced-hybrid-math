@@ -1,15 +1,15 @@
 {
   "action": "update_bfi_levels",
   "symbol": "^NDX",
-  "timestamp": "2025-08-02T20:22:52.669057",
+  "timestamp": "2025-09-03T19:43:46.490967",
   "data": {
-    "cv": 22763.31,
-    "prv": 23218.12,
-    "high": 22972.47,
-    "low": 22673.88,
-    "tp": 22308.5,
-    "bias": "SHORT",
-    "net_change": -454.81,
-    "change_pct": -1.96
+    "cv": 23332.14,
+    "prv": 23231.11,
+    "high": 23478.01,
+    "low": 23332.14,
+    "tp": 23433.17,
+    "bias": "LONG",
+    "net_change": 101.03,
+    "change_pct": 0.43
   }
 }
