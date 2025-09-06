@@ -14,6 +14,101 @@ import time
 import re
 
 
+def fetch_yfinance_fast(symbol: str) -> pd.DataFrame:
+    """
+    Fast yfinance data fetch with optimized parameters
+    
+    Args:
+        symbol (str): The ticker symbol to fetch data for
+    
+    Returns:
+        pd.DataFrame: DataFrame with exactly 2 rows containing OHLC data
+    """
+    try:
+        # Get current time and calculate start time for fetching data
+        now = datetime.utcnow().replace(minute=0, second=0, microsecond=0)
+        start = now - timedelta(days=5)  # Shorter range for faster fetch
+        
+        print(f"⚡ Fast fetch for {symbol} from {start} to {now}")
+        
+        # Download 1-hour interval data with minimal parameters for speed
+        df = yf.download(
+            symbol, 
+            start=start, 
+            end=now, 
+            interval="1h",
+            progress=False
+        )
+        
+        if df.empty:
+            return None
+        
+        # Handle multi-index columns if present
+        if isinstance(df.columns, pd.MultiIndex):
+            df.columns = df.columns.get_level_values(0)
+        
+        # Remove any rows with NaN values
+        df = df.dropna()
+        
+        if len(df) < 2:
+            return None
+        
+        # Get the last two completed bars
+        last_two_bars = df.tail(2).copy()
+        
+        # Store the symbol in the DataFrame attributes for later use
+        last_two_bars.attrs['symbol'] = symbol
+        last_two_bars.attrs['source'] = 'yfinance_fast'
+        
+        print(f"✅ Fast fetch success for {symbol}: {len(last_two_bars)} bars")
+        
+        return last_two_bars
+        
+    except Exception as e:
+        print(f"❌ Fast fetch error for {symbol}: {str(e)}")
+        return None
+
+
+def fetch_gold_optimized(symbol: str) -> pd.DataFrame:
+    """
+    Optimized gold data fetching with multiple sources and fallbacks
+    
+    Args:
+        symbol (str): The gold symbol to fetch data for
+    
+    Returns:
+        pd.DataFrame: DataFrame with exactly 2 rows containing OHLC data
+    """
+    # Gold symbol mapping for different data sources (in order of preference)
+    gold_sources = [
+        'GC=F',      # Gold futures (COMEX) - usually most liquid
+        'GLD',       # Gold ETF - reliable backup
+        'XAUUSD=X'   # Gold spot - forex backup
+    ]
+    
+    # Try each gold source until we get good data
+    for i, gold_symbol in enumerate(gold_sources):
+        try:
+            print(f"🥇 Trying gold source {i+1}/{len(gold_sources)}: {gold_symbol}")
+            
+            result = fetch_yfinance_fast(gold_symbol)
+            if result is not None and len(result) >= 2:
+                # Mark the successful source
+                result.attrs['symbol'] = symbol  # Keep original symbol
+                result.attrs['source'] = f'gold_optimized_{gold_symbol}'
+                
+                print(f"✅ Gold data success with {gold_symbol}")
+                return result
+                
+        except Exception as e:
+            print(f"⚠️ Gold source {gold_symbol} failed: {str(e)[:50]}")
+            continue
+    
+    # If all gold sources fail, raise an error
+    print(f"❌ All gold data sources failed for {symbol}")
+    raise ValueError(f"Could not fetch gold data for {symbol}")
+
+
 def fetch_nasdaq_marketwatch_data(symbol: str) -> pd.DataFrame:
     """
     Fetch NASDAQ-100 data by web scraping marketwatch.com
@@ -34,28 +129,16 @@ def fetch_nasdaq_marketwatch_data(symbol: str) -> pd.DataFrame:
         url = f"https://www.marketwatch.com/investing/index/{clean_symbol}"
         print(f"🌐 Scraping from: {url}")
         
-        # Headers to mimic a real browser and avoid 401 errors
+        # Simplified headers for faster requests
         headers = {
-            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
-            'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7',
+            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
+            'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
             'Accept-Language': 'en-US,en;q=0.9',
-            'Accept-Encoding': 'gzip, deflate, br',
             'Connection': 'keep-alive',
-            'Sec-Fetch-Dest': 'document', 
-            'Sec-Fetch-Mode': 'navigate',
-            'Sec-Fetch-Site': 'none',
-            'Sec-Fetch-User': '?1',
-            'Upgrade-Insecure-Requests': '1',
-            'sec-ch-ua': '"Not_A Brand";v="8", "Chromium";v="120", "Google Chrome";v="120"',
-            'sec-ch-ua-mobile': '?0',
-            'sec-ch-ua-platform': '"Windows"',
-            'Cache-Control': 'no-cache',
-            'Pragma': 'no-cache',
-            'Referer': 'https://www.google.com/',
         }
         
-        # Make the request
-        response = requests.get(url, headers=headers, timeout=30)
+        # Make the request with reduced timeout for better performance
+        response = requests.get(url, headers=headers, timeout=8)
         response.raise_for_status()
         print(f"✅ Successfully connected to marketwatch.com")
         
@@ -883,19 +966,49 @@ def fetch_last_two_1h_bars(symbol: str) -> pd.DataFrame:
         ValueError: If insufficient data is available
     """
     
-    # Check if this is a US30 symbol that needs Barchart scraping
+    # Check if this is a US30 symbol - try yfinance first for better performance
     us30_symbols = ['US30', 'US30.', '$DOWI', 'DOWI', '^DJI', 'DJI']
     
     if symbol.upper() in [s.upper() for s in us30_symbols]:
-        print(f"🌐 Detected US30 symbol {symbol}, using MarketWatch scraping...")
+        print(f"📈 Detected US30 symbol {symbol}, trying yfinance first...")
+        try:
+            # Map US30 symbols to yfinance equivalent
+            yf_symbol = '^DJI' if symbol.upper() != '^DJI' else symbol
+            yf_result = fetch_yfinance_fast(yf_symbol)
+            if yf_result is not None and len(yf_result) >= 2:
+                print(f"✅ yfinance success for {symbol}")
+                return yf_result
+        except Exception as e:
+            print(f"⚠️ yfinance failed for {symbol}: {str(e)[:50]}")
+        
+        # Fallback to MarketWatch scraping if yfinance fails
+        print(f"🌐 Falling back to MarketWatch scraping for {symbol}...")
         return fetch_us30_marketwatch_data(symbol)
     
-    # Check if this is a NASDAQ symbol that needs web scraping
+    # Check if this is a NASDAQ symbol - try yfinance first for better performance
     nasdaq_symbols = ['^NDX', 'NDX', '^IXIC', 'IXIC', '^GSPC', 'GSPC']
     
     if symbol.upper() in [s.upper() for s in nasdaq_symbols]:
-        print(f"🌐 Detected NASDAQ symbol {symbol}, using MarketWatch scraping...")
+        print(f"📈 Detected NASDAQ symbol {symbol}, trying yfinance first...")
+        try:
+            # Try yfinance first for faster performance
+            yf_result = fetch_yfinance_fast(symbol)
+            if yf_result is not None and len(yf_result) >= 2:
+                print(f"✅ yfinance success for {symbol}")
+                return yf_result
+        except Exception as e:
+            print(f"⚠️ yfinance failed for {symbol}: {str(e)[:50]}")
+        
+        # Fallback to MarketWatch scraping if yfinance fails
+        print(f"🌐 Falling back to MarketWatch scraping for {symbol}...")
         return fetch_nasdaq_marketwatch_data(symbol)
+    
+    # Check if this is a GOLD symbol - use optimized gold fetching
+    gold_symbols = ['GOLD', 'GC=F', 'GLD', 'XAUUSD=X', 'XAU']
+    
+    if symbol.upper() in [s.upper() for s in gold_symbols]:
+        print(f"🥇 Detected GOLD symbol {symbol}, using optimized gold fetch...")
+        return fetch_gold_optimized(symbol)
     
     # For other symbols, use yfinance
     try:
