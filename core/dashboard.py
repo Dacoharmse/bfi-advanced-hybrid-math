@@ -11,7 +11,7 @@ logging.getLogger('werkzeug').setLevel(logging.ERROR)
 warnings.filterwarnings("ignore", category=UserWarning, module="transformers")
 
 from flask import Flask, render_template, request, jsonify, redirect, url_for, send_file, flash, session
-import sqlite3
+from db_service import db_service
 import json
 from datetime import datetime, timedelta
 import pickle
@@ -35,47 +35,147 @@ from auth_manager import auth_manager, login_required, admin_required
 from email_config import email_service
 from agent_manager import agent_manager
 
+def send_verification_email(user_email, username, verification_token):
+    """Send email verification to new user"""
+    try:
+        import os
+        base_url = os.getenv('BASE_URL', 'http://localhost:5000')
+        verification_url = f"{base_url}/verify-email?token={verification_token}"
+        
+        subject = "Verify your BFI Signals account"
+        
+        html_body = f"""
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>Verify Your Account - BFI Signals</title>
+    <style>
+        body {{
+            font-family: 'Inter', Arial, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            background-color: #0a0a0a;
+            margin: 0;
+            padding: 20px;
+        }}
+        .container {{
+            max-width: 600px;
+            margin: 0 auto;
+            background: #1a1a1a;
+            border-radius: 10px;
+            overflow: hidden;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+        }}
+        .header {{
+            background: linear-gradient(135deg, #d4af37, #f4d03f);
+            color: #000;
+            padding: 30px;
+            text-align: center;
+        }}
+        .header h1 {{
+            margin: 0;
+            font-size: 24px;
+            font-weight: bold;
+        }}
+        .content {{
+            padding: 40px 30px;
+            color: #ffffff;
+        }}
+        .verify-button {{
+            display: inline-block;
+            background: linear-gradient(135deg, #d4af37, #f4d03f);
+            color: #000;
+            padding: 15px 30px;
+            text-decoration: none;
+            border-radius: 5px;
+            font-weight: bold;
+            margin: 20px 0;
+        }}
+        .footer {{
+            background: #111;
+            padding: 20px;
+            text-align: center;
+            font-size: 12px;
+            color: #888;
+        }}
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>Welcome to BFI Signals!</h1>
+        </div>
+        
+        <div class="content">
+            <h2>Hi {username},</h2>
+            
+            <p>Welcome to BFI Signals! Please click the button below to verify your email address and activate your account:</p>
+            
+            <center>
+                <a href="{verification_url}" class="verify-button">Verify My Account</a>
+            </center>
+            
+            <p>If the button doesn't work, copy and paste this link into your browser:</p>
+            <p style="word-break: break-all; color: #d4af37;">{verification_url}</p>
+            
+            <p>If you didn't create this account, you can safely ignore this email.</p>
+        </div>
+        
+        <div class="footer">
+            <p>BFI Signals - AI Trading Dashboard<br>
+            This is an automated message. Please do not reply.</p>
+        </div>
+    </div>
+</body>
+</html>
+        """
+        
+        text_body = f"""
+Welcome to BFI Signals!
+
+Hi {username},
+
+Please verify your email address by visiting this link:
+{verification_url}
+
+If you didn't create this account, you can safely ignore this email.
+
+---
+BFI Signals Team
+        """
+        
+        return email_service.send_email(user_email, subject, html_body, text_body)
+        
+    except Exception as e:
+        print(f"Error sending verification email: {e}")
+        return False
+
+def format_signal_data_supabase(signals_data):
+    """Format signal data from Supabase for display"""
+    formatted_signals = []
+    
+    for signal in signals_data:
+        formatted_signal = {
+            'id': signal['id'],
+            'symbol': signal['symbol'],
+            'signal_type': signal.get('signal_type', 'auto'),
+            'predicted_probability': signal.get('predicted_probability', 50),
+            'risk_level': signal.get('risk_level', 'Medium'),
+            'timestamp': signal.get('timestamp', ''),
+            'actual_outcome': signal.get('actual_outcome'),
+            'profit_loss': signal.get('profit_loss'),
+            'risky_play_outcome': signal.get('risky_play_outcome')
+        }
+        formatted_signals.append(formatted_signal)
+    
+    return formatted_signals
+
 def get_todays_signals():
     """Get signals for today only"""
     try:
-        conn = sqlite3.connect('ai_learning.db')
-        cursor = conn.cursor()
-        
-        # Get today's date in YYYY-MM-DD format
-        today = datetime.now().strftime('%Y-%m-%d')
-        
-        # Ensure risky_play_outcome column exists
-        try:
-            cursor.execute('ALTER TABLE signal_performance ADD COLUMN risky_play_outcome INTEGER')
-            conn.commit()
-        except sqlite3.OperationalError:
-            pass
-        
-        # Check if risky_play_outcome column exists
-        cursor.execute('PRAGMA table_info(signal_performance)')
-        columns = [col[1] for col in cursor.fetchall()]
-        
-        if 'risky_play_outcome' in columns:
-            cursor.execute('''
-                SELECT id, symbol, signal_type, predicted_probability, risk_level, 
-                       timestamp, actual_outcome, profit_loss, risky_play_outcome
-                FROM signal_performance 
-                WHERE DATE(timestamp) = ?
-                ORDER BY timestamp DESC
-            ''', (today,))
-        else:
-            cursor.execute('''
-                SELECT id, symbol, signal_type, predicted_probability, risk_level, 
-                       timestamp, actual_outcome, profit_loss, NULL as risky_play_outcome
-                FROM signal_performance 
-                WHERE DATE(timestamp) = ?
-                ORDER BY timestamp DESC
-            ''', (today,))
-        
-        signals_data = cursor.fetchall()
-        conn.close()
-        
-        return format_signal_data(signals_data)
+        signals_data = db_service.get_todays_signals()
+        return format_signal_data_supabase(signals_data)
         
     except Exception as e:
         print(f"❌ Error getting today's signals: {str(e)}")
@@ -84,47 +184,8 @@ def get_todays_signals():
 def get_week_signals():
     """Get signals for the current week"""
     try:
-        conn = sqlite3.connect('ai_learning.db')
-        cursor = conn.cursor()
-        
-        # Get start of current week (Monday)
-        today = datetime.now()
-        days_since_monday = today.weekday()
-        monday = today - timedelta(days=days_since_monday)
-        week_start = monday.strftime('%Y-%m-%d')
-        
-        # Ensure risky_play_outcome column exists
-        try:
-            cursor.execute('ALTER TABLE signal_performance ADD COLUMN risky_play_outcome INTEGER')
-            conn.commit()
-        except sqlite3.OperationalError:
-            pass
-        
-        # Check if risky_play_outcome column exists
-        cursor.execute('PRAGMA table_info(signal_performance)')
-        columns = [col[1] for col in cursor.fetchall()]
-        
-        if 'risky_play_outcome' in columns:
-            cursor.execute('''
-                SELECT id, symbol, signal_type, predicted_probability, risk_level, 
-                       timestamp, actual_outcome, profit_loss, risky_play_outcome
-                FROM signal_performance 
-                WHERE DATE(timestamp) >= ?
-                ORDER BY timestamp DESC
-            ''', (week_start,))
-        else:
-            cursor.execute('''
-                SELECT id, symbol, signal_type, predicted_probability, risk_level, 
-                       timestamp, actual_outcome, profit_loss, NULL as risky_play_outcome
-                FROM signal_performance 
-                WHERE DATE(timestamp) >= ?
-                ORDER BY timestamp DESC
-            ''', (week_start,))
-        
-        signals_data = cursor.fetchall()
-        conn.close()
-        
-        return format_signal_data(signals_data)
+        signals_data = db_service.get_week_signals()
+        return format_signal_data_supabase(signals_data)
         
     except Exception as e:
         print(f"❌ Error getting week signals: {str(e)}")
@@ -688,9 +749,24 @@ def api_register():
         register_result = auth_manager.register_user(username, email, password)
         
         if register_result['success']:
+            # Send verification email
+            try:
+                verification_token = register_result.get('verification_token')
+                if verification_token:
+                    # Send verification email
+                    email_sent = send_verification_email(email, username, verification_token)
+                    if email_sent:
+                        print(f"✅ Verification email sent to {email}")
+                    else:
+                        print(f"⚠️ Failed to send verification email to {email}")
+                else:
+                    print("⚠️ No verification token generated")
+            except Exception as e:
+                print(f"❌ Email sending error: {e}")
+            
             return jsonify({
                 'success': True,
-                'message': 'Account created successfully! Please log in.'
+                'message': 'Account created successfully! Please check your email for verification instructions.'
             })
         else:
             return jsonify({'success': False, 'error': register_result['error']})

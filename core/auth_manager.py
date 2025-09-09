@@ -4,7 +4,6 @@ User Authentication and Authorization Manager for BFI Signals
 Handles user registration, login, role-based access control, and session management
 """
 
-import sqlite3
 import hashlib
 import secrets
 import uuid
@@ -12,121 +11,43 @@ from datetime import datetime, timedelta
 from functools import wraps
 from flask import session, request, jsonify, redirect, url_for
 import bcrypt
+from db_service import db_service
 
 class AuthManager:
-    def __init__(self, db_path='ai_learning.db'):
-        self.db_path = db_path
+    def __init__(self):
+        self.db = db_service
         self.init_auth_tables()
     
     def init_auth_tables(self):
         """Initialize authentication-related database tables"""
-        conn = sqlite3.connect(self.db_path)
-        cursor = conn.cursor()
+        if not self.db.is_available():
+            print("⚠️ Database service not available")
+            return
+            
+        # Check database connection
+        if not self.db.test_connection():
+            print("⚠️ Database connection test failed")
+            return
         
-        # Users table
-        cursor.execute('''
-            CREATE TABLE IF NOT EXISTS users (
-                id INTEGER PRIMARY KEY AUTOINCREMENT,
-                username TEXT UNIQUE NOT NULL,
-                email TEXT UNIQUE NOT NULL,
-                password_hash TEXT NOT NULL,
-                role TEXT DEFAULT 'user',
-                is_active BOOLEAN DEFAULT 0,
-                is_approved BOOLEAN DEFAULT 0,
-                created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-                last_login DATETIME,
-                email_verified BOOLEAN DEFAULT 0,
-                verification_token TEXT,
-                approved_by INTEGER,
-                approved_at DATETIME,
-                profile_picture TEXT,
-                full_name TEXT,
-                timezone TEXT DEFAULT 'UTC'
-            )
-        ''')
+        # Tables are managed in Supabase directly
+        # Check if default admin user exists
+        admin_user = self.db.get_user(username='admin')
         
-        # User sessions table
-        cursor.execute('''
-            CREATE TABLE IF NOT EXISTS user_sessions (
-                id INTEGER PRIMARY KEY AUTOINCREMENT,
-                user_id INTEGER,
-                session_token TEXT UNIQUE NOT NULL,
-                expires_at DATETIME NOT NULL,
-                created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-                ip_address TEXT,
-                user_agent TEXT,
-                FOREIGN KEY (user_id) REFERENCES users (id)
-            )
-        ''')
-        
-        # User notifications table
-        cursor.execute('''
-            CREATE TABLE IF NOT EXISTS user_notifications (
-                id INTEGER PRIMARY KEY AUTOINCREMENT,
-                user_id INTEGER,
-                title TEXT NOT NULL,
-                message TEXT NOT NULL,
-                notification_type TEXT DEFAULT 'signal',
-                is_read BOOLEAN DEFAULT 0,
-                created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-                signal_id INTEGER,
-                FOREIGN KEY (user_id) REFERENCES users (id)
-            )
-        ''')
-        
-        # Create default admin user if none exists
-        cursor.execute('SELECT COUNT(*) FROM users WHERE role = "admin"')
-        admin_count = cursor.fetchone()[0]
-        
-        if admin_count == 0:
+        if not admin_user:
             # Create default admin user: admin / admin123
             admin_password = self.hash_password('admin123')
-            cursor.execute('''
-                INSERT INTO users (username, email, password_hash, role, is_active, is_approved, email_verified)
-                VALUES (?, ?, ?, ?, ?, ?, ?)
-            ''', ('admin', 'admin@bfisignals.com', admin_password, 'admin', 1, 1, 1))
-            print("✅ Default admin user created: admin / admin123")
+            admin_user = self.db.create_user(
+                username='admin',
+                email='admin@bfisignals.com', 
+                password_hash=admin_password,
+                role='admin'
+            )
+            if admin_user:
+                print("✅ Default admin user created: admin / admin123")
+            else:
+                print("❌ Failed to create default admin user")
         
-        # Add new columns to existing users table if they don't exist
-        try:
-            cursor.execute('ALTER TABLE users ADD COLUMN is_approved BOOLEAN DEFAULT 0')
-        except sqlite3.OperationalError:
-            pass  # Column already exists
-        
-        try:
-            cursor.execute('ALTER TABLE users ADD COLUMN approved_by INTEGER')
-        except sqlite3.OperationalError:
-            pass  # Column already exists
-            
-        try:
-            cursor.execute('ALTER TABLE users ADD COLUMN approved_at DATETIME')
-        except sqlite3.OperationalError:
-            pass  # Column already exists
-            
-        try:
-            cursor.execute('ALTER TABLE users ADD COLUMN profile_picture TEXT')
-        except sqlite3.OperationalError:
-            pass  # Column already exists
-            
-        try:
-            cursor.execute('ALTER TABLE users ADD COLUMN full_name TEXT')
-        except sqlite3.OperationalError:
-            pass  # Column already exists
-            
-        try:
-            cursor.execute('ALTER TABLE users ADD COLUMN timezone TEXT DEFAULT "UTC"')
-        except sqlite3.OperationalError:
-            pass  # Column already exists
-        
-        # Update existing admin users to be approved
-        cursor.execute('''
-            UPDATE users 
-            SET is_approved = 1, is_active = 1 
-            WHERE role = "admin" AND (is_approved IS NULL OR is_approved = 0)
-        ''')
-        
-        conn.commit()
-        conn.close()
+        print("✅ Auth tables initialized successfully")
     
     def hash_password(self, password):
         """Hash password using bcrypt"""
@@ -139,32 +60,34 @@ class AuthManager:
     def register_user(self, username, email, password, role='user'):
         """Register a new user"""
         try:
-            conn = sqlite3.connect(self.db_path)
-            cursor = conn.cursor()
-            
             # Check if user already exists
-            cursor.execute('SELECT id FROM users WHERE username = ? OR email = ?', (username, email))
-            if cursor.fetchone():
-                return {'success': False, 'error': 'Username or email already exists'}
+            existing_user = self.db.get_user(username=username)
+            if existing_user:
+                return {'success': False, 'error': 'Username already exists'}
+                
+            existing_email = self.db.get_user(email=email)
+            if existing_email:
+                return {'success': False, 'error': 'Email already exists'}
             
             # Hash password and create user
             password_hash = self.hash_password(password)
             verification_token = str(uuid.uuid4())
             
-            cursor.execute('''
-                INSERT INTO users (username, email, password_hash, role, verification_token)
-                VALUES (?, ?, ?, ?, ?)
-            ''', (username, email, password_hash, role, verification_token))
+            user = self.db.create_user(
+                username=username,
+                email=email,
+                password_hash=password_hash,
+                role=role
+            )
             
-            user_id = cursor.lastrowid
-            conn.commit()
-            conn.close()
-            
-            return {
-                'success': True,
-                'user_id': user_id,
-                'verification_token': verification_token
-            }
+            if user:
+                return {
+                    'success': True,
+                    'user_id': user['id'],
+                    'verification_token': verification_token
+                }
+            else:
+                return {'success': False, 'error': 'Failed to create user'}
             
         except Exception as e:
             return {'success': False, 'error': str(e)}
@@ -172,43 +95,33 @@ class AuthManager:
     def authenticate_user(self, username, password):
         """Authenticate user login"""
         try:
-            conn = sqlite3.connect(self.db_path)
-            cursor = conn.cursor()
-            
-            cursor.execute('''
-                SELECT id, username, email, password_hash, role, is_active, is_approved 
-                FROM users WHERE username = ? OR email = ?
-            ''', (username, username))
-            
-            user = cursor.fetchone()
+            # Try to get user by username first, then email
+            user = self.db.get_user(username=username)
+            if not user:
+                user = self.db.get_user(email=username)
             
             if not user:
                 return {'success': False, 'error': 'Invalid username or password'}
             
-            user_id, username, email, password_hash, role, is_active, is_approved = user
-            
-            if not is_active:
+            if not user.get('is_active', False):
                 return {'success': False, 'error': 'Account is deactivated'}
             
-            if not is_approved:
+            if not user.get('is_approved', False):
                 return {'success': False, 'error': 'Account is pending admin approval'}
             
-            if not self.verify_password(password, password_hash):
+            if not self.verify_password(password, user['password_hash']):
                 return {'success': False, 'error': 'Invalid username or password'}
             
             # Update last login
-            cursor.execute('UPDATE users SET last_login = ? WHERE id = ?', 
-                          (datetime.now(), user_id))
-            conn.commit()
-            conn.close()
+            self.db.update_user_login(user['id'])
             
             return {
                 'success': True,
                 'user': {
-                    'id': user_id,
-                    'username': username,
-                    'email': email,
-                    'role': role
+                    'id': user['id'],
+                    'username': user['username'],
+                    'email': user['email'],
+                    'role': user['role']
                 }
             }
             
@@ -221,18 +134,15 @@ class AuthManager:
             session_token = secrets.token_urlsafe(32)
             expires_at = datetime.now() + timedelta(days=30)  # 30-day session
             
-            conn = sqlite3.connect(self.db_path)
-            cursor = conn.cursor()
+            success = self.db.create_session(
+                user_id=user_id,
+                session_token=session_token,
+                expires_at=expires_at,
+                ip_address=ip_address,
+                user_agent=user_agent
+            )
             
-            cursor.execute('''
-                INSERT INTO user_sessions (user_id, session_token, expires_at, ip_address, user_agent)
-                VALUES (?, ?, ?, ?, ?)
-            ''', (user_id, session_token, expires_at, ip_address, user_agent))
-            
-            conn.commit()
-            conn.close()
-            
-            return session_token
+            return session_token if success else None
             
         except Exception as e:
             print(f"Error creating session: {e}")
@@ -241,32 +151,30 @@ class AuthManager:
     def validate_session(self, session_token):
         """Validate a session token"""
         try:
-            conn = sqlite3.connect(self.db_path)
-            cursor = conn.cursor()
+            # Get session data
+            session_data = self.db.get_session(session_token)
             
-            cursor.execute('''
-                SELECT u.id, u.username, u.email, u.role, u.is_active, s.expires_at
-                FROM users u
-                JOIN user_sessions s ON u.id = s.user_id
-                WHERE s.session_token = ? AND s.expires_at > ?
-            ''', (session_token, datetime.now()))
+            if not session_data:
+                return {'valid': False}
             
-            session_data = cursor.fetchone()
-            conn.close()
+            # Check if session is expired
+            expires_at = datetime.fromisoformat(session_data['expires_at'])
+            if expires_at <= datetime.now():
+                return {'valid': False}
             
-            if session_data:
-                user_id, username, email, role, is_active, expires_at = session_data
-                
-                if is_active:
-                    return {
-                        'valid': True,
-                        'user': {
-                            'id': user_id,
-                            'username': username,
-                            'email': email,
-                            'role': role
-                        }
+            # Get user data
+            user = self.db.get_user(user_id=session_data['user_id'])
+            
+            if user and user.get('is_active', False):
+                return {
+                    'valid': True,
+                    'user': {
+                        'id': user['id'],
+                        'username': user['username'],
+                        'email': user['email'],
+                        'role': user['role']
                     }
+                }
             
             return {'valid': False}
             
@@ -277,14 +185,7 @@ class AuthManager:
     def logout_user(self, session_token):
         """Logout user by invalidating session"""
         try:
-            conn = sqlite3.connect(self.db_path)
-            cursor = conn.cursor()
-            
-            cursor.execute('DELETE FROM user_sessions WHERE session_token = ?', (session_token,))
-            conn.commit()
-            conn.close()
-            
-            return True
+            return self.db.delete_session(session_token)
             
         except Exception as e:
             print(f"Error logging out user: {e}")

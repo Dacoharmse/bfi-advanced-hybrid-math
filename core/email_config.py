@@ -9,7 +9,7 @@ import secrets
 import email.mime.text
 import email.mime.multipart
 from datetime import datetime, timedelta
-import sqlite3
+from db_service import db_service
 
 # Email configuration
 EMAIL_CONFIG = {
@@ -21,29 +21,14 @@ EMAIL_CONFIG = {
 }
 
 class EmailService:
-    def __init__(self, db_path='ai_learning.db'):
-        self.db_path = db_path
+    def __init__(self):
+        self.db = db_service
         self.init_password_reset_table()
     
     def init_password_reset_table(self):
         """Initialize password reset tokens table"""
-        conn = sqlite3.connect(self.db_path)
-        cursor = conn.cursor()
-        
-        cursor.execute('''
-            CREATE TABLE IF NOT EXISTS password_reset_tokens (
-                id INTEGER PRIMARY KEY AUTOINCREMENT,
-                user_id INTEGER NOT NULL,
-                token TEXT UNIQUE NOT NULL,
-                expires_at DATETIME NOT NULL,
-                created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-                used BOOLEAN DEFAULT 0,
-                FOREIGN KEY (user_id) REFERENCES users (id)
-            )
-        ''')
-        
-        conn.commit()
-        conn.close()
+        # Tables are managed in Supabase
+        pass
     
     def send_email(self, to_email, subject, body_html, body_text=None):
         """Send an email using the configured SMTP server"""
@@ -144,19 +129,7 @@ class EmailService:
     def use_password_reset_token(self, token):
         """Mark a password reset token as used"""
         try:
-            conn = sqlite3.connect(self.db_path)
-            cursor = conn.cursor()
-            
-            cursor.execute('''
-                UPDATE password_reset_tokens 
-                SET used = 1 
-                WHERE token = ?
-            ''', (token,))
-            
-            conn.commit()
-            conn.close()
-            
-            return cursor.rowcount > 0
+            return self.db.mark_token_used(token)
             
         except Exception as e:
             print(f"Error using reset token: {e}")

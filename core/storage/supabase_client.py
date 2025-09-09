@@ -20,8 +20,11 @@ class SupabaseClient:
     
     def __init__(self):
         """Initialize Supabase client with credentials"""
-        self.url = "https://kiiugsmjybncvtrdshdk.supabase.co"
-        self.key = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImtpaXVnc21qeWJuY3Z0cmRzaGRrIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTM4NzY2ODIsImV4cCI6MjA2OTQ1MjY4Mn0.4GRc469_WzsUERgsqikeGQ2SQZwJpR4HPW1kkqXR3Sw"
+        # Try different URL formats
+        self.url = "https://mlcunoaiebghhxjycogb.supabase.co"  
+        # Use the correct anon public key
+        self.key = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im1sY3Vub2FpZWJnaGh4anljb2diIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTc0MTA3NDEsImV4cCI6MjA3Mjk4Njc0MX0.PXBjFUXPbpl2E5_McuGbWwbtFIORluyltbHhD0a4Zhc"
+        self.password = "fiw5Y1uxmLBEcJj3"
         
         try:
             # Try to import supabase
@@ -253,6 +256,318 @@ class SupabaseClient:
         except Exception as e:
             logger.error(f"❌ Failed to get latest market close data: {e}")
             return {}
+
+    def init_tables(self) -> bool:
+        """Initialize all required tables in Supabase"""
+        if not self.available:
+            return False
+        
+        try:
+            # Note: In Supabase, we'll create tables via the web interface first
+            # This method can be used to verify tables exist
+            test_queries = [
+                self.supabase.table('users').select('id').limit(1),
+                self.supabase.table('signal_performance').select('id').limit(1),
+                self.supabase.table('user_sessions').select('id').limit(1),
+                self.supabase.table('user_notifications').select('id').limit(1),
+                self.supabase.table('password_reset_tokens').select('id').limit(1),
+                self.supabase.table('journal_entries').select('id').limit(1)
+            ]
+            
+            for query in test_queries:
+                query.execute()
+            
+            logger.info("✅ All Supabase tables verified successfully")
+            return True
+            
+        except Exception as e:
+            logger.error(f"❌ Failed to verify Supabase tables: {e}")
+            return False
+
+    # User Management Methods
+    def create_user(self, username: str, email: str, password_hash: str, role: str = 'user') -> Optional[Dict]:
+        """Create a new user"""
+        if not self.available:
+            return None
+        
+        try:
+            response = self.supabase.table('users').insert({
+                'username': username,
+                'email': email,
+                'password_hash': password_hash,
+                'role': role
+            }).execute()
+            
+            if response.data:
+                logger.info(f"✅ User created: {username}")
+                return response.data[0]
+            return None
+            
+        except Exception as e:
+            logger.error(f"❌ Failed to create user: {e}")
+            return None
+
+    def get_user_by_username(self, username: str) -> Optional[Dict]:
+        """Get user by username"""
+        if not self.available:
+            return None
+        
+        try:
+            response = self.supabase.table('users').select('*').eq('username', username).execute()
+            return response.data[0] if response.data else None
+        except Exception as e:
+            logger.error(f"❌ Failed to get user by username: {e}")
+            return None
+
+    def get_user_by_email(self, email: str) -> Optional[Dict]:
+        """Get user by email"""
+        if not self.available:
+            return None
+        
+        try:
+            response = self.supabase.table('users').select('*').eq('email', email).execute()
+            return response.data[0] if response.data else None
+        except Exception as e:
+            logger.error(f"❌ Failed to get user by email: {e}")
+            return None
+
+    def get_user_by_id(self, user_id: int) -> Optional[Dict]:
+        """Get user by ID"""
+        if not self.available:
+            return None
+        
+        try:
+            response = self.supabase.table('users').select('*').eq('id', user_id).execute()
+            return response.data[0] if response.data else None
+        except Exception as e:
+            logger.error(f"❌ Failed to get user by ID: {e}")
+            return None
+
+    def update_user_login(self, user_id: int) -> bool:
+        """Update user's last login timestamp"""
+        if not self.available:
+            return False
+        
+        try:
+            self.supabase.table('users').update({
+                'last_login': datetime.now().isoformat()
+            }).eq('id', user_id).execute()
+            return True
+        except Exception as e:
+            logger.error(f"❌ Failed to update user login: {e}")
+            return False
+
+    # Session Management Methods
+    def create_session(self, user_id: int, session_token: str, expires_at: datetime, ip_address: str = None, user_agent: str = None) -> bool:
+        """Create a new user session"""
+        if not self.available:
+            return False
+        
+        try:
+            self.supabase.table('user_sessions').insert({
+                'user_id': user_id,
+                'session_token': session_token,
+                'expires_at': expires_at.isoformat(),
+                'ip_address': ip_address,
+                'user_agent': user_agent
+            }).execute()
+            return True
+        except Exception as e:
+            logger.error(f"❌ Failed to create session: {e}")
+            return False
+
+    def get_session(self, session_token: str) -> Optional[Dict]:
+        """Get session by token"""
+        if not self.available:
+            return None
+        
+        try:
+            response = self.supabase.table('user_sessions').select('*').eq('session_token', session_token).execute()
+            return response.data[0] if response.data else None
+        except Exception as e:
+            logger.error(f"❌ Failed to get session: {e}")
+            return None
+
+    def delete_session(self, session_token: str) -> bool:
+        """Delete a user session"""
+        if not self.available:
+            return False
+        
+        try:
+            self.supabase.table('user_sessions').delete().eq('session_token', session_token).execute()
+            return True
+        except Exception as e:
+            logger.error(f"❌ Failed to delete session: {e}")
+            return False
+
+    # Signal Performance Methods
+    def save_signal_performance(self, signal_data: Dict[str, Any]) -> bool:
+        """Save signal performance data"""
+        if not self.available:
+            return False
+        
+        try:
+            self.supabase.table('signal_performance').insert(signal_data).execute()
+            logger.info(f"✅ Saved signal performance data")
+            return True
+        except Exception as e:
+            logger.error(f"❌ Failed to save signal performance: {e}")
+            return False
+
+    def get_signal_performance(self, limit: int = 100, offset: int = 0) -> List[Dict]:
+        """Get signal performance data"""
+        if not self.available:
+            return []
+        
+        try:
+            response = self.supabase.table('signal_performance').select('*').order('timestamp', desc=True).limit(limit).offset(offset).execute()
+            return response.data
+        except Exception as e:
+            logger.error(f"❌ Failed to get signal performance: {e}")
+            return []
+
+    def get_signals_by_date(self, date_str: str) -> List[Dict]:
+        """Get signals for a specific date"""
+        if not self.available:
+            return []
+        
+        try:
+            response = self.supabase.table('signal_performance').select('*').gte('timestamp', f"{date_str} 00:00:00").lt('timestamp', f"{date_str} 23:59:59").order('timestamp', desc=True).execute()
+            return response.data
+        except Exception as e:
+            logger.error(f"❌ Failed to get signals by date: {e}")
+            return []
+
+    def update_signal_outcome(self, signal_id: int, outcome: int, profit_loss: float = None) -> bool:
+        """Update signal outcome"""
+        if not self.available:
+            return False
+        
+        try:
+            update_data = {'actual_outcome': outcome}
+            if profit_loss is not None:
+                update_data['profit_loss'] = profit_loss
+                
+            self.supabase.table('signal_performance').update(update_data).eq('id', signal_id).execute()
+            return True
+        except Exception as e:
+            logger.error(f"❌ Failed to update signal outcome: {e}")
+            return False
+
+    # Password Reset Methods
+    def create_password_reset_token(self, user_id: int, token: str, expires_at: datetime) -> bool:
+        """Create password reset token"""
+        if not self.available:
+            return False
+        
+        try:
+            self.supabase.table('password_reset_tokens').insert({
+                'user_id': user_id,
+                'token': token,
+                'expires_at': expires_at.isoformat()
+            }).execute()
+            return True
+        except Exception as e:
+            logger.error(f"❌ Failed to create password reset token: {e}")
+            return False
+
+    def get_password_reset_token(self, token: str) -> Optional[Dict]:
+        """Get password reset token"""
+        if not self.available:
+            return None
+        
+        try:
+            response = self.supabase.table('password_reset_tokens').select('*').eq('token', token).eq('used', False).execute()
+            return response.data[0] if response.data else None
+        except Exception as e:
+            logger.error(f"❌ Failed to get password reset token: {e}")
+            return None
+
+    def mark_token_used(self, token: str) -> bool:
+        """Mark password reset token as used"""
+        if not self.available:
+            return False
+        
+        try:
+            self.supabase.table('password_reset_tokens').update({'used': True}).eq('token', token).execute()
+            return True
+        except Exception as e:
+            logger.error(f"❌ Failed to mark token as used: {e}")
+            return False
+
+    # Journal Management Methods
+    def save_journal_entry(self, user_id: int, symbol: str, entry_type: str, entry_date: date, content: str) -> bool:
+        """Save journal entry"""
+        if not self.available:
+            return False
+        
+        try:
+            self.supabase.table('journal_entries').insert({
+                'user_id': user_id,
+                'symbol': symbol,
+                'entry_type': entry_type,
+                'entry_date': entry_date.isoformat(),
+                'content': content
+            }).execute()
+            return True
+        except Exception as e:
+            logger.error(f"❌ Failed to save journal entry: {e}")
+            return False
+
+    def get_journal_entries(self, user_id: int, limit: int = 50) -> List[Dict]:
+        """Get journal entries for user"""
+        if not self.available:
+            return []
+        
+        try:
+            response = self.supabase.table('journal_entries').select('*').eq('user_id', user_id).order('created_at', desc=True).limit(limit).execute()
+            return response.data
+        except Exception as e:
+            logger.error(f"❌ Failed to get journal entries: {e}")
+            return []
+
+    # Notification Methods
+    def create_notification(self, user_id: int, title: str, message: str, notification_type: str = 'signal', signal_id: int = None) -> bool:
+        """Create user notification"""
+        if not self.available:
+            return False
+        
+        try:
+            self.supabase.table('user_notifications').insert({
+                'user_id': user_id,
+                'title': title,
+                'message': message,
+                'notification_type': notification_type,
+                'signal_id': signal_id
+            }).execute()
+            return True
+        except Exception as e:
+            logger.error(f"❌ Failed to create notification: {e}")
+            return False
+
+    def get_user_notifications(self, user_id: int, limit: int = 20) -> List[Dict]:
+        """Get user notifications"""
+        if not self.available:
+            return []
+        
+        try:
+            response = self.supabase.table('user_notifications').select('*').eq('user_id', user_id).order('created_at', desc=True).limit(limit).execute()
+            return response.data
+        except Exception as e:
+            logger.error(f"❌ Failed to get user notifications: {e}")
+            return []
+
+    def mark_notification_read(self, notification_id: int) -> bool:
+        """Mark notification as read"""
+        if not self.available:
+            return False
+        
+        try:
+            self.supabase.table('user_notifications').update({'is_read': True}).eq('id', notification_id).execute()
+            return True
+        except Exception as e:
+            logger.error(f"❌ Failed to mark notification as read: {e}")
+            return False
 
 
 # Global instance

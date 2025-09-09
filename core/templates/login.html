@@ -149,6 +149,45 @@
             color: var(--text-muted);
         }
 
+        .password-input-wrapper {
+            position: relative;
+            display: flex;
+            align-items: center;
+        }
+
+        .password-input-wrapper .form-input {
+            padding-right: 45px;
+        }
+
+        .password-toggle {
+            position: absolute;
+            right: 12px;
+            top: 50%;
+            transform: translateY(-50%);
+            background: none;
+            border: none;
+            color: var(--text-muted);
+            cursor: pointer;
+            padding: 8px;
+            border-radius: 4px;
+            transition: all 0.3s ease;
+            font-size: 18px;
+            z-index: 10;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .password-toggle:hover {
+            color: var(--golden-primary);
+            background: rgba(212, 175, 55, 0.1);
+        }
+
+        .password-toggle:focus {
+            outline: none;
+            color: var(--golden-bright);
+        }
+
         .btn-login {
             width: 100%;
             padding: 14px;
@@ -289,8 +328,13 @@
 
             <div class="form-group">
                 <label for="password">Password</label>
-                <input type="password" id="password" name="password" class="form-input" 
-                       placeholder="Enter your password" required>
+                <div class="password-input-wrapper">
+                    <input type="password" id="password" name="password" class="form-input" 
+                           placeholder="Enter your password" required>
+                    <button type="button" class="password-toggle" id="passwordToggle">
+                        <span class="password-toggle-icon" id="toggleIcon">👁️</span>
+                    </button>
+                </div>
             </div>
 
             <button type="submit" class="btn-login" id="loginBtn">
@@ -371,6 +415,21 @@
                     showAlert('Network error. Please try again.');
                 } finally {
                     setLoading(false);
+                }
+            });
+
+            // Password toggle functionality
+            const passwordInput = document.getElementById('password');
+            const passwordToggle = document.getElementById('passwordToggle');
+            const toggleIcon = document.getElementById('toggleIcon');
+
+            passwordToggle.addEventListener('click', function() {
+                if (passwordInput.type === 'password') {
+                    passwordInput.type = 'text';
+                    toggleIcon.textContent = '🙈';
+                } else {
+                    passwordInput.type = 'password';
+                    toggleIcon.textContent = '👁️';
                 }
             });
 
